@@ -285,11 +285,10 @@ def LTreeParser.run (x: StateT LTreeParser (Except ParseError) α) (t: LTree): E
   (LTree.node "a" []) =
   Except.ok ["{", "V", "}"]
 
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["{", "F", "{", "V", "F", "V", "}", "}"] := by
-  native_decide
+  Except.ok ["{", "F", "{", "V", "F", "V", "}", "}"]
 
 -- walkActions next just two
 #guard LTreeParser.run
@@ -298,71 +297,61 @@ example : LTreeParser.run
   = Except.ok ["{", "F"]
 
 -- walkActions next to end
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  = Except.ok ["{", "F", "{", "V", "F", "V", "}", "}", "$"] := by
-  native_decide
+  = Except.ok ["{", "F", "{", "V", "F", "V", "}", "}", "$"]
 
 -- walkActions next to end and tokenize all
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"] := by
-  native_decide
+  = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
 -- walkActions next to end and tokenize all
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"] := by
-  native_decide
+  = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
 -- walkActions skip
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.skip, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["$"] := by
-  native_decide
+  Except.ok ["$"]
 
 -- walkActions next skip
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.skip, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["{", "$"] := by
-  native_decide
+  Except.ok ["{", "$"]
 
 -- walkActions next next skip
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["{", "F", "}", "$"] := by
-  native_decide
+  Except.ok ["{", "F", "}", "$"]
 
 -- walkActions next next token skip
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["{", "F", "a", "}", "$"] := by
-  native_decide
+  Except.ok ["{", "F", "a", "}", "$"]
 
 -- walkActions next next token next skip
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["{", "F", "a", "{", "}", "$"] := by
-  native_decide
+  Except.ok ["{", "F", "a", "{", "}", "$"]
 
 -- walkActions next next token next next token skip
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["{", "F", "a", "{", "V", "b", "}", "$"] := by
-  native_decide
+  Except.ok ["{", "F", "a", "{", "V", "b", "}", "$"]
 
 -- walkActions next next token next next token next token skip
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"] := by
-  native_decide
+  Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"]
