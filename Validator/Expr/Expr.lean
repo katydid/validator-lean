@@ -1,6 +1,6 @@
 import Init.Control.State
-import Init.Control.Except
-import Init.Control.EState
+
+import Validator.Std.Except
 
 namespace Expr
 
@@ -63,6 +63,7 @@ partial def validate (x: Expr) (forest: List LTree): Bool :=
 
 inductive ParseError where
   | unknown (desc: String)
+  deriving DecidableEq
 
 inductive Hint where
   | enter
@@ -118,9 +119,9 @@ instance : ToString Token :=
 -- * `Token: () -> (Token | error)`
 
 class Parser (m: Type -> Type u) [Monad m] where
-  next: m (Except ParseError Hint)
-  skip: m (Except ParseError Unit)
-  token: m (Except ParseError Token)
+  next: m Hint
+  skip: m Unit
+  token: m Token
 
 inductive Action where
   | next
@@ -130,24 +131,17 @@ inductive Action where
 def walkActions [Monad m] [Parser m] (actions: List Action) (logs: List String := []): m (List String) := do
   match actions with
   | [] => return reverse logs
-  | (action::rest) =>
-    match action with
-    | Action.next => do
-      match <- Parser.next with
-      | Except.error (ParseError.unknown errstring) => return reverse (errstring::logs)
-      | Except.ok Hint.eof => return reverse (toString Hint.eof :: logs)
-      | Except.ok h' =>
+  | (Action.next::rest) => do
+    match <- Parser.next with
+    | Hint.eof =>
+        return reverse (toString Hint.eof :: logs)
+    | h' =>
         walkActions rest (toString h' :: logs)
-    | Action.skip => do
-      match <- Parser.skip with
-      | Except.error (ParseError.unknown errstring) => return reverse (errstring::logs)
-      | Except.ok () =>
-        walkActions rest logs
-    | Action.token => do
-      match <- Parser.token with
-      | Except.error (ParseError.unknown errstring) => return reverse (errstring::logs)
-      | Except.ok t' =>
-        walkActions rest (toString t' :: logs)
+  | (Action.skip::rest) => do
+    _ <- Parser.skip
+    walkActions rest logs
+  | (Action.token::rest) => do
+    walkActions rest (toString (<- Parser.token) :: logs)
 
 -- StateParser is the default Parser, where the State type (S) still needs to be specified.
 def StateParser (S: Type) := Parser (StateM S)
@@ -157,26 +151,26 @@ def IOParser := Parser IO
 inductive StackedState (S: Type) where
   | mk (current: S) (stack: List S)
 
-def getCurrent: StateM (StackedState S) S := do
+def getCurrent [Monad m]: StateT (StackedState S) m S := do
   let s <- get
   match s with
   | StackedState.mk curr _ => return curr
 
-def setCurrent (t: S): StateM (StackedState S) PUnit := do
+def setCurrent [Monad m] (t: S): StateT (StackedState S) m Unit := do
   let s <- get
   match s with
   | StackedState.mk _ stack =>
     set (StackedState.mk t stack)
     return ()
 
-def push (top: S): StateM (StackedState S) PUnit := do
+def push [Monad m] (top: S): StateT (StackedState S) m Unit := do
   let s <- get
   match s with
   | StackedState.mk oldtop stack =>
     set (StackedState.mk top (oldtop::stack))
     return ()
 
-def pop: StateM (StackedState S) Bool := do
+def pop [Monad m]: StateT (StackedState S) m Bool := do
   let s <- get
   match s with
   | StackedState.mk _ [] =>
@@ -198,189 +192,177 @@ def LTreeParser := StackedState ParserState
 def LTreeParser.mk' (t: LTree): LTreeParser :=
   StackedState.mk (ParserState.unknown [t]) []
 
-def nextNode (current: LTree) (nexts: List LTree): StateM LTreeParser (Except ParseError Hint) := do
+def nextNode (current: LTree) (nexts: List LTree): StateT LTreeParser (Except ParseError) Hint := do
   match current with
   | LTree.node v [] =>
     setCurrent (ParserState.value (Token.string v) nexts)
-    return Except.ok Hint.value
+    return Hint.value
   | LTree.node f [LTree.node v []] =>
     setCurrent (ParserState.pair (Token.string f) (Token.string v) nexts)
-    return Except.ok Hint.field
+    return Hint.field
   | LTree.node f children =>
     setCurrent (ParserState.opened nexts)
     push (ParserState.field (Token.string f) children)
-    return Except.ok Hint.field
+    return Hint.field
 
-def next: StateM LTreeParser (Except ParseError Hint) := do
+def next: StateT LTreeParser (Except ParseError) Hint := do
   let curr <- getCurrent
   match curr with
   | ParserState.unknown f =>
     setCurrent (ParserState.opened f)
-    return Except.ok Hint.enter
+    return Hint.enter
   | ParserState.opened [] =>
     let popped <- pop
     if not popped then setCurrent ParserState.eof
-    return Except.ok Hint.leave
+    return Hint.leave
   | ParserState.opened (t::ts) =>
     nextNode t ts
   | ParserState.value _ [] =>
     let popped <- pop
     if not popped then setCurrent ParserState.eof
-    return Except.ok Hint.leave
+    return Hint.leave
   | ParserState.value _ (t::ts) =>
     nextNode t ts
   | ParserState.pair _ v nexts =>
     setCurrent (ParserState.value v nexts)
-    return Except.ok Hint.value
+    return Hint.value
   | ParserState.field _ children =>
     setCurrent (ParserState.opened children)
-    return Except.ok Hint.enter
+    return Hint.enter
   | ParserState.eof =>
-    return Except.ok Hint.eof
+    return Hint.eof
 
-def skip: StateM LTreeParser (Except ParseError Unit) := do
+def skip: StateT LTreeParser (Except ParseError) Unit := do
   let curr <- getCurrent
   match curr with
   | ParserState.unknown _ =>
     setCurrent ParserState.eof
-    return Except.ok ()
+    return ()
   | ParserState.opened _ =>
     let popped <- pop
     if not popped then setCurrent ParserState.eof
-    return Except.ok ()
+    return ()
   | ParserState.value _ _ =>
     let popped <- pop
     if not popped then setCurrent ParserState.eof
-    return Except.ok ()
+    return ()
   | ParserState.pair _ _ nexts =>
     setCurrent (ParserState.opened nexts)
-    return Except.ok ()
+    return ()
   | ParserState.field _ _ =>
     let popped <- pop
     if not popped then setCurrent ParserState.eof
-    return Except.ok ()
+    return ()
   | ParserState.eof =>
-    return Except.ok ()
+    return ()
 
-def token: StateM LTreeParser (Except ParseError Token) := do
+def token: StateT LTreeParser (Except ParseError) Token := do
   let curr <- getCurrent
   match curr with
   | ParserState.unknown _ =>
-    return Except.error (ParseError.unknown "unknown")
+    throw (ParseError.unknown "unknown")
   | ParserState.opened _ =>
-    return Except.error (ParseError.unknown "unknown")
+    throw (ParseError.unknown "unknown")
   | ParserState.value v _ =>
-    return Except.ok v
+    return v
   | ParserState.pair f _ _ =>
-    return Except.ok f
+    return f
   | ParserState.field f _ =>
-    return Except.ok f
+    return f
   | ParserState.eof =>
-    return Except.error (ParseError.unknown "unknown")
+    throw (ParseError.unknown "unknown")
 
-instance : Parser (StateM LTreeParser) where
+instance : Parser (StateT LTreeParser (Except ParseError)) where
   next := next
   skip := skip
   token := token
 
--- Unfortunately with StateT.run' we need the type hint (m := Id), so we define StateM.run':
-def StateM.run' {σ : Type u} {α : Type u} (x : StateT σ Id α) (s : σ) : α :=
-  StateT.run' x s
+def LTreeParser.run (x: StateT LTreeParser (Except ParseError) α) (t: LTree): Except ParseError α :=
+  StateT.run' x (LTreeParser.mk' t)
 
-example : StateM.run'
-  (walkActions [Action.next, Action.next, Action.next])
-  (LTreeParser.mk' (LTree.node "a" [])) =
-  ["{", "V", "}"] := by
-  native_decide
-
-def LTreeParser.run (x: StateM LTreeParser α) (t: LTree): α :=
-  StateM.run' x (LTreeParser.mk' t)
-
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next, Action.next])
   (LTree.node "a" []) =
-  ["{", "V", "}"] := by
-  native_decide
+  Except.ok ["{", "V", "}"]
 
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["{", "F", "{", "V", "F", "V", "}", "}"] := by
+  Except.ok ["{", "F", "{", "V", "F", "V", "}", "}"] := by
   native_decide
 
 -- walkActions next just two
-example : LTreeParser.run
+#guard LTreeParser.run
   (walkActions [Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  = ["{", "F"] := by
-  native_decide
+  = Except.ok ["{", "F"]
 
 -- walkActions next to end
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  = ["{", "F", "{", "V", "F", "V", "}", "}", "$"] := by
+  = Except.ok ["{", "F", "{", "V", "F", "V", "}", "}", "$"] := by
   native_decide
 
 -- walkActions next to end and tokenize all
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  = ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"] := by
+  = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"] := by
   native_decide
 
 -- walkActions next to end and tokenize all
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  = ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"] := by
+  = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"] := by
   native_decide
 
 -- walkActions skip
 example : LTreeParser.run
   (walkActions [Action.skip, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["$"] := by
+  Except.ok ["$"] := by
   native_decide
 
 -- walkActions next skip
 example : LTreeParser.run
   (walkActions [Action.next, Action.skip, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["{", "$"] := by
+  Except.ok ["{", "$"] := by
   native_decide
 
 -- walkActions next next skip
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["{", "F", "}", "$"] := by
+  Except.ok ["{", "F", "}", "$"] := by
   native_decide
 
 -- walkActions next next token skip
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["{", "F", "a", "}", "$"] := by
+  Except.ok ["{", "F", "a", "}", "$"] := by
   native_decide
 
 -- walkActions next next token next skip
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["{", "F", "a", "{", "}", "$"] := by
+  Except.ok ["{", "F", "a", "{", "}", "$"] := by
   native_decide
 
 -- walkActions next next token next next token skip
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["{", "F", "a", "{", "V", "b", "}", "$"] := by
+  Except.ok ["{", "F", "a", "{", "V", "b", "}", "$"] := by
   native_decide
 
 -- walkActions next next token next next token next token skip
 example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
-  ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"] := by
+  Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"] := by
   native_decide
