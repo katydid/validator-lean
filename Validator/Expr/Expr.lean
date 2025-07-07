@@ -247,17 +247,11 @@ def skip: StateM LTreeParser (Except ParseError Unit) := do
   | ParserState.opened _ =>
     let popped <- pop
     if not popped then setCurrent ParserState.eof
-    let n <- next
-    match n with
-    | Except.error e => return Except.error e
-    | _ => return Except.ok ()
+    return Except.ok ()
   | ParserState.value _ _ =>
     let popped <- pop
     if not popped then setCurrent ParserState.eof
-    let n <- next
-    match n with
-    | Except.error e => return Except.error e
-    | _ => return Except.ok ()
+    return Except.ok ()
   | ParserState.pair _ _ nexts =>
     setCurrent (ParserState.opened nexts)
     return Except.ok ()
@@ -370,14 +364,23 @@ example : LTreeParser.run
   ["{", "F", "a", "}", "$"] := by
   native_decide
 
--- TODO: walkActions next next token next skip
-#eval LTreeParser.run
+-- walkActions next next token next skip
+example : LTreeParser.run
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  -- ["{", "F", "a", "{", "$"]
-  -- ["{", "F", "a", "{", "}", $"]
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  ["{", "F", "a", "{", "}", "$"] := by
+  native_decide
 
-#eval LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
-  -- ["{", "F", "a", "{", "$"]
+-- walkActions next next token next next token skip
+example : LTreeParser.run
+  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  ["{", "F", "a", "{", "V", "b", "}", "$"] := by
+  native_decide
+
+-- walkActions next next token next next token next token skip
+example : LTreeParser.run
+  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"] := by
+  native_decide
