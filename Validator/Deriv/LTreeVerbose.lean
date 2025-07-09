@@ -78,6 +78,15 @@ def dLeaves (xs: List Expr) (ns: List Bool): Except String (List Expr) :=
       | Except.ok dxs' =>
         Except.ok (dx::dxs')
 
+-- foldLoop is a more readable version of List.foldlM for imperative programmers:
+def foldLoop (deriv: List Expr -> LTree -> Except String (List Expr)) (start: List Expr) (forest: List LTree): Except String (List Expr) := do
+  let mut res := start
+  for tree in forest do
+    match deriv res tree with
+    | Except.error err => throw err
+    | Except.ok r => res := r
+  return res
+
 def deriv (xs: List Expr) (t: LTree): Except String (List Expr) :=
   if List.all xs Expr.unescapable
   then Except.ok xs
@@ -88,6 +97,7 @@ def deriv (xs: List Expr) (t: LTree): Except String (List Expr) :=
       -- des == derivatives of enter
       let des : List Expr := List.map (fun x => evalIfExpr x (Token.string label)) ifExprs
       -- dcs == derivatives of children, the ' is for the exception it is wrapped in
+      -- see foldLoop for an explanation of what List.foldM does.
       let dcs' : Except String (List Expr) := List.foldlM deriv des children
       match dcs' with
       | Except.error err => Except.error err
@@ -100,6 +110,7 @@ def deriv (xs: List Expr) (t: LTree): Except String (List Expr) :=
           Except.ok dls
 
 def derivs (x: Expr) (forest: List LTree): Except String Expr :=
+  -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM deriv [x] forest
   match dxs with
   | Except.error err => Except.error err
