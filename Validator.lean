@@ -15,6 +15,8 @@ import Validator.Expr.Pred
 
 import Validator.Deriv.Enter
 import Validator.Deriv.Leave
+import Validator.Deriv.LTreeConcise
+import Validator.Deriv.LTreeConciseCompress
 import Validator.Deriv.LTreeOriginal
 import Validator.Deriv.LTreeVerbose
 import Validator.Deriv.LTreeVerboseCompress

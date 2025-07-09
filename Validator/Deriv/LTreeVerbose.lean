@@ -27,7 +27,7 @@ def deriv (xs: List Expr) (t: LTree): Except String (List Expr) :=
     | LTree.node label children =>
       let ifExprs: List IfExpr := Enter.enters xs
       -- des == derivatives of enter
-      let des : List Expr := List.map (fun x => IfExpr.eval x (Token.string label)) ifExprs
+      let des : List Expr := IfExpr.evals ifExprs (Token.string label)
       -- dcs == derivatives of children, the ' is for the exception it is wrapped in
       -- see foldLoop for an explanation of what List.foldM does.
       let dcs' : Except String (List Expr) := List.foldlM deriv des children

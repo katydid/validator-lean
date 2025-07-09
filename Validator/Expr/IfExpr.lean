@@ -12,3 +12,6 @@ def eval (ifExpr: IfExpr) (t: Token): Expr :=
     if Pred.eval cnd t
     then thn
     else els
+
+def evals (ifExprs: List IfExpr) (t: Token): List Expr :=
+  List.map (fun x => eval x t) ifExprs
