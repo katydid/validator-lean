@@ -2,13 +2,13 @@ import Validator.Expr.Pred
 import Validator.Expr.Expr
 
 inductive IfExpr where
-  | mk (cnd: Pred.Pred) (thn: Expr) (els: Expr)
+  | mk (cnd: Pred) (thn: Expr) (els: Expr)
 
 namespace IfExpr
 
 def eval (ifExpr: IfExpr) (t: Token): Expr :=
   match ifExpr with
   | IfExpr.mk cnd thn els =>
-    if cnd t
+    if Pred.eval cnd t
     then thn
     else els

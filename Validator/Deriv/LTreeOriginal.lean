@@ -2,6 +2,7 @@
 -- It is intended to be used for explanation purposes.
 -- This version cannot be memoized effectively, but it is the easiest version to understand.
 
+import Validator.Expr.Pred
 import Validator.Expr.Expr
 
 namespace LTreeOriginal
@@ -12,7 +13,7 @@ partial def derive (x: Expr) (t: LTree): Expr :=
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childrenExpr =>
     let childResExpr := List.foldl derive childrenExpr (LTree.children t)
-    if labelPred (Token.string (LTree.label t))
+    if Pred.eval labelPred (Token.string (LTree.label t))
     then
       if Expr.nullable childResExpr
       then Expr.epsilon

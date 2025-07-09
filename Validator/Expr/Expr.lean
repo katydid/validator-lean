@@ -9,10 +9,11 @@ import Validator.Expr.Pred
 inductive Expr where
   | emptyset
   | epsilon
-  | tree (labelPred: Pred.Pred) (childrenExpr: Expr)
+  | tree (labelPred: Pred) (childrenExpr: Expr)
   | or (y z: Expr)
   | concat (y z: Expr)
   | star (y: Expr)
+  deriving DecidableEq, Ord
 
 namespace Expr
 

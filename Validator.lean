@@ -7,6 +7,7 @@ import Validator.Parser.Parser
 import Validator.Parser.Stack
 import Validator.Parser.Token
 
+import Validator.Expr.Compress
 import Validator.Expr.Expr
 import Validator.Expr.IfExpr
 import Validator.Expr.Language
