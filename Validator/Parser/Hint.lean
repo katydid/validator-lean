@@ -15,3 +15,5 @@ instance : ToString Hint :=
     | Hint.value => "V"
     | Hint.eof => "$"
   ⟩
+
+namespace Hint

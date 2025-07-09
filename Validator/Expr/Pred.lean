@@ -1,3 +1,5 @@
 import Validator.Parser.Token
 
-def Predicate := Token -> Bool
+namespace Pred
+
+def Pred := Token -> Bool

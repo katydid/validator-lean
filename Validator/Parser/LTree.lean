@@ -7,6 +7,8 @@ import Validator.Parser.Parser
 inductive LTree where
   | node (label: String) (children: List LTree)
 
+namespace LTree
+
 def label (t: LTree): String :=
   match t with
   | LTree.node l _ => l
@@ -28,77 +30,77 @@ def LTreeParser := Stack ParserState
 def LTreeParser.mk' (t: LTree): LTreeParser :=
   Stack.mk (ParserState.unknown [t]) []
 
-def nextNode (current: LTree) (nexts: List LTree): StateT LTreeParser (Except ParseError) Hint := do
+def nextNode (current: LTree) (nexts: List LTree): StateT LTreeParser (Except Parser.Error) Hint := do
   match current with
   | LTree.node v [] =>
-    setCurrent (ParserState.value (Token.string v) nexts)
+    Stack.setCurrent (ParserState.value (Token.string v) nexts)
     return Hint.value
   | LTree.node f [LTree.node v []] =>
-    setCurrent (ParserState.pair (Token.string f) (Token.string v) nexts)
+    Stack.setCurrent (ParserState.pair (Token.string f) (Token.string v) nexts)
     return Hint.field
   | LTree.node f children =>
-    setCurrent (ParserState.opened nexts)
-    push (ParserState.field (Token.string f) children)
+    Stack.setCurrent (ParserState.opened nexts)
+    Stack.push (ParserState.field (Token.string f) children)
     return Hint.field
 
-def next: StateT LTreeParser (Except ParseError) Hint := do
-  let curr <- getCurrent
+def next: StateT LTreeParser (Except Parser.Error) Hint := do
+  let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown f =>
-    setCurrent (ParserState.opened f)
+    Stack.setCurrent (ParserState.opened f)
     return Hint.enter
   | ParserState.opened [] =>
-    let popped <- pop
-    if not popped then setCurrent ParserState.eof
+    let popped <- Stack.pop
+    if not popped then Stack.setCurrent ParserState.eof
     return Hint.leave
   | ParserState.opened (t::ts) =>
     nextNode t ts
   | ParserState.value _ [] =>
-    let popped <- pop
-    if not popped then setCurrent ParserState.eof
+    let popped <- Stack.pop
+    if not popped then Stack.setCurrent ParserState.eof
     return Hint.leave
   | ParserState.value _ (t::ts) =>
     nextNode t ts
   | ParserState.pair _ v nexts =>
-    setCurrent (ParserState.value v nexts)
+    Stack.setCurrent (ParserState.value v nexts)
     return Hint.value
   | ParserState.field _ children =>
-    setCurrent (ParserState.opened children)
+    Stack.setCurrent (ParserState.opened children)
     return Hint.enter
   | ParserState.eof =>
     return Hint.eof
 
-def skip: StateT LTreeParser (Except ParseError) Unit := do
-  let curr <- getCurrent
+def skip: StateT LTreeParser (Except Parser.Error) Unit := do
+  let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
-    setCurrent ParserState.eof
+    Stack.setCurrent ParserState.eof
     return ()
   | ParserState.opened _ =>
-    let popped <- pop
-    if not popped then setCurrent ParserState.eof
+    let popped <- Stack.pop
+    if not popped then Stack.setCurrent ParserState.eof
     return ()
   | ParserState.value _ _ =>
-    let popped <- pop
-    if not popped then setCurrent ParserState.eof
+    let popped <- Stack.pop
+    if not popped then Stack.setCurrent ParserState.eof
     return ()
   | ParserState.pair _ _ nexts =>
-    setCurrent (ParserState.opened nexts)
+    Stack.setCurrent (ParserState.opened nexts)
     return ()
   | ParserState.field _ _ =>
-    let popped <- pop
-    if not popped then setCurrent ParserState.eof
+    let popped <- Stack.pop
+    if not popped then Stack.setCurrent ParserState.eof
     return ()
   | ParserState.eof =>
     return ()
 
-def token: StateT LTreeParser (Except ParseError) Token := do
-  let curr <- getCurrent
+def token: StateT LTreeParser (Except Parser.Error) Token := do
+  let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
-    throw (ParseError.unknown "unknown")
+    throw (Parser.Error.unknown "unknown")
   | ParserState.opened _ =>
-    throw (ParseError.unknown "unknown")
+    throw (Parser.Error.unknown "unknown")
   | ParserState.value v _ =>
     return v
   | ParserState.pair f _ _ =>
@@ -106,88 +108,90 @@ def token: StateT LTreeParser (Except ParseError) Token := do
   | ParserState.field f _ =>
     return f
   | ParserState.eof =>
-    throw (ParseError.unknown "unknown")
+    throw (Parser.Error.unknown "unknown")
 
-instance : Parser (StateT LTreeParser (Except ParseError)) where
+instance : Parser (StateT LTreeParser (Except Parser.Error)) where
   next := next
   skip := skip
   token := token
 
-def LTreeParser.run (x: StateT LTreeParser (Except ParseError) α) (t: LTree): Except ParseError α :=
+def LTreeParser.run (x: StateT LTreeParser (Except Parser.Error) α) (t: LTree): Except Parser.Error α :=
   StateT.run' x (LTreeParser.mk' t)
 
+open Parser
+
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.next])
   (LTree.node "a" []) =
   Except.ok ["{", "V", "}"]
 
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "F", "{", "V", "F", "V", "}", "}"]
 
--- walkActions next just two
+-- walk next just two
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next])
+  (walk [Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
   = Except.ok ["{", "F"]
 
--- walkActions next to end
+-- walk next to end
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
   = Except.ok ["{", "F", "{", "V", "F", "V", "}", "}", "$"]
 
--- walkActions next to end and tokenize all
+-- walk next to end and tokenize all
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
   = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
--- walkActions next to end and tokenize all
+-- walk next to end and tokenize all
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
   = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
--- walkActions skip
+-- walk skip
 #guard LTreeParser.run
-  (walkActions [Action.skip, Action.next])
+  (walk [Action.skip, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["$"]
 
--- walkActions next skip
+-- walk next skip
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.skip, Action.next])
+  (walk [Action.next, Action.skip, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "$"]
 
--- walkActions next next skip
+-- walk next next skip
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.skip, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "F", "}", "$"]
 
--- walkActions next next token skip
+-- walk next next token skip
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "}", "$"]
 
--- walkActions next next token next skip
+-- walk next next token next skip
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "}", "$"]
 
--- walkActions next next token next next token skip
+-- walk next next token next next token skip
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "}", "$"]
 
--- walkActions next next token next next token next token skip
+-- walk next next token next next token next token skip
 #guard LTreeParser.run
-  (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
+  (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"]

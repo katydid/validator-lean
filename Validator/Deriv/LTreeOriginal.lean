@@ -4,13 +4,15 @@
 
 import Validator.Expr.Expr
 
+namespace LTreeOriginal
+
 partial def derive (x: Expr) (t: LTree): Expr :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childrenExpr =>
-    let childResExpr := List.foldl derive childrenExpr (children t)
-    if labelPred (Token.string (label t))
+    let childResExpr := List.foldl derive childrenExpr (LTree.children t)
+    if labelPred (Token.string (LTree.label t))
     then
       if Expr.nullable childResExpr
       then Expr.epsilon

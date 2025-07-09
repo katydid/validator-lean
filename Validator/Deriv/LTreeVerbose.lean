@@ -5,6 +5,8 @@
 import Validator.Expr.Expr
 import Validator.Expr.IfExpr
 
+namespace LTreeVerbose
+
 def dEnter (x: Expr) (res: List IfExpr := []): List IfExpr :=
   match x with
   | Expr.emptyset => res
@@ -79,7 +81,7 @@ def dLeaves (xs: List Expr) (ns: List Bool): Except String (List Expr) :=
         Except.ok (dx::dxs')
 
 -- foldLoop is a more readable version of List.foldlM for imperative programmers:
-def foldLoop (deriv: List Expr -> LTree -> Except String (List Expr)) (start: List Expr) (forest: List LTree): Except String (List Expr) := do
+private def foldLoop (deriv: List Expr -> LTree -> Except String (List Expr)) (start: List Expr) (forest: List LTree): Except String (List Expr) := do
   let mut res := start
   for tree in forest do
     match deriv res tree with
@@ -95,7 +97,7 @@ def deriv (xs: List Expr) (t: LTree): Except String (List Expr) :=
     | LTree.node label children =>
       let ifExprs: List IfExpr := List.flatten (List.map dEnter xs)
       -- des == derivatives of enter
-      let des : List Expr := List.map (fun x => evalIfExpr x (Token.string label)) ifExprs
+      let des : List Expr := List.map (fun x => IfExpr.eval x (Token.string label)) ifExprs
       -- dcs == derivatives of children, the ' is for the exception it is wrapped in
       -- see foldLoop for an explanation of what List.foldM does.
       let dcs' : Except String (List Expr) := List.foldlM deriv des children

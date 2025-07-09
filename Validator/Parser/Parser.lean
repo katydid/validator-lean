@@ -1,10 +1,6 @@
 import Validator.Parser.Hint
 import Validator.Parser.Token
 
-inductive ParseError where
-  | unknown (desc: String)
-  deriving DecidableEq
-
 -- * `Next : () -> (Hint | error | EOF)`
 -- * `Skip : () -> (error | EOF)?`
 -- * `Token: () -> (Token | error)`
@@ -14,17 +10,23 @@ class Parser (m: Type -> Type u) [Monad m] where
   skip: m Unit
   token: m Token
 
+namespace Parser
+
 -- StateParser is the default Parser, where the State type (S) still needs to be specified.
-def StateParser (S: Type) := Parser (StateM S)
+private def StateParser (S: Type) := Parser (StateM S)
 -- Various Parsers implementations (other than StateM) are possible, just an example, here we have a parser with IO.
-def IOParser := Parser IO
+private def IOParser := Parser IO
+
+inductive Error where
+  | unknown (desc: String)
+  deriving DecidableEq
 
 inductive Action where
   | next
   | skip
   | token
 
-def walkActions [Monad m] [Parser m] (actions: List Action) (logs: List String := []): m (List String) := do
+def walk [Monad m] [Parser m] (actions: List Action) (logs: List String := []): m (List String) := do
   match actions with
   | [] => return List.reverse logs
   | (Action.next::rest) => do
@@ -32,9 +34,9 @@ def walkActions [Monad m] [Parser m] (actions: List Action) (logs: List String :
     | Hint.eof =>
         return List.reverse (toString Hint.eof :: logs)
     | h' =>
-        walkActions rest (toString h' :: logs)
+        walk rest (toString h' :: logs)
   | (Action.skip::rest) => do
     _ <- Parser.skip
-    walkActions rest logs
+    walk rest logs
   | (Action.token::rest) => do
-    walkActions rest (toString (<- Parser.token) :: logs)
+    walk rest (toString (<- Parser.token) :: logs)

@@ -1,6 +1,8 @@
 inductive Stack (S: Type) where
   | mk (current: S) (stack: List S)
 
+namespace Stack
+
 def getCurrent [Monad m]: StateT (Stack S) m S := do
   let s <- get
   match s with

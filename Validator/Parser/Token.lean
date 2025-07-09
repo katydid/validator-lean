@@ -31,3 +31,5 @@ instance : ToString Token :=
     | Token.datetime v => "z:" ++ v
     | Token.tag v => "#:" ++ v
   ⟩
+
+namespace Token
