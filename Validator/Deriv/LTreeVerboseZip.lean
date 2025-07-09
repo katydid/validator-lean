@@ -1,1 +1,0 @@
--- TODO: implement zipderive and zipderiv from https://github.com/katydid/katydid-haskell/blob/master/src/Data/Katydid/Relapse/Derive.hs

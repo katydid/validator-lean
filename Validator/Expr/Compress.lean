@@ -1,5 +1,7 @@
 import Validator.Expr.Expr
 
+namespace Compress
+
 inductive Index where
  | val (n: Nat)
  | emptyset -- emptyset is unescapable, so it gets a special index

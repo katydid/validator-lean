@@ -12,12 +12,11 @@ partial def derive (x: Expr) (t: LTree): Expr :=
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childrenExpr =>
-    let childResExpr := List.foldl derive childrenExpr (LTree.children t)
+    -- This is the only rule that differs from regular expressions.
+    -- Although if we view this as a complicated predicate, then actually there is no difference.
     if Pred.eval labelPred (Token.string (LTree.label t))
-    then
-      if Expr.nullable childResExpr
-      then Expr.epsilon
-      else Expr.emptyset
+    && Expr.nullable (List.foldl derive childrenExpr (LTree.children t))
+    then Expr.epsilon
     else Expr.emptyset
   | Expr.or y z => Expr.or (derive y t) (derive z t)
   | Expr.concat y z =>
