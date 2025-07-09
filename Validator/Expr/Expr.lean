@@ -6,9 +6,59 @@ namespace Expr
 
 open List
 
-def Predicate := String -> Bool
+inductive Hint where
+  | enter
+  | leave
+  | field
+  | value
+  | eof
+  deriving Repr
+
+instance : ToString Hint :=
+  ⟨ fun h =>
+    match h with
+    | Hint.enter => "{"
+    | Hint.leave => "}"
+    | Hint.field => "F"
+    | Hint.value => "V"
+    | Hint.eof => "$"
+  ⟩
+
 def Bytes := Array UInt8
   deriving Repr
+
+inductive Token where
+  | void
+  | elem
+  | bool (value: Bool)
+  | bytes (value: Bytes)
+  | string (value: String)
+  | int64 (value: Int64)
+  | float64 (value: Float)
+  | decimal (value: String)
+  | nanoseconds (value: Int64)
+  | datetime (value: String)
+  | tag (value: String)
+  deriving Repr
+
+instance : ToString Token :=
+  ⟨ fun t =>
+    match t with
+    | Token.void => "_"
+    | Token.elem => "i"
+    | Token.bool false => "f"
+    | Token.bool true => "t"
+    | Token.bytes v => "x:" ++ reprStr v
+    | Token.string v => v
+    | Token.int64 v => "-:" ++ reprStr v
+    | Token.float64 v => ".:" ++ reprStr v
+    | Token.decimal v => "/:" ++ v
+    | Token.nanoseconds v => "9:" ++ reprStr v
+    | Token.datetime v => "z:" ++ v
+    | Token.tag v => "#:" ++ v
+  ⟩
+
+def Predicate := Token -> Bool
 
 -- LTree is a Labelled Tree.
 inductive LTree where
@@ -45,7 +95,7 @@ partial def derive (x: Expr) (t: LTree): Expr :=
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childrenExpr =>
     let childResExpr := List.foldl derive childrenExpr (children t)
-    if labelPred (label t)
+    if labelPred (Token.string (label t))
     then
       if nullable childResExpr
       then Expr.epsilon
@@ -64,55 +114,6 @@ partial def validate (x: Expr) (forest: List LTree): Bool :=
 inductive ParseError where
   | unknown (desc: String)
   deriving DecidableEq
-
-inductive Hint where
-  | enter
-  | leave
-  | field
-  | value
-  | eof
-  deriving Repr
-
-instance : ToString Hint :=
-  ⟨ fun h =>
-    match h with
-    | Hint.enter => "{"
-    | Hint.leave => "}"
-    | Hint.field => "F"
-    | Hint.value => "V"
-    | Hint.eof => "$"
-  ⟩
-
-inductive Token where
-  | void
-  | elem
-  | bool (value: Bool)
-  | bytes (value: Bytes)
-  | string (value: String)
-  | int64 (value: Int64)
-  | float64 (value: Float)
-  | decimal (value: String)
-  | nanoseconds (value: Int64)
-  | datetime (value: String)
-  | tag (value: String)
-  deriving Repr
-
-instance : ToString Token :=
-  ⟨ fun t =>
-    match t with
-    | Token.void => "_"
-    | Token.elem => "i"
-    | Token.bool false => "f"
-    | Token.bool true => "t"
-    | Token.bytes v => "x:" ++ reprStr v
-    | Token.string v => v
-    | Token.int64 v => "-:" ++ reprStr v
-    | Token.float64 v => ".:" ++ reprStr v
-    | Token.decimal v => "/:" ++ v
-    | Token.nanoseconds v => "9:" ++ reprStr v
-    | Token.datetime v => "z:" ++ v
-    | Token.tag v => "#:" ++ v
-  ⟩
 
 -- * `Next : () -> (Hint | error | EOF)`
 -- * `Skip : () -> (error | EOF)?`
@@ -355,3 +356,121 @@ def LTreeParser.run (x: StateT LTreeParser (Except ParseError) α) (t: LTree): E
   (walkActions [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"]
+
+inductive IfExpr where
+  | mk (cnd: Predicate) (thn: Expr) (els: Expr)
+
+-- https://github.com/katydid/katydid-haskell/blob/master/src/Data/Katydid/Relapse/Derive.hs
+
+def dEnter (x: Expr) (res: List IfExpr := []): List IfExpr :=
+  match x with
+  | Expr.emptyset => res
+  | Expr.epsilon => res
+  | Expr.tree p y => (IfExpr.mk p y Expr.emptyset) :: res
+  | Expr.or y z => dEnter y (dEnter z res)
+  | Expr.concat y z =>
+    if nullable y
+    then dEnter y (dEnter z res)
+    else dEnter y res
+  | Expr.star y => dEnter y res
+
+def dLeave (x: Expr) (ns: List Bool): Except String (Expr × List Bool) :=
+  match x with
+  | Expr.emptyset => Except.ok (Expr.emptyset, ns)
+  | Expr.epsilon => Except.ok (Expr.epsilon, ns)
+  | Expr.tree _ _ =>
+    match ns with
+    | [] => Except.error "wtf"
+    | (null::ns') =>
+      if null
+      then Except.ok (Expr.epsilon, ns')
+      else Except.ok (Expr.emptyset, ns')
+  | Expr.or y z =>
+    match dLeave y ns with
+    | Except.error e => Except.error e
+    | Except.ok (y', ns') =>
+      match dLeave z ns' with
+      | Except.error e => Except.error e
+      | Except.ok (z', ns'') =>
+        Except.ok (Expr.or y' z', ns'')
+  | Expr.concat y z =>
+    if nullable y
+    then
+      match dLeave y ns with
+      | Except.error e => Except.error e
+      | Except.ok (y', ns') =>
+        match dLeave z ns' with
+        | Except.error e => Except.error e
+        | Except.ok (z', ns'') =>
+          Except.ok (Expr.or (Expr.concat y' z) z', ns'')
+    else
+      match dLeave y ns with
+      | Except.error e => Except.error e
+      | Except.ok (y', ns') =>
+        Except.ok (Expr.concat y' z, ns')
+  | Expr.star y =>
+      match dLeave y ns with
+      | Except.error e => Except.error e
+      | Except.ok (y', ns') =>
+        Except.ok (Expr.star y', ns')
+
+-- dLeaves takes a list of expressions and list of bools.
+-- The list of bools represent the nullability of the derived child expressions.
+-- Each bool will then replace each tree expression with either an epsilon or emptyset.
+-- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
+def dLeaves (xs: List Expr) (ns: List Bool): Except String (List Expr) :=
+  match xs with
+  | [] =>
+    match ns with
+    | [] => Except.ok []
+    | _ => Except.error "nulls are left, but there are no expressions to place them in"
+  | (x::xs') =>
+    let dl: Except String (Expr × List Bool) := dLeave x ns
+    match dl with
+    | Except.error err => Except.error err
+    | Except.ok (dx, tailns) =>
+      let dls: Except String (List Expr) := dLeaves xs' tailns
+      match dls with
+      | Except.error err => Except.error err
+      | Except.ok dxs' =>
+        Except.ok (dx::dxs')
+
+def unescapable (x: Expr): Bool :=
+  match x with
+  | Expr.emptyset => true
+  | _ => false
+
+def evalIfExpr (ifExpr: IfExpr) (t: Token): Expr :=
+  match ifExpr with
+  | IfExpr.mk cnd thn els =>
+    if cnd t
+    then thn
+    else els
+
+def deriv (xs: List Expr) (t: LTree): Except String (List Expr) :=
+  if all xs unescapable
+  then Except.ok xs
+  else
+    match t with
+    | LTree.node label children =>
+      let ifExprs: List IfExpr := List.flatten (List.map dEnter xs)
+      -- des == derivatives of enter
+      let des : List Expr := List.map (fun x => evalIfExpr x (Token.string label)) ifExprs
+      -- dcs == derivatives of children, the ' is for the exception it is wrapped in
+      let dcs' : Except String (List Expr) := foldlM deriv des children
+      match dcs' with
+      | Except.error err => Except.error err
+      | Except.ok dcs =>
+        -- dls == derivatives of leave, the ' is for the exception it is wrapped in
+        let dls': Except String (List Expr) := dLeaves xs (map nullable dcs)
+        match dls' with
+        | Except.error err => Except.error err
+        | Except.ok dls =>
+          Except.ok dls
+
+def derivs (x: Expr) (forest: List LTree): Except String Expr :=
+  let dxs := foldlM deriv [x] forest
+  match dxs with
+  | Except.error err => Except.error err
+  | Except.ok [dx] => Except.ok dx
+  | Except.ok _ => Except.error "expected one expression"
