@@ -5,7 +5,7 @@ namespace Leave
 def leave [Monad m] [MonadExcept String m] (x: Expr) (ns: List Bool): m (Expr × List Bool) := do
   match x with
   | Expr.emptyset => return (Expr.emptyset, ns)
-  | Expr.epsilon => return (Expr.epsilon, ns)
+  | Expr.epsilon => return (Expr.emptyset, ns)
   | Expr.tree _ _ =>
     match ns with
     | [] => throw "wtf"

@@ -27,3 +27,60 @@ partial def derive (x: Expr) (t: LTree): Expr :=
 
 partial def validate (x: Expr) (forest: List LTree): Bool :=
   Expr.nullable (List.foldl derive x forest)
+
+def run (x: Expr) (t: LTree): Except String Bool :=
+  Except.ok (validate x [t])
+
+#guard run
+  Expr.emptyset
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  Except.ok false
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (LTree.node "a" []) =
+  Except.ok true
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (LTree.node "a" [LTree.node "b" []]) =
+  Except.ok false
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    (Expr.tree (Pred.eq (Token.string "b"))
+      Expr.epsilon
+    )
+  )
+  (LTree.node "a" [LTree.node "b" []]) =
+  Except.ok true
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    (Expr.concat
+      (Expr.tree (Pred.eq (Token.string "b"))
+        Expr.epsilon
+      )
+      (Expr.tree (Pred.eq (Token.string "c"))
+        Expr.epsilon
+      )
+    )
+  )
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" []]) =
+  Except.ok true
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    (Expr.concat
+      (Expr.tree (Pred.eq (Token.string "b"))
+        Expr.epsilon
+      )
+      (Expr.tree (Pred.eq (Token.string "c"))
+        (Expr.tree (Pred.eq (Token.string "d"))
+          Expr.epsilon
+        )
+      )
+    )
+  )
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  Except.ok true

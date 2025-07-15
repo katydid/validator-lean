@@ -30,7 +30,7 @@ def LTreeParser := Stack ParserState
 def LTreeParser.mk' (t: LTree): LTreeParser :=
   Stack.mk (ParserState.unknown [t]) []
 
-def nextNode (current: LTree) (nexts: List LTree): StateT LTreeParser (Except Parser.Error) Hint := do
+def nextNode (current: LTree) (nexts: List LTree): StateT LTreeParser (Except String) Hint := do
   match current with
   | LTree.node v [] =>
     Stack.setCurrent (ParserState.value (Token.string v) nexts)
@@ -43,7 +43,7 @@ def nextNode (current: LTree) (nexts: List LTree): StateT LTreeParser (Except Pa
     Stack.push (ParserState.field (Token.string f) children)
     return Hint.field
 
-def next: StateT LTreeParser (Except Parser.Error) Hint := do
+def next: StateT LTreeParser (Except String) Hint := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown f =>
@@ -70,7 +70,7 @@ def next: StateT LTreeParser (Except Parser.Error) Hint := do
   | ParserState.eof =>
     return Hint.eof
 
-def skip: StateT LTreeParser (Except Parser.Error) Unit := do
+def skip: StateT LTreeParser (Except String) Unit := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
@@ -94,13 +94,13 @@ def skip: StateT LTreeParser (Except Parser.Error) Unit := do
   | ParserState.eof =>
     return ()
 
-def token: StateT LTreeParser (Except Parser.Error) Token := do
+def token: StateT LTreeParser (Except String) Token := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
-    throw (Parser.Error.unknown "unknown")
+    throw "unknown"
   | ParserState.opened _ =>
-    throw (Parser.Error.unknown "unknown")
+    throw "unknown"
   | ParserState.value v _ =>
     return v
   | ParserState.pair f _ _ =>
@@ -108,14 +108,14 @@ def token: StateT LTreeParser (Except Parser.Error) Token := do
   | ParserState.field f _ =>
     return f
   | ParserState.eof =>
-    throw (Parser.Error.unknown "unknown")
+    throw "unknown"
 
-instance : Parser (StateT LTreeParser (Except Parser.Error)) where
+instance : Parser (StateT LTreeParser (Except String)) where
   next := next
   skip := skip
   token := token
 
-def LTreeParser.run (x: StateT LTreeParser (Except Parser.Error) α) (t: LTree): Except Parser.Error α :=
+def LTreeParser.run (x: StateT LTreeParser (Except String) α) (t: LTree): Except String α :=
   StateT.run' x (LTreeParser.mk' t)
 
 open Parser

@@ -17,10 +17,6 @@ private def StateParser (S: Type) := Parser (StateM S)
 -- Various Parsers implementations (other than StateM) are possible, just an example, here we have a parser with IO.
 private def IOParser := Parser IO
 
-inductive Error where
-  | unknown (desc: String)
-  deriving DecidableEq
-
 inductive Action where
   | next
   | skip

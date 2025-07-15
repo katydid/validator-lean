@@ -13,18 +13,18 @@ inductive Expr where
   | or (y z: Expr)
   | concat (y z: Expr)
   | star (y: Expr)
-  deriving DecidableEq, Ord
+  deriving DecidableEq, Ord, Repr
 
 namespace Expr
 
 def nullable (x: Expr): Bool :=
   match x with
-  | Expr.emptyset => False
-  | Expr.epsilon => True
-  | Expr.tree _ _ => False
+  | Expr.emptyset => false
+  | Expr.epsilon => true
+  | Expr.tree _ _ => false
   | Expr.or y z => nullable y || nullable z
   | Expr.concat y z => nullable y && nullable z
-  | Expr.star _ => True
+  | Expr.star _ => true
 
 def unescapable (x: Expr): Bool :=
   match x with
