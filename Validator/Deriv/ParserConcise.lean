@@ -68,7 +68,9 @@ partial def derivField [Monad m] [MonadExcept String m] [Parser m] (xs: List Exp
     throw "unexpected leave before enter"
   | Hint.eof =>
     throw "unexpected eof"
-partial def derivUnknown [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+end
+
+partial def derivStart [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
   if List.all xs Expr.unescapable then
     Parser.skip
     return xs
@@ -76,21 +78,20 @@ partial def derivUnknown [Monad m] [MonadExcept String m] [Parser m] (xs: List E
   match next with
   | Hint.field =>
     let dxs := <- derivField xs
-    derivUnknown dxs
+    derivStart dxs
   | Hint.value =>
     let dxs <- derivValue xs
-    derivUnknown dxs
+    derivStart dxs
   | Hint.enter =>
     let dxs <- derivEnter xs
-    derivUnknown dxs
+    derivStart dxs
   | Hint.leave =>
     throw "unexpected leave"
   | Hint.eof =>
     return xs
-end
 
 private def dvalidate [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Expr := do
-  let dxs <- derivUnknown [x]
+  let dxs <- derivStart [x]
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
