@@ -14,6 +14,7 @@ import Validator.Expr.Language
 import Validator.Expr.Pred
 
 import Validator.Deriv.Enter
+import Validator.Deriv.Env
 import Validator.Deriv.Leave
 import Validator.Deriv.LeaveVerbose
 import Validator.Deriv.LTreeConcise
