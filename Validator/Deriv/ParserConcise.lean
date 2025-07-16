@@ -27,8 +27,7 @@ def derivValue [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (L
 
 partial def deriv [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
   if List.all xs Expr.unescapable then
-    Parser.skip
-    return xs
+    Parser.skip; return xs
   match <- Parser.next with
   | Hint.field =>
     let xsEnter <- derivEnter xs -- derive enter field
@@ -42,7 +41,7 @@ partial def deriv [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m
   | Hint.value => derivValue xs >>= deriv -- derive value and then derive next
   | Hint.enter => deriv xs >>= deriv -- derive children, until return from a Hint.leave and then derive next
   | Hint.leave => return xs -- never happens at the top
-  | Hint.eof =>  return xs -- only happens at the top
+  | Hint.eof => return xs -- only happens at the top
 
 def validate [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Bool := do
   let dxs <- deriv [x]
@@ -106,3 +105,69 @@ def run (x: Expr) (t: LTree): Except String Bool :=
   )
   (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
   Except.ok true
+
+-- try to engage skip using emptyset, since it is unescapable
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    Expr.emptyset
+  )
+  (LTree.node "a" [LTree.node "b" []]) =
+  Except.ok false
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    (Expr.concat
+      (Expr.tree (Pred.eq (Token.string "b"))
+        Expr.emptyset
+      )
+      (Expr.tree (Pred.eq (Token.string "c"))
+        (Expr.tree (Pred.eq (Token.string "d"))
+          Expr.epsilon
+        )
+      )
+    )
+  )
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  Except.ok false
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    (Expr.concat
+      (Expr.tree (Pred.eq (Token.string "b"))
+        Expr.epsilon
+      )
+      Expr.emptyset
+    )
+  )
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  Except.ok false
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    (Expr.concat
+      (Expr.tree (Pred.eq (Token.string "b"))
+        Expr.epsilon
+      )
+      (Expr.tree (Pred.eq (Token.string "c"))
+        Expr.emptyset
+      )
+    )
+  )
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  Except.ok false
+
+#guard run
+  (Expr.tree (Pred.eq (Token.string "a"))
+    (Expr.concat
+      (Expr.tree (Pred.eq (Token.string "b"))
+        Expr.epsilon
+      )
+      (Expr.tree (Pred.eq (Token.string "c"))
+        (Expr.tree (Pred.eq (Token.string "d"))
+          Expr.emptyset
+        )
+      )
+    )
+  )
+  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  Except.ok false

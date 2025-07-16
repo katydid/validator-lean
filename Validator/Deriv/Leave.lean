@@ -1,4 +1,5 @@
 import Validator.Expr.Expr
+import Validator.Expr.Smart
 
 namespace Leave
 
@@ -16,19 +17,19 @@ def leave [Monad m] [MonadExcept String m] (x: Expr) (ns: List Bool): m (Expr ×
   | Expr.or y z =>
     let (ly, yns) <- leave y ns
     let (lz, zns) <- leave z yns
-    return (Expr.or ly lz, zns)
+    return (Smart.or ly lz, zns)
   | Expr.concat y z =>
     if Expr.nullable y
     then
       let (ly, yns) <- leave y ns
       let (lz, zns) <- leave z yns
-      return (Expr.or (Expr.concat ly z) lz, zns)
+      return (Smart.or (Smart.concat ly z) lz, zns)
     else
       let (ly, yns) <- leave y ns
-      return (Expr.concat ly z, yns)
+      return (Smart.concat ly z, yns)
   | Expr.star y =>
       let (ly, yns) <- leave y ns
-      return (Expr.star ly, yns)
+      return (Smart.star ly, yns)
 
 -- leaves takes a list of expressions and list of bools.
 -- The list of bools represent the nullability of the derived child expressions.

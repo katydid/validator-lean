@@ -27,10 +27,8 @@ def walk [Monad m] [Parser m] (actions: List Action) (logs: List String := []): 
   | [] => return List.reverse logs
   | (Action.next::rest) => do
     match <- Parser.next with
-    | Hint.eof =>
-        return List.reverse (toString Hint.eof :: logs)
-    | h' =>
-        walk rest (toString h' :: logs)
+    | Hint.eof => return List.reverse (toString Hint.eof :: logs)
+    | h' => walk rest (toString h' :: logs)
   | (Action.skip::rest) => do
     _ <- Parser.skip
     walk rest logs
