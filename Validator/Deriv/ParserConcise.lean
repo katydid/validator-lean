@@ -16,35 +16,35 @@ import Validator.Parser.LTree
 
 namespace LTreeConcise
 
-def derivEnter [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+def deriveEnter [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
   return IfExpr.evals (Enter.enters xs) (<- Parser.token)
 
-def derivLeave [Monad m] [MonadExcept String m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
+def deriveLeave [Monad m] [MonadExcept String m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
   Leave.leaves xs (List.map Expr.nullable cs)
 
-def derivValue [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
-  derivLeave xs (<- derivEnter xs)
+def deriveValue [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+  deriveLeave xs (<- deriveEnter xs)
 
-partial def deriv [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+partial def derive [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
   if List.all xs Expr.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
   | Hint.field =>
-    let xsEnter <- derivEnter xs -- derive enter field
+    let xsEnter <- deriveEnter xs -- derive enter field
     let xsChild <-
       match <- Parser.next with
-      | Hint.value => derivValue xsEnter -- derive child value
-      | Hint.enter => deriv xsEnter -- derive children, until return from a Hint.leave
+      | Hint.value => deriveValue xsEnter -- derive child value
+      | Hint.enter => derive xsEnter -- derive children, until return from a Hint.leave
       | hint => throw s!"unexpected {hint}"
-    let xsLeave := <- derivLeave xs xsChild -- derive leave field
-    deriv xsLeave -- deriv next
-  | Hint.value => derivValue xs >>= deriv -- derive value and then derive next
-  | Hint.enter => deriv xs >>= deriv -- derive children, until return from a Hint.leave and then derive next
+    let xsLeave <- deriveLeave xs xsChild -- derive leave field
+    derive xsLeave -- deriv next
+  | Hint.value => deriveValue xs >>= derive -- derive value and then derive next
+  | Hint.enter => derive xs >>= derive -- derive children, until return from a Hint.leave and then derive next
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Bool := do
-  let dxs <- deriv [x]
+def validate {m} [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Bool := do
+  let dxs <- derive [x]
   match dxs with
   | [dx] => return Expr.nullable dx
   | _ => throw "expected one expression"
