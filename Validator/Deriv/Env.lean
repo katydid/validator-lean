@@ -10,39 +10,42 @@ import Validator.Deriv.Mem
 --   a pull based Parser
 --   a deriveEnter and deriveLeave function that could optionally be memoized.
 --   the possibility of returning an error.
-class Env (m: Type -> Type u)
-  [Monad m]
-  [MonadExcept String m]
-  [Parser m]
-  [Enter.DeriveEnters m]
-  [Leave.DeriveLeaves m]
+-- Tagless final class inspired by https://jproyo.github.io/posts/2019-03-17-tagless-final-haskell/
+class Env (m: Type -> Type u) extends
+  Monad m,
+  MonadExcept String m,
+  Parser m,
+  Enter.DeriveEnters m,
+  Leave.DeriveLeaves m
 
-abbrev EnvLTreeExcept := StateT LTree.LTreeParser (Except String)
+namespace Env
 
-instance : Enter.DeriveEnters EnvLTreeExcept where
+abbrev LTreeExcept m := StateT LTree.LTreeParser (Except String) m
+
+instance : Enter.DeriveEnters LTreeExcept where
   deriveEnters xs := return Enter.enters xs
 
-instance : Leave.DeriveLeaves EnvLTreeExcept where
+instance : Leave.DeriveLeaves LTreeExcept where
   deriveLeaves xs ns := Leave.leaves xs ns
 
-instance : Env EnvLTreeExcept where
+instance : Env LTreeExcept where
   -- all instances have been created, so no implementations are required here
 
-structure EnvLTreeState where
+structure LTreeState where
   parser: LTree.LTreeParser
   enter: Mem.MemEnter
   leave: Mem.MemLeave
 
-abbrev EnvLTreeMem := StateT EnvLTreeState (Except String)
+abbrev LTreeMem := StateT LTreeState (Except String)
 
 -- TODO: find better way to write exactly the same code for each method.
 -- There has to be shorter way to lift accross these monads.
-instance : Parser EnvLTreeMem where
+instance : Parser LTreeMem where
   next := do
     let s <- get
     match StateT.run LTree.next s.parser with
     | Except.ok (res, parser') =>
-      set (EnvLTreeState.mk parser' s.enter s.leave)
+      set (LTreeState.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
@@ -50,7 +53,7 @@ instance : Parser EnvLTreeMem where
     let s <- get
     match StateT.run LTree.skip s.parser with
     | Except.ok (res, parser') =>
-      set (EnvLTreeState.mk parser' s.enter s.leave)
+      set (LTreeState.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
@@ -58,28 +61,28 @@ instance : Parser EnvLTreeMem where
     let s <- get
     match StateT.run LTree.token s.parser with
     | Except.ok (res, parser') =>
-      set (EnvLTreeState.mk parser' s.enter s.leave)
+      set (LTreeState.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
 
-instance : Enter.DeriveEnters EnvLTreeMem where
+instance : Enter.DeriveEnters LTreeMem where
   deriveEnters xs := do
     let s <- get
     match StateT.run (m := Id) (Mem.enters xs) s.enter with
     | (res, enter') =>
-      set (EnvLTreeState.mk s.parser enter' s.leave)
+      set (LTreeState.mk s.parser enter' s.leave)
       return res
 
-instance : Leave.DeriveLeaves EnvLTreeMem where
+instance : Leave.DeriveLeaves LTreeMem where
   deriveLeaves xs ns := do
     let s <- get
     match StateT.run (Mem.leaves xs ns) s.leave with
     | Except.ok (res, leave') =>
-      set (EnvLTreeState.mk s.parser s.enter leave')
+      set (LTreeState.mk s.parser s.enter leave')
       return res
     | Except.error err =>
       throw err
 
-instance : Env EnvLTreeMem where
+instance : Env LTreeMem where
   -- all instances have been created, so no implementations are required here

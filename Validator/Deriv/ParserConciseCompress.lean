@@ -8,6 +8,7 @@ import Validator.Expr.Expr
 import Validator.Expr.IfExpr
 
 import Validator.Deriv.Enter
+import Validator.Deriv.Env
 import Validator.Deriv.Leave
 
 import Validator.Parser.Parser
@@ -16,16 +17,18 @@ import Validator.Parser.LTree
 
 namespace ParserConciseCompress
 
-def deriveEnter [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
-  return IfExpr.evals (Enter.enters xs) (<- Parser.token)
+def deriveEnter [Env m] (xs: List Expr): m (List Expr) := do
+  let token <- Parser.token
+  let enters <- Enter.DeriveEnters.deriveEnters xs
+  return IfExpr.evals enters token
 
-def deriveLeave [Monad m] [MonadExcept String m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
-  Leave.leaves xs (List.map Expr.nullable cs)
+def deriveLeave [Env m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
+  Leave.DeriveLeaves.deriveLeaves xs (List.map Expr.nullable cs)
 
-def deriveValue [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+def deriveValue [Env m] (xs: List Expr): m (List Expr) := do
   deriveLeave xs (<- deriveEnter xs)
 
-partial def derive [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+partial def derive [Env m] (xs: List Expr): m (List Expr) := do
   if List.all xs Expr.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
@@ -50,7 +53,7 @@ partial def derive [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): 
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Bool := do
+def validate {m} [Env m] (x: Expr): m Bool := do
   let dxs <- derive [x]
   match dxs with
   | [dx] => return Expr.nullable dx
