@@ -32,63 +32,51 @@ def derivValue [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (L
   let dxs := <- derivValue' xs token
   return dxs
 
-mutual
-partial def derivEnter [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+partial def deriv [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr) (top: Bool): m (List Expr) := do
   if List.all xs Expr.unescapable then
     Parser.skip
     return xs
   let next := <- Parser.next
   match next with
   | Hint.field =>
-    let dxs <- derivField xs
-    derivEnter dxs
+    let token := <- Parser.token
+    let des := derivEnter' xs token
+    let next := <- Parser.next
+    let dxs <- match next with
+    | Hint.field =>
+      throw "unexpected field"
+    | Hint.value =>
+      let dcs := <- derivValue des
+      derivLeave' xs dcs
+    | Hint.enter =>
+      let dcs := <- deriv des false
+      derivLeave' xs dcs
+    | Hint.leave =>
+      throw "unexpected leave"
+    | Hint.eof =>
+      throw "unexpected eof"
+    deriv dxs false
   | Hint.value =>
     let dxs <- derivValue xs
-    derivEnter dxs
+    deriv dxs false
   | Hint.enter =>
-    throw "unexpected enter"
+    if top
+    then
+      let dxs <- deriv xs false
+      deriv dxs true
+    else
+      throw "unexpected enter"
   | Hint.leave =>
-    return xs
+    if top
+    then throw "unexpected leave"
+    else return xs
   | Hint.eof =>
-    throw "unexpected eof"
-partial def derivField [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
-  let token := <- Parser.token
-  let des := derivEnter' xs token
-  let next := <- Parser.next
-  match next with
-  | Hint.field =>
-    throw "unexpected field"
-  | Hint.value =>
-    let dcs := <- derivValue des
-    derivLeave' xs dcs
-  | Hint.enter =>
-    let dcs := <- derivEnter des
-    derivLeave' xs dcs
-  | Hint.leave =>
-    throw "unexpected leave before enter"
-  | Hint.eof =>
-    throw "unexpected eof"
-end
+    if top
+    then return xs
+    else throw "unexpected eof"
 
 partial def derivStart [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
-  if List.all xs Expr.unescapable then
-    Parser.skip
-    return xs
-  let next := <- Parser.next
-  match next with
-  | Hint.field =>
-    let dxs := <- derivField xs
-    derivStart dxs
-  | Hint.value =>
-    let dxs <- derivValue xs
-    derivStart dxs
-  | Hint.enter =>
-    let dxs <- derivEnter xs
-    derivStart dxs
-  | Hint.leave =>
-    throw "unexpected leave"
-  | Hint.eof =>
-    return xs
+  deriv xs true
 
 private def dvalidate [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Expr := do
   let dxs <- derivStart [x]
