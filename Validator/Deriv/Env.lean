@@ -38,6 +38,9 @@ structure LTreeState where
 
 abbrev LTreeMem := StateT LTreeState (Except String)
 
+def LTreeMem.mk (p: LTree.LTreeParser): LTreeState :=
+  LTreeState.mk p Std.ExtHashMap.emptyWithCapacity Std.ExtHashMap.emptyWithCapacity
+
 -- TODO: find better way to write exactly the same code for each method.
 -- There has to be shorter way to lift accross these monads.
 instance : Parser LTreeMem where
