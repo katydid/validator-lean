@@ -21,3 +21,5 @@ import Validator.Deriv.LTreeConciseCompress
 import Validator.Deriv.LTreeOriginal
 import Validator.Deriv.LTreeVerbose
 import Validator.Deriv.LTreeVerboseCompress
+import Validator.Deriv.ParserConcise
+import Validator.Deriv.ParserConciseCompress

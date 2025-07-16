@@ -46,8 +46,18 @@ def compress (xs: List Expr): Except String ((List Expr) × Indices) := do
   let indexes: List Index <- List.mapM (indexOf sxs'') xs
   return (sxs'', Indices.mk indexes)
 
+def compressM [Monad m] [MonadExcept String m] (xs: List Expr): m ((List Expr) × Indices) := do
+  match compress xs with
+  | Except.ok k => return k
+  | Except.error err => throw err
+
 -- expand expands a list of expressions.
 def expand (indices: Indices) (xs: List Expr): Except String (List Expr) :=
   match indices with
   | Indices.mk indexes =>
     List.mapM (ofIndex xs) indexes
+
+def expandM [Monad m] [MonadExcept String m] (indices: Indices) (xs: List Expr): m (List Expr) :=
+  match expand indices xs with
+  | Except.ok k => return k
+  | Except.error err => throw err
