@@ -39,3 +39,9 @@ def leaves [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool) (mem
   | ⟨ memE, memL ⟩ =>
     let (deriveLeave, memL') <- memoizeM memL leavesUncurried (xs, ns)
     return (deriveLeave, ( memE, memL' ))
+
+instance : Enter.DeriveEnters (StateM Mem) where
+  deriveEnters := enters
+
+instance : Leave.DeriveLeaves (StateT Mem (Except String)) where
+  deriveLeaves := leaves

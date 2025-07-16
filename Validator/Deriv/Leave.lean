@@ -45,3 +45,9 @@ def leaves [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool): m (
     let (dx, tailns) <- leave x ns
     let dxs <- leaves xs' tailns
     return (dx::dxs)
+
+class DeriveLeaves (m: Type -> Type u) where
+  deriveLeaves (xs: List Expr) (ns: List Bool): m (List Expr)
+
+instance : DeriveLeaves (Except String) where
+  deriveLeaves := leaves

@@ -17,3 +17,9 @@ def enter (x: Expr) (res: List IfExpr := []): List IfExpr :=
 
 def enters (xs: List Expr): List IfExpr :=
   List.flatten (List.map Enter.enter xs)
+
+class DeriveEnters (m: Type -> Type u) where
+  deriveEnters (xs: List Expr): m (List IfExpr)
+
+instance : DeriveEnters Id where
+  deriveEnters := enters

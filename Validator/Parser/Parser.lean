@@ -5,7 +5,7 @@ import Validator.Parser.Token
 -- * `Skip : () -> (error | EOF)?`
 -- * `Token: () -> (Token | error)`
 
-class Parser (m: Type -> Type u) [Monad m] where
+class Parser (m: Type -> Type u) where
   next: m Hint
   skip: m Unit
   token: m Token
