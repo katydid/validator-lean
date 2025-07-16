@@ -13,7 +13,7 @@ inductive Expr where
   | or (y z: Expr)
   | concat (y z: Expr)
   | star (y: Expr)
-  deriving DecidableEq, Ord, Repr
+  deriving DecidableEq, Ord, Repr, Hashable
 
 namespace Expr
 

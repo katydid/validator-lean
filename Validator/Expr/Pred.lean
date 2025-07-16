@@ -6,7 +6,7 @@ import Validator.Parser.Token
 
 inductive Pred where
   | eq (t: Token)
-  deriving DecidableEq, Ord, Repr
+  deriving DecidableEq, Ord, Repr, Hashable
 
 namespace Pred
 

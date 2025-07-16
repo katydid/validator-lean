@@ -1,5 +1,5 @@
 def Bytes := Array UInt8
-  deriving DecidableEq, Ord, Repr
+  deriving DecidableEq, Ord, Repr, Hashable
 
 inductive Token where
   | void
@@ -13,7 +13,7 @@ inductive Token where
   | nanoseconds (value: Int64)
   | datetime (value: String)
   | tag (value: String)
-  deriving DecidableEq, Ord, Repr
+  deriving DecidableEq, Ord, Repr, Hashable
 
 instance : ToString Token :=
   ⟨ fun t =>

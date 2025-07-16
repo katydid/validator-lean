@@ -7,5 +7,5 @@ This package provides multiple implementations of the derivative algorithm for v
  * [LTreeVerboseCompress](./LTreeConciseCompress.lean) adds compression to [LTreeVerbose](./LTreeVerbose.lean) for a little extra efficiency. NO monads, NO parser, NO memoization.
  * [LTreeConcise](./LTreeConcise.lean) is the simplest version of the memoizable algorithm, which using [enter](./Enter.lean) and [leave](./Leave.lean). It uses monads to make the code more concise. NO compression, NO parser, NO memoization.
  * [LTreeConciseCompress](./LTreeConciseCompress.lean) adds compression to [LTreeConcise](./LTreeConcise.lean) for a little extra efficiency. NO parser, NO memoization.
- * [ParserConcise](./ParserConcise.lean) is the simplest version of the memoizable algorithm that uses a parser. NO compression, , NO memoization.
+ * [ParserConcise](./ParserConcise.lean) is the simplest version of the memoizable algorithm that uses a parser. NO compression, NO memoization.
  * [ParserConciseCompress](./ParserConciseCompress.lean) adds compression to [ParserConcise](./ParserConcise.lean) for a little extra efficiency. NO memoization.
