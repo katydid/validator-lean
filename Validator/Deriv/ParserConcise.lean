@@ -16,77 +16,39 @@ import Validator.Parser.LTree
 
 namespace LTreeConcise
 
-def derivEnter' (xs: List Expr) (token: Token): List Expr :=
-  let ifExprs: List IfExpr := Enter.enters xs
-  IfExpr.evals ifExprs token
+def derivEnter [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
+  return IfExpr.evals (Enter.enters xs) (<- Parser.token)
 
-def derivLeave' [Monad m] [MonadExcept String m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
+def derivLeave [Monad m] [MonadExcept String m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
   Leave.leaves xs (List.map Expr.nullable cs)
 
-def derivValue' [Monad m] [MonadExcept String m] (xs: List Expr) (token: Token): m (List Expr) :=
-  let cs := derivEnter' xs token
-  derivLeave' xs cs
-
 def derivValue [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
-  let token := <- Parser.token
-  let dxs := <- derivValue' xs token
-  return dxs
+  derivLeave xs (<- derivEnter xs)
 
-partial def deriv [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr) (top: Bool): m (List Expr) := do
+partial def deriv [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
   if List.all xs Expr.unescapable then
     Parser.skip
     return xs
-  let next := <- Parser.next
-  match next with
+  match <- Parser.next with
   | Hint.field =>
-    let token := <- Parser.token
-    let des := derivEnter' xs token
-    let next := <- Parser.next
-    let dxs <- match next with
-    | Hint.field =>
-      throw "unexpected field"
-    | Hint.value =>
-      let dcs := <- derivValue des
-      derivLeave' xs dcs
-    | Hint.enter =>
-      let dcs := <- deriv des false
-      derivLeave' xs dcs
-    | Hint.leave =>
-      throw "unexpected leave"
-    | Hint.eof =>
-      throw "unexpected eof"
-    deriv dxs false
-  | Hint.value =>
-    let dxs <- derivValue xs
-    deriv dxs false
-  | Hint.enter =>
-    if top
-    then
-      let dxs <- deriv xs false
-      deriv dxs true
-    else
-      throw "unexpected enter"
-  | Hint.leave =>
-    if top
-    then throw "unexpected leave"
-    else return xs
-  | Hint.eof =>
-    if top
-    then return xs
-    else throw "unexpected eof"
-
-partial def derivStart [Monad m] [MonadExcept String m] [Parser m] (xs: List Expr): m (List Expr) := do
-  deriv xs true
-
-private def dvalidate [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Expr := do
-  let dxs <- derivStart [x]
-  match dxs with
-  | [dx] => return dx
-  | _ => throw "expected one expression"
+    let xsEnter <- derivEnter xs -- derive enter field
+    let xsChild <-
+      match <- Parser.next with
+      | Hint.value => derivValue xsEnter -- derive child value
+      | Hint.enter => deriv xsEnter -- derive children, until return from a Hint.leave
+      | hint => throw s!"unexpected {hint}"
+    let xsLeave := <- derivLeave xs xsChild -- derive leave field
+    deriv xsLeave -- deriv next
+  | Hint.value => derivValue xs >>= deriv -- derive value and then derive next
+  | Hint.enter => deriv xs >>= deriv -- derive children, until return from a Hint.leave and then derive next
+  | Hint.leave => return xs -- never happens at the top
+  | Hint.eof =>  return xs -- only happens at the top
 
 def validate [Monad m] [MonadExcept String m] [Parser m] (x: Expr): m Bool := do
-  let dx <- dvalidate x
-  return Expr.nullable dx
+  let dxs <- deriv [x]
+  match dxs with
+  | [dx] => return Expr.nullable dx
+  | _ => throw "expected one expression"
 
 def run (x: Expr) (t: LTree): Except String Bool :=
   LTree.LTreeParser.run (validate x) t
