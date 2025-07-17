@@ -20,40 +20,35 @@ class Env (m: Type -> Type u) extends
 
 namespace Env
 
-abbrev ETreeParser := EStateM String ParseTree.TreeParser
+abbrev TreeParserState α := EStateM String ParseTree.TreeParser α
 
-instance : Enter.DeriveEnters ETreeParser where
+instance : Enter.DeriveEnters TreeParserState where
   deriveEnters xs := return Enter.enters xs
 
-instance : Leave.DeriveLeaves ETreeParser where
+instance : Leave.DeriveLeaves TreeParserState where
   deriveLeaves xs ns := Leave.leaves xs ns
 
-instance : Env ETreeParser where
+instance : Env TreeParserState where
   -- all instances have been created, so no implementations are required here
 
-def ETreeParser.run (x: ETreeParser α) (t: ParseTree): Except String α :=
-  match EStateM.run x (ParseTree.TreeParser.mk' t) with
-  | EStateM.Result.ok k _ => Except.ok k
-  | EStateM.Result.error err _ => Except.error err
-
-structure TreeState where
+structure TreeParserAndMem where
   parser: ParseTree.TreeParser
   enter: Mem.MemEnter
   leave: Mem.MemLeave
 
-abbrev TreeMem := EStateM String TreeState
+abbrev TreeParserStateWithMem α := EStateM String TreeParserAndMem α
 
-def TreeMem.mk (p: ParseTree.TreeParser): TreeState :=
-  TreeState.mk p Std.ExtHashMap.emptyWithCapacity Std.ExtHashMap.emptyWithCapacity
+def TreeParserStateWithMem.mk (p: ParseTree.TreeParser): TreeParserAndMem :=
+  TreeParserAndMem.mk p Std.ExtHashMap.emptyWithCapacity Std.ExtHashMap.emptyWithCapacity
 
 -- TODO: find better way to write exactly the same code for each method.
 -- There has to be shorter way to lift accross these monads.
-instance : Parser TreeMem where
+instance : Parser TreeParserStateWithMem where
   next := do
     let s <- get
     match StateT.run ParseTree.next s.parser with
     | Except.ok (res, parser') =>
-      set (TreeState.mk parser' s.enter s.leave)
+      set (TreeParserAndMem.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
@@ -61,7 +56,7 @@ instance : Parser TreeMem where
     let s <- get
     match StateT.run ParseTree.skip s.parser with
     | Except.ok (res, parser') =>
-      set (TreeState.mk parser' s.enter s.leave)
+      set (TreeParserAndMem.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
@@ -69,33 +64,38 @@ instance : Parser TreeMem where
     let s <- get
     match StateT.run ParseTree.token s.parser with
     | Except.ok (res, parser') =>
-      set (TreeState.mk parser' s.enter s.leave)
+      set (TreeParserAndMem.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
 
-instance : Enter.DeriveEnters TreeMem where
+instance : Enter.DeriveEnters TreeParserStateWithMem where
   deriveEnters xs := do
     let s <- get
     match StateT.run (m := Id) (Mem.enters xs) s.enter with
     | (res, enter') =>
-      set (TreeState.mk s.parser enter' s.leave)
+      set (TreeParserAndMem.mk s.parser enter' s.leave)
       return res
 
-instance : Leave.DeriveLeaves TreeMem where
+instance : Leave.DeriveLeaves TreeParserStateWithMem where
   deriveLeaves xs ns := do
     let s <- get
     match StateT.run (Mem.leaves xs ns) s.leave with
     | Except.ok (res, leave') =>
-      set (TreeState.mk s.parser s.enter leave')
+      set (TreeParserAndMem.mk s.parser s.enter leave')
       return res
     | Except.error err =>
       throw err
 
-instance : Env TreeMem where
+instance : Env TreeParserStateWithMem where
   -- all instances have been created, so no implementations are required here
 
-def TreeMem.run (x: TreeMem α) (t: ParseTree): Except String α :=
-  match EStateM.run x (TreeMem.mk (ParseTree.TreeParser.mk' t)) with
+def TreeParserState.run (x: TreeParserState α) (t: ParseTree): Except String α :=
+  match EStateM.run x (ParseTree.TreeParser.mk t) with
+  | EStateM.Result.ok k _ => Except.ok k
+  | EStateM.Result.error err _ => Except.error err
+
+def TreeParserStateWithMem.run (f: TreeParserStateWithMem α) (t: ParseTree): Except String α :=
+  match EStateM.run f (TreeParserStateWithMem.mk (ParseTree.TreeParser.mk t)) with
   | EStateM.Result.ok k _ => Except.ok k
   | EStateM.Result.error err _ => Except.error err

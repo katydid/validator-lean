@@ -9,7 +9,7 @@ def validate {m} [Env m] (x: Expr): m Bool :=
   ParserConciseCompress.validate x
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  Env.TreeMem.run (validate x) t
+  Env.TreeParserStateWithMem.run (validate x) t
 
 open ParseTree (field)
 

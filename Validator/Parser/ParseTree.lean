@@ -34,10 +34,10 @@ inductive ParserState where
 
 abbrev TreeParser := Stack ParserState
 
-def TreeParser.pop [Monad m] [MonadStateOf (Stack ParserState) m]: m Bool :=
+def TreeParser.pop [Monad m] [MonadStateOf TreeParser m]: m Bool :=
   Stack.pop (α := ParserState)
 
-def TreeParser.mk' (t: ParseTree): TreeParser :=
+def TreeParser.mk (t: ParseTree): TreeParser :=
   Stack.mk (ParserState.unknown [t]) []
 
 def nextNode
@@ -134,7 +134,7 @@ instance [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m] : Parser m
   token := token
 
 def TreeParser.run (x: StateT TreeParser (Except String) α) (t: ParseTree): Except String α :=
-  StateT.run' x (TreeParser.mk' t)
+  StateT.run' x (TreeParser.mk t)
 
 open Parser
 
