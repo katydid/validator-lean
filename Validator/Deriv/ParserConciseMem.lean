@@ -14,19 +14,21 @@ def run' (x: Env.TreeMem α) (t: ParseTree): Except String α :=
 def run (x: Expr) (t: ParseTree): Except String Bool :=
   run' (validate x) t
 
+open ParseTree (field)
+
 #guard run
   Expr.emptyset
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok false
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (ParseTree.node "a" []) =
+  (field "a" []) =
   Except.ok true
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (ParseTree.node "a" [ParseTree.node "b" []]) =
+  (field "a" [field "b" []]) =
   Except.ok false
 
 #guard run
@@ -35,7 +37,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       Expr.epsilon
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" []]) =
+  (field "a" [field "b" []]) =
   Except.ok true
 
 #guard run
@@ -49,7 +51,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       )
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" []]) =
+  (field "a" [field "b" [], field "c" []]) =
   Except.ok true
 
 #guard run
@@ -65,7 +67,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       )
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok true
 
 -- try to engage skip using emptyset, since it is unescapable
@@ -73,7 +75,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
   (Expr.tree (Pred.eq (Token.string "a"))
     Expr.emptyset
   )
-  (ParseTree.node "a" [ParseTree.node "b" []]) =
+  (field "a" [field "b" []]) =
   Except.ok false
 
 #guard run
@@ -89,7 +91,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       )
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok false
 
 #guard run
@@ -101,7 +103,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       Expr.emptyset
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok false
 
 #guard run
@@ -115,7 +117,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       )
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok false
 
 #guard run
@@ -131,5 +133,5 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       )
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok false

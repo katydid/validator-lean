@@ -22,7 +22,7 @@ def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
     | ParseTree.node label children =>
       let ifExprs: List IfExpr := Enter.enters xs
       -- des == derivatives of enter
-      let des : List Expr := IfExpr.evals ifExprs (Token.string label)
+      let des : List Expr := IfExpr.evals ifExprs label
       -- NEW: compress
       -- cdes compressed derivatives of enter
       let (cdes, indices) <- Compress.compress des
@@ -46,19 +46,21 @@ def validate (x: Expr) (forest: List ParseTree): Except String Bool := do
 def run (x: Expr) (t: ParseTree): Except String Bool :=
   validate x [t]
 
+open ParseTree (field)
+
 #guard run
   Expr.emptyset
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok false
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (ParseTree.node "a" []) =
+  (field "a" []) =
   Except.ok true
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (ParseTree.node "a" [ParseTree.node "b" []]) =
+  (field "a" [field "b" []]) =
   Except.ok false
 
 #guard run
@@ -67,7 +69,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       Expr.epsilon
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" []]) =
+  (field "a" [field "b" []]) =
   Except.ok true
 
 #guard run
@@ -81,7 +83,7 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       )
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" []]) =
+  (field "a" [field "b" [], field "c" []]) =
   Except.ok true
 
 #guard run
@@ -97,5 +99,5 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
       )
     )
   )
-  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
+  (field "a" [field "b" [], field "c" [field "d" []]]) =
   Except.ok true
