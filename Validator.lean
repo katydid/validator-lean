@@ -2,7 +2,7 @@ import Validator.Std.Linter.DetectClassical
 import Validator.Std.Except
 
 import Validator.Parser.Hint
-import Validator.Parser.LTree
+import Validator.Parser.ParseTree
 import Validator.Parser.Parser
 import Validator.Parser.Stack
 import Validator.Parser.Token
@@ -17,11 +17,11 @@ import Validator.Deriv.Enter
 import Validator.Deriv.Env
 import Validator.Deriv.Leave
 import Validator.Deriv.LeaveVerbose
-import Validator.Deriv.LTreeConcise
-import Validator.Deriv.LTreeConciseCompress
-import Validator.Deriv.LTreeOriginal
-import Validator.Deriv.LTreeVerbose
-import Validator.Deriv.LTreeVerboseCompress
+import Validator.Deriv.TreeConcise
+import Validator.Deriv.TreeConciseCompress
+import Validator.Deriv.TreeOriginal
+import Validator.Deriv.TreeVerbose
+import Validator.Deriv.TreeVerboseCompress
 import Validator.Deriv.Mem
 import Validator.Deriv.ParserConcise
 import Validator.Deriv.ParserConciseMem

@@ -1,9 +1,3 @@
-import Validator.Parser.Hint
-import Validator.Parser.LTree
-import Validator.Parser.Parser
-import Validator.Parser.Stack
-import Validator.Parser.Token
-
 import Validator.Expr.Pred
 
 inductive Expr where

@@ -3,47 +3,47 @@ import Validator.Std.Except
 import Validator.Parser.Stack
 import Validator.Parser.Parser
 
--- LTree is a Labelled Tree.
-inductive LTree where
-  | node (label: String) (children: List LTree)
+-- ParseTree is a Labelled Tree.
+inductive ParseTree where
+  | node (label: String) (children: List ParseTree)
 
-namespace LTree
+namespace ParseTree
 
-def label (t: LTree): String :=
+def label (t: ParseTree): String :=
   match t with
-  | LTree.node l _ => l
+  | ParseTree.node l _ => l
 
-def children (t: LTree): List LTree :=
+def children (t: ParseTree): List ParseTree :=
   match t with
-  | LTree.node _ c => c
+  | ParseTree.node _ c => c
 
 inductive ParserState where
-  | unknown (children: List LTree)
-  | opened (nexts: List LTree)
-  | value (v: Token) (nexts: List LTree)
-  | pair (f v: Token) (nexts: List LTree)
-  | field (f: Token) (children: List LTree)
+  | unknown (children: List ParseTree)
+  | opened (nexts: List ParseTree)
+  | value (v: Token) (nexts: List ParseTree)
+  | pair (f v: Token) (nexts: List ParseTree)
+  | field (f: Token) (children: List ParseTree)
   | eof
 
-def LTreeParser := Stack ParserState
+def TreeParser := Stack ParserState
 
-def LTreeParser.mk' (t: LTree): LTreeParser :=
+def TreeParser.mk' (t: ParseTree): TreeParser :=
   Stack.mk (ParserState.unknown [t]) []
 
-def nextNode (current: LTree) (nexts: List LTree): StateT LTreeParser (Except String) Hint := do
+def nextNode (current: ParseTree) (nexts: List ParseTree): StateT TreeParser (Except String) Hint := do
   match current with
-  | LTree.node v [] =>
+  | ParseTree.node v [] =>
     Stack.setCurrent (ParserState.value (Token.string v) nexts)
     return Hint.value
-  | LTree.node f [LTree.node v []] =>
+  | ParseTree.node f [ParseTree.node v []] =>
     Stack.setCurrent (ParserState.pair (Token.string f) (Token.string v) nexts)
     return Hint.field
-  | LTree.node f children =>
+  | ParseTree.node f children =>
     Stack.setCurrent (ParserState.opened nexts)
     Stack.push (ParserState.field (Token.string f) children)
     return Hint.field
 
-def next: StateT LTreeParser (Except String) Hint := do
+def next: StateT TreeParser (Except String) Hint := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown f =>
@@ -70,7 +70,7 @@ def next: StateT LTreeParser (Except String) Hint := do
   | ParserState.eof =>
     return Hint.eof
 
-def skip: StateT LTreeParser (Except String) Unit := do
+def skip: StateT TreeParser (Except String) Unit := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
@@ -94,7 +94,7 @@ def skip: StateT LTreeParser (Except String) Unit := do
   | ParserState.eof =>
     return ()
 
-def token: StateT LTreeParser (Except String) Token := do
+def token: StateT TreeParser (Except String) Token := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
@@ -110,88 +110,88 @@ def token: StateT LTreeParser (Except String) Token := do
   | ParserState.eof =>
     throw "unknown"
 
-instance : Parser (StateT LTreeParser (Except String)) where
+instance : Parser (StateT TreeParser (Except String)) where
   next := next
   skip := skip
   token := token
 
-def LTreeParser.run (x: StateT LTreeParser (Except String) α) (t: LTree): Except String α :=
-  StateT.run' x (LTreeParser.mk' t)
+def TreeParser.run (x: StateT TreeParser (Except String) α) (t: ParseTree): Except String α :=
+  StateT.run' x (TreeParser.mk' t)
 
 open Parser
 
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.next])
-  (LTree.node "a" []) =
+  (ParseTree.node "a" []) =
   Except.ok ["{", "V", "}"]
 
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["{", "F", "{", "V", "F", "V", "}", "}"]
 
 -- walk next just two
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]])
   = Except.ok ["{", "F"]
 
 -- walk next to end
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]])
   = Except.ok ["{", "F", "{", "V", "F", "V", "}", "}", "$"]
 
 -- walk next to end and tokenize all
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]])
   = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
 -- walk next to end and tokenize all
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]])
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]])
   = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
 -- walk skip
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.skip, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["$"]
 
 -- walk next skip
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.skip, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["{", "$"]
 
 -- walk next next skip
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.skip, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["{", "F", "}", "$"]
 
 -- walk next next token skip
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "}", "$"]
 
 -- walk next next token next skip
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "}", "$"]
 
 -- walk next next token next next token skip
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "}", "$"]
 
 -- walk next next token next next token next token skip
-#guard LTreeParser.run
+#guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"]

@@ -1,5 +1,5 @@
 -- ParserConcise is a memoizable version of the validation algorithm.
--- This version of the algorithm uses a Parser instead of a LTree.
+-- This version of the algorithm uses a Parser instead of a ParseTree.
 -- It is intended to be used for explanation purposes. This means that it gives up speed for readability. Thus it has no memoization implemented.
 
 import Validator.Expr.Compress
@@ -10,9 +10,9 @@ import Validator.Deriv.Enter
 import Validator.Deriv.Env
 import Validator.Deriv.Leave
 
-import Validator.Parser.Parser
 import Validator.Parser.Hint
-import Validator.Parser.LTree
+import Validator.Parser.Parser
+import Validator.Parser.ParseTree
 
 namespace ParserConcise
 
@@ -51,22 +51,22 @@ def validate {m} [Env m] (x: Expr): m Bool := do
   | [dx] => return Expr.nullable dx
   | _ => throw "expected one expression"
 
-def run (x: Expr) (t: LTree): Except String Bool :=
-  LTree.LTreeParser.run (validate x) t
+def run (x: Expr) (t: ParseTree): Except String Bool :=
+  ParseTree.TreeParser.run (validate x) t
 
 #guard run
   Expr.emptyset
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (LTree.node "a" []) =
+  (ParseTree.node "a" []) =
   Except.ok true
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok false
 
 #guard run
@@ -75,7 +75,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       Expr.epsilon
     )
   )
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok true
 
 #guard run
@@ -89,7 +89,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" []]) =
   Except.ok true
 
 #guard run
@@ -105,7 +105,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok true
 
 -- try to engage skip using emptyset, since it is unescapable
@@ -113,7 +113,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
   (Expr.tree (Pred.eq (Token.string "a"))
     Expr.emptyset
   )
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok false
 
 #guard run
@@ -129,7 +129,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -141,7 +141,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       Expr.emptyset
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -155,7 +155,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -171,5 +171,5 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false

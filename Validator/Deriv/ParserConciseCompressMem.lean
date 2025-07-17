@@ -1,4 +1,4 @@
-import Validator.Parser.LTree
+import Validator.Parser.ParseTree
 
 import Validator.Deriv.Env
 import Validator.Deriv.ParserConciseCompress
@@ -8,25 +8,25 @@ namespace ParserConciseCompressMem
 def validate {m} [Env m] (x: Expr): m Bool :=
   ParserConciseCompress.validate x
 
-def run' (x: Env.LTreeMem α) (t: LTree): Except String α :=
-  StateT.run' x (Env.LTreeMem.mk (LTree.LTreeParser.mk' t))
+def run' (x: Env.TreeMem α) (t: ParseTree): Except String α :=
+  StateT.run' x (Env.TreeMem.mk (ParseTree.TreeParser.mk' t))
 
-def run (x: Expr) (t: LTree): Except String Bool :=
+def run (x: Expr) (t: ParseTree): Except String Bool :=
   run' (validate x) t
 
 #guard run
   Expr.emptyset
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (LTree.node "a" []) =
+  (ParseTree.node "a" []) =
   Except.ok true
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok false
 
 #guard run
@@ -35,7 +35,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       Expr.epsilon
     )
   )
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok true
 
 #guard run
@@ -49,7 +49,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" []]) =
   Except.ok true
 
 #guard run
@@ -65,7 +65,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok true
 
 -- try to engage skip using emptyset, since it is unescapable
@@ -73,7 +73,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
   (Expr.tree (Pred.eq (Token.string "a"))
     Expr.emptyset
   )
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok false
 
 #guard run
@@ -89,7 +89,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -101,7 +101,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       Expr.emptyset
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -115,7 +115,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -131,5 +131,5 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false

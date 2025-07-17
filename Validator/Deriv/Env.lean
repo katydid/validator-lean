@@ -1,5 +1,5 @@
 import Validator.Parser.Parser
-import Validator.Parser.LTree
+import Validator.Parser.ParseTree
 
 import Validator.Deriv.Enter
 import Validator.Deriv.Leave
@@ -20,72 +20,72 @@ class Env (m: Type -> Type u) extends
 
 namespace Env
 
-abbrev LTreeExcept m := StateT LTree.LTreeParser (Except String) m
+abbrev TreeExcept := StateT ParseTree.TreeParser (Except String)
 
-instance : Enter.DeriveEnters LTreeExcept where
+instance : Enter.DeriveEnters TreeExcept where
   deriveEnters xs := return Enter.enters xs
 
-instance : Leave.DeriveLeaves LTreeExcept where
+instance : Leave.DeriveLeaves TreeExcept where
   deriveLeaves xs ns := Leave.leaves xs ns
 
-instance : Env LTreeExcept where
+instance : Env TreeExcept where
   -- all instances have been created, so no implementations are required here
 
-structure LTreeState where
-  parser: LTree.LTreeParser
+structure TreeState where
+  parser: ParseTree.TreeParser
   enter: Mem.MemEnter
   leave: Mem.MemLeave
 
-abbrev LTreeMem := StateT LTreeState (Except String)
+abbrev TreeMem := StateT TreeState (Except String)
 
-def LTreeMem.mk (p: LTree.LTreeParser): LTreeState :=
-  LTreeState.mk p Std.ExtHashMap.emptyWithCapacity Std.ExtHashMap.emptyWithCapacity
+def TreeMem.mk (p: ParseTree.TreeParser): TreeState :=
+  TreeState.mk p Std.ExtHashMap.emptyWithCapacity Std.ExtHashMap.emptyWithCapacity
 
 -- TODO: find better way to write exactly the same code for each method.
 -- There has to be shorter way to lift accross these monads.
-instance : Parser LTreeMem where
+instance : Parser TreeMem where
   next := do
     let s <- get
-    match StateT.run LTree.next s.parser with
+    match StateT.run ParseTree.next s.parser with
     | Except.ok (res, parser') =>
-      set (LTreeState.mk parser' s.enter s.leave)
+      set (TreeState.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
   skip := do
     let s <- get
-    match StateT.run LTree.skip s.parser with
+    match StateT.run ParseTree.skip s.parser with
     | Except.ok (res, parser') =>
-      set (LTreeState.mk parser' s.enter s.leave)
+      set (TreeState.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
   token := do
     let s <- get
-    match StateT.run LTree.token s.parser with
+    match StateT.run ParseTree.token s.parser with
     | Except.ok (res, parser') =>
-      set (LTreeState.mk parser' s.enter s.leave)
+      set (TreeState.mk parser' s.enter s.leave)
       return res
     | Except.error err =>
       throw err
 
-instance : Enter.DeriveEnters LTreeMem where
+instance : Enter.DeriveEnters TreeMem where
   deriveEnters xs := do
     let s <- get
     match StateT.run (m := Id) (Mem.enters xs) s.enter with
     | (res, enter') =>
-      set (LTreeState.mk s.parser enter' s.leave)
+      set (TreeState.mk s.parser enter' s.leave)
       return res
 
-instance : Leave.DeriveLeaves LTreeMem where
+instance : Leave.DeriveLeaves TreeMem where
   deriveLeaves xs ns := do
     let s <- get
     match StateT.run (Mem.leaves xs ns) s.leave with
     | Except.ok (res, leave') =>
-      set (LTreeState.mk s.parser s.enter leave')
+      set (TreeState.mk s.parser s.enter leave')
       return res
     | Except.error err =>
       throw err
 
-instance : Env LTreeMem where
+instance : Env TreeMem where
   -- all instances have been created, so no implementations are required here

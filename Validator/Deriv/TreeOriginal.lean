@@ -1,21 +1,23 @@
--- LTreeOriginal is the original derivative algorithm that runs on a labelled tree.
+-- TreeOriginal is the original derivative algorithm that runs on a labelled tree.
 -- It is intended to be used for explanation purposes.
 -- This version cannot be memoized effectively, but it is the easiest version to understand.
+
+import Validator.Parser.ParseTree
 
 import Validator.Expr.Pred
 import Validator.Expr.Expr
 
-namespace LTreeOriginal
+namespace TreeOriginal
 
-partial def derive (x: Expr) (t: LTree): Expr :=
+partial def derive (x: Expr) (t: ParseTree): Expr :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childrenExpr =>
     -- This is the only rule that differs from regular expressions.
     -- Although if we view this as a complicated predicate, then actually there is no difference.
-    if Pred.eval labelPred (Token.string (LTree.label t))
-    && Expr.nullable (List.foldl derive childrenExpr (LTree.children t))
+    if Pred.eval labelPred (Token.string (ParseTree.label t))
+    && Expr.nullable (List.foldl derive childrenExpr (ParseTree.children t))
     then Expr.epsilon
     else Expr.emptyset
   | Expr.or y z => Expr.or (derive y t) (derive z t)
@@ -25,25 +27,25 @@ partial def derive (x: Expr) (t: LTree): Expr :=
     else Expr.concat (derive y t) z
   | Expr.star y => Expr.concat (derive y t) (Expr.star y)
 
-partial def validate (x: Expr) (forest: List LTree): Bool :=
+partial def validate (x: Expr) (forest: List ParseTree): Bool :=
   Expr.nullable (List.foldl derive x forest)
 
-def run (x: Expr) (t: LTree): Except String Bool :=
+def run (x: Expr) (t: ParseTree): Except String Bool :=
   Except.ok (validate x [t])
 
 #guard run
   Expr.emptyset
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok false
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (LTree.node "a" []) =
+  (ParseTree.node "a" []) =
   Except.ok true
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok false
 
 #guard run
@@ -52,7 +54,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       Expr.epsilon
     )
   )
-  (LTree.node "a" [LTree.node "b" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" []]) =
   Except.ok true
 
 #guard run
@@ -66,7 +68,7 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" []]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" []]) =
   Except.ok true
 
 #guard run
@@ -82,5 +84,5 @@ def run (x: Expr) (t: LTree): Except String Bool :=
       )
     )
   )
-  (LTree.node "a" [LTree.node "b" [], LTree.node "c" [LTree.node "d" []]]) =
+  (ParseTree.node "a" [ParseTree.node "b" [], ParseTree.node "c" [ParseTree.node "d" []]]) =
   Except.ok true
