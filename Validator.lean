@@ -15,6 +15,8 @@ import Validator.Expr.Pred
 
 import Validator.Deriv.Enter
 import Validator.Deriv.Env
+import Validator.Deriv.EnvTreeParserState
+import Validator.Deriv.EnvTreeParserStateWithMem
 import Validator.Deriv.Leave
 import Validator.Deriv.LeaveVerbose
 import Validator.Deriv.TreeConcise

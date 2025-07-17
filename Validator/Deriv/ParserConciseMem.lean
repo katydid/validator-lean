@@ -1,6 +1,7 @@
 import Validator.Parser.ParseTree
 
 import Validator.Deriv.Env
+import Validator.Deriv.EnvTreeParserStateWithMem
 import Validator.Deriv.ParserConcise
 
 namespace ParserConciseMem
@@ -9,7 +10,7 @@ def validate {m} [Env m] (x: Expr): m Bool :=
   ParserConcise.validate x
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  Env.TreeParserStateWithMem.run (validate x) t
+  EnvTreeParserStateWithMem.run (validate x) t
 
 open ParseTree (field)
 

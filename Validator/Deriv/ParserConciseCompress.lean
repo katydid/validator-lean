@@ -9,6 +9,7 @@ import Validator.Expr.IfExpr
 
 import Validator.Deriv.Enter
 import Validator.Deriv.Env
+import Validator.Deriv.EnvTreeParserState
 import Validator.Deriv.Leave
 
 import Validator.Parser.ParseTree
@@ -60,7 +61,7 @@ def validate {m} [Env m] (x: Expr): m Bool := do
   | _ => throw "expected one expression"
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  Env.TreeParserState.run (validate x) t
+  EnvTreeParserState.run (validate x) t
 
 open ParseTree (field)
 
