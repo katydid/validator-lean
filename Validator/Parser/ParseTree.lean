@@ -32,12 +32,17 @@ inductive ParserState where
   | field (f: Token) (children: List ParseTree)
   | eof
 
-def TreeParser := Stack ParserState
+abbrev TreeParser := Stack ParserState
+
+def TreeParser.pop [Monad m] [MonadStateOf (Stack ParserState) m]: m Bool :=
+  Stack.pop (α := ParserState)
 
 def TreeParser.mk' (t: ParseTree): TreeParser :=
   Stack.mk (ParserState.unknown [t]) []
 
-def nextNode (current: ParseTree) (nexts: List ParseTree): StateT TreeParser (Except String) Hint := do
+def nextNode
+  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  (current: ParseTree) (nexts: List ParseTree): m Hint := do
   match current with
   | ParseTree.node v [] =>
     Stack.setCurrent (ParserState.value v nexts)
@@ -50,20 +55,22 @@ def nextNode (current: ParseTree) (nexts: List ParseTree): StateT TreeParser (Ex
     Stack.push (ParserState.field f children)
     return Hint.field
 
-def next: StateT TreeParser (Except String) Hint := do
+def next
+  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  : m Hint := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown f =>
     Stack.setCurrent (ParserState.opened f)
     return Hint.enter
   | ParserState.opened [] =>
-    let popped <- Stack.pop
+    let popped <- TreeParser.pop
     if not popped then Stack.setCurrent ParserState.eof
     return Hint.leave
   | ParserState.opened (t::ts) =>
     nextNode t ts
   | ParserState.value _ [] =>
-    let popped <- Stack.pop
+    let popped <- TreeParser.pop
     if not popped then Stack.setCurrent ParserState.eof
     return Hint.leave
   | ParserState.value _ (t::ts) =>
@@ -77,31 +84,35 @@ def next: StateT TreeParser (Except String) Hint := do
   | ParserState.eof =>
     return Hint.eof
 
-def skip: StateT TreeParser (Except String) Unit := do
+def skip
+  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  : m Unit := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
     Stack.setCurrent ParserState.eof
     return ()
   | ParserState.opened _ =>
-    let popped <- Stack.pop
+    let popped <- TreeParser.pop
     if not popped then Stack.setCurrent ParserState.eof
     return ()
   | ParserState.value _ _ =>
-    let popped <- Stack.pop
+    let popped: Bool <- TreeParser.pop
     if not popped then Stack.setCurrent ParserState.eof
     return ()
   | ParserState.pair _ _ nexts =>
     Stack.setCurrent (ParserState.opened nexts)
     return ()
   | ParserState.field _ _ =>
-    let popped <- Stack.pop
+    let popped: Bool <- TreeParser.pop
     if not popped then Stack.setCurrent ParserState.eof
     return ()
   | ParserState.eof =>
     return ()
 
-def token: StateT TreeParser (Except String) Token := do
+def token
+  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  : m Token := do
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
@@ -117,7 +128,7 @@ def token: StateT TreeParser (Except String) Token := do
   | ParserState.eof =>
     throw "unknown"
 
-instance : Parser (StateT TreeParser (Except String)) where
+instance [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m] : Parser m where
   next := next
   skip := skip
   token := token

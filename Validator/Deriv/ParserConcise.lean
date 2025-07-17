@@ -52,7 +52,7 @@ def validate {m} [Env m] (x: Expr): m Bool := do
   | _ => throw "expected one expression"
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  ParseTree.TreeParser.run (validate x) t
+  Env.ETreeParser.run (validate x) t
 
 open ParseTree (field)
 

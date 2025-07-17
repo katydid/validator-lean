@@ -20,23 +20,28 @@ class Env (m: Type -> Type u) extends
 
 namespace Env
 
-abbrev TreeExcept := StateT ParseTree.TreeParser (Except String)
+abbrev ETreeParser := EStateM String ParseTree.TreeParser
 
-instance : Enter.DeriveEnters TreeExcept where
+instance : Enter.DeriveEnters ETreeParser where
   deriveEnters xs := return Enter.enters xs
 
-instance : Leave.DeriveLeaves TreeExcept where
+instance : Leave.DeriveLeaves ETreeParser where
   deriveLeaves xs ns := Leave.leaves xs ns
 
-instance : Env TreeExcept where
+instance : Env ETreeParser where
   -- all instances have been created, so no implementations are required here
+
+def ETreeParser.run (x: ETreeParser α) (t: ParseTree): Except String α :=
+  match EStateM.run x (ParseTree.TreeParser.mk' t) with
+  | EStateM.Result.ok k _ => Except.ok k
+  | EStateM.Result.error err _ => Except.error err
 
 structure TreeState where
   parser: ParseTree.TreeParser
   enter: Mem.MemEnter
   leave: Mem.MemLeave
 
-abbrev TreeMem := StateT TreeState (Except String)
+abbrev TreeMem := EStateM String TreeState
 
 def TreeMem.mk (p: ParseTree.TreeParser): TreeState :=
   TreeState.mk p Std.ExtHashMap.emptyWithCapacity Std.ExtHashMap.emptyWithCapacity
@@ -89,3 +94,8 @@ instance : Leave.DeriveLeaves TreeMem where
 
 instance : Env TreeMem where
   -- all instances have been created, so no implementations are required here
+
+def TreeMem.run (x: TreeMem α) (t: ParseTree): Except String α :=
+  match EStateM.run x (TreeMem.mk (ParseTree.TreeParser.mk' t)) with
+  | EStateM.Result.ok k _ => Except.ok k
+  | EStateM.Result.error err _ => Except.error err

@@ -35,5 +35,5 @@ def leaves [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool) (mem
 instance : Enter.DeriveEnters (StateM MemEnter) where
   deriveEnters := enters
 
-instance : Leave.DeriveLeaves (StateT MemLeave (Except String)) where
-  deriveLeaves := leaves
+instance : Leave.DeriveLeaves (EStateM String MemLeave) where
+  deriveLeaves xs ns mem := EStateM.run (leavesUncurried (xs, ns)) mem

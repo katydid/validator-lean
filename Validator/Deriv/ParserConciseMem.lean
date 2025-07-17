@@ -8,11 +8,8 @@ namespace ParserConciseMem
 def validate {m} [Env m] (x: Expr): m Bool :=
   ParserConcise.validate x
 
-def run' (x: Env.TreeMem α) (t: ParseTree): Except String α :=
-  StateT.run' x (Env.TreeMem.mk (ParseTree.TreeParser.mk' t))
-
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  run' (validate x) t
+  Env.TreeMem.run (validate x) t
 
 open ParseTree (field)
 
