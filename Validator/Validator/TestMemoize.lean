@@ -1,6 +1,6 @@
 import Validator.Parser.ParseTree
 
-import Validator.Deriv.Validate
+import Validator.Validator.Validate
 
 import Validator.Env.EnvM
 import Validator.Env.EnvTreeParserStateWithMem

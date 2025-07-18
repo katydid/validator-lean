@@ -16,9 +16,8 @@ import Validator.Expr.Pred
 
 import Validator.Deriv.Enter
 import Validator.Deriv.Leave
-import Validator.Deriv.Validate
-import Validator.Deriv.TestMemoize
 
+import Validator.Validator.Validator
 import Validator.Env.Env
 import Validator.Memoize.Memoize
 import Validator.Learning.Learning

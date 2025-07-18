@@ -1,11 +1,11 @@
 import Validator.Parser.ParseTree
 
-import Validator.Deriv.Validate
+import Validator.Validator.Validate
 
 import Validator.Env.EnvTreeParserIO
 import Validator.Env.EnvM
 
-namespace TestEnvTreeParserIO
+namespace TestDebug
 
 def validate {m} [EnvM m] (x: Expr): m Bool :=
   Validate.validate x
