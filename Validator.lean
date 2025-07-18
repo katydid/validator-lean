@@ -21,10 +21,9 @@ import Validator.Deriv.EnvTreeParserIO
 import Validator.Deriv.EnvTreeParserStateWithMem
 import Validator.Deriv.EnvTreeParserStateWithMemTest
 import Validator.Deriv.Leave
-import Validator.Deriv.Mem
-import Validator.Deriv.MemEnter
-import Validator.Deriv.MemLeave
+
 import Validator.Deriv.Validate
 import Validator.Deriv.TestMemoize
 
+import Validator.Memoize.Memoize
 import Validator.Learning.Learning

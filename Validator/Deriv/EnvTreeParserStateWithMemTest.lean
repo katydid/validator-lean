@@ -1,8 +1,8 @@
 import Validator.Std.Debug
 
 import Validator.Deriv.Env
-import Validator.Deriv.MemEnter
-import Validator.Deriv.MemLeave
+import Validator.Memoize.MemEnter
+import Validator.Memoize.MemLeave
 
 import Validator.Deriv.EnvTreeParserStateWithMem
 
