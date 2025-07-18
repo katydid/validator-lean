@@ -15,24 +15,24 @@ import Validator.Deriv.Leave
 namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
-def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
+def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
   if List.all xs Expr.unescapable
   then return xs
   else
     match t with
     | ParseTree.node label children =>
-      let ifexprs: List IfExpr := Enter.enters xs
+      let ifexprs: List IfExpr := Enter.deriveEnter xs
       let childxs : List Expr := IfExpr.evals ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
       let (cchildxs, indices) <- Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.
-      let cdchildxs <- List.foldlM deriv cchildxs children
+      let cdchildxs <- List.foldlM derive cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs <- Compress.expand indices cdchildxs
-      Leave.leaves xs (List.map Expr.nullable dchildxs)
+      Leave.deriveLeave xs (List.map Expr.nullable dchildxs)
 
 def derivs (x: Expr) (forest: List ParseTree): Except String Expr := do
-  let dxs <- List.foldlM deriv [x] forest
+  let dxs <- List.foldlM derive [x] forest
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"

@@ -21,7 +21,7 @@ private def foldLoop (deriv: List Expr -> ParseTree -> Except String (List Expr)
     | Except.ok r => res := r
   return res
 
-def deriv (xs: List Expr) (tree: ParseTree): Except String (List Expr) :=
+def derive (xs: List Expr) (tree: ParseTree): Except String (List Expr) :=
   -- If all expressions are unescapable, then simply return without look at the input tree.
   -- An example of an unescapable expression is emptyset, since its derivative is always emptyset, no matter the input.
   if List.all xs Expr.unescapable
@@ -31,25 +31,25 @@ def deriv (xs: List Expr) (tree: ParseTree): Except String (List Expr) :=
     match tree with
     | ParseTree.node label children =>
       -- enters is one of our two new memoizable functions.
-      let ifexprs: List IfExpr := Enter.enters xs
+      let ifexprs: List IfExpr := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
       let childxs: List Expr := IfExpr.evals ifexprs label
       -- dchildxs = derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let dchildxs': Except String (List Expr) := List.foldlM deriv childxs children
+      let dchildxs': Except String (List Expr) := List.foldlM derive childxs children
       match dchildxs' with
       | Except.error err => Except.error err
       | Except.ok dchildxs =>
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
       -- leaves is the other one of our two new memoizable functions.
-      let dxs': Except String (List Expr) := ImperativeLeave.leaves xs (List.map Expr.nullable dchildxs)
+      let dxs': Except String (List Expr) := ImperativeLeave.deriveLeave xs (List.map Expr.nullable dchildxs)
       match dxs' with
       | Except.error err => Except.error err
       | Except.ok dxs => Except.ok dxs
 
 def derivs (x: Expr) (forest: List ParseTree): Except String Expr :=
   -- see foldLoop for an explanation of what List.foldM does.
-  let dxs := List.foldlM deriv [x] forest
+  let dxs := List.foldlM derive [x] forest
   match dxs with
   | Except.error err => Except.error err
   | Except.ok [dx] => Except.ok dx

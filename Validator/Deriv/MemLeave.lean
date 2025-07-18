@@ -20,19 +20,19 @@ instance [Monad m] [MonadStateOf LeaveMap m] : MemLeave m where
   getLeave := MonadStateOf.get
   setLeave s := MonadStateOf.set s
 
-def leave
+def deriveLeave
   [Monad m] [Debug m] [MonadExcept String m] [MemLeave m]
   (xs: List Expr) (ns: List Bool): m (List Expr) := do
   let memoized <- MemLeave.getLeave
   match memoized.get? (xs, ns) with
   | Option.none =>
     Debug.debug "cache miss"
-    let newvalue <- Leave.leaves xs ns
+    let newvalue <- Leave.deriveLeave xs ns
     MemLeave.setLeave (memoized.insert (xs, ns) newvalue)
     return newvalue
   | Option.some value =>
     Debug.debug "cache hit"
     return value
 
-instance [Monad m] [Debug m] [MonadExcept String m] [MemLeave m] : Leave.DeriveLeaves m where
-  deriveLeaves (xs: List Expr) (ns: List Bool): m (List Expr) := leave xs ns
+instance [Monad m] [Debug m] [MonadExcept String m] [MemLeave m] : Leave.DeriveLeave m where
+  deriveLeave (xs: List Expr) (ns: List Bool): m (List Expr) := deriveLeave xs ns

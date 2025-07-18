@@ -19,11 +19,11 @@ namespace ParserConcise
 
 def deriveEnter [Env m] (xs: List Expr): m (List Expr) := do
   let token <- Parser.token
-  let enters <- Enter.DeriveEnters.deriveEnters xs
+  let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals enters token
 
 def deriveLeave [Env m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
-  Leave.DeriveLeaves.deriveLeaves xs (List.map Expr.nullable cs)
+  Leave.DeriveLeave.deriveLeave xs (List.map Expr.nullable cs)
 
 def deriveValue [Env m] (xs: List Expr): m (List Expr) := do
   deriveLeave xs (<- deriveEnter xs)

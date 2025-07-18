@@ -45,11 +45,11 @@ def leave (x: Expr) (ns: List Bool): Except String (Expr × List Bool) :=
       | Except.ok (y', ns') =>
         Except.ok (Expr.star y', ns')
 
--- leaves takes a list of expressions and list of bools.
+-- deriveLeave takes a list of expressions and list of bools.
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def leaves (xs: List Expr) (ns: List Bool): Except String (List Expr) :=
+def deriveLeave (xs: List Expr) (ns: List Bool): Except String (List Expr) :=
   match xs with
   | [] =>
     match ns with
@@ -60,7 +60,7 @@ def leaves (xs: List Expr) (ns: List Bool): Except String (List Expr) :=
     match lx' with
     | Except.error err => Except.error err
     | Except.ok (lx, tailns) =>
-    let lxs': Except String (List Expr) := leaves xs' tailns
+    let lxs': Except String (List Expr) := deriveLeave xs' tailns
     match lxs' with
     | Except.error err => Except.error err
     | Except.ok lxs =>

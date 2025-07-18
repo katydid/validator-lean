@@ -31,11 +31,11 @@ def leave [Monad m] [MonadExcept String m] (x: Expr) (ns: List Bool): m (Expr ×
       let (ly, yns) <- leave y ns
       return (Smart.star ly, yns)
 
--- leaves takes a list of expressions and list of bools.
+-- deriveLeave takes a list of expressions and list of bools.
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def leaves [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool): m (List Expr) := do
+def deriveLeave [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool): m (List Expr) := do
   match xs with
   | [] =>
     match ns with
@@ -43,11 +43,11 @@ def leaves [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool): m (
     | _ => throw "Not all nulls were consumed, but there are no expressions to place them in."
   | (x::xs') =>
     let (lx, tailns) <- leave x ns
-    let lxs <- leaves xs' tailns
+    let lxs <- deriveLeave xs' tailns
     return (lx::lxs)
 
-class DeriveLeaves (m: Type -> Type u) where
-  deriveLeaves (xs: List Expr) (ns: List Bool): m (List Expr)
+class DeriveLeave (m: Type -> Type u) where
+  deriveLeave (xs: List Expr) (ns: List Bool): m (List Expr)
 
-instance : DeriveLeaves (Except String) where
-  deriveLeaves := leaves
+instance : DeriveLeave (Except String) where
+  deriveLeave := deriveLeave

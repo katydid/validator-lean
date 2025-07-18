@@ -13,23 +13,23 @@ import Validator.Deriv.Leave
 
 namespace Basic
 
-def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
+def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
   if List.all xs Expr.unescapable
   then return xs
   else
     match t with
     | ParseTree.node label children =>
       -- enters is one of our two new memoizable functions.
-      let ifExprs: List IfExpr := Enter.enters xs
+      let ifExprs: List IfExpr := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
       let childxs : List Expr := IfExpr.evals ifExprs label
       -- dchildxs = derivatives of children.
-      let dchildxs <- List.foldlM deriv childxs children
+      let dchildxs <- List.foldlM derive childxs children
       -- leaves is the other one of our two new memoizable functions.
-      Leave.leaves xs (List.map Expr.nullable dchildxs)
+      Leave.deriveLeave xs (List.map Expr.nullable dchildxs)
 
 def derivs (x: Expr) (forest: List ParseTree): Except String Expr := do
-  let dxs <- List.foldlM deriv [x] forest
+  let dxs <- List.foldlM derive [x] forest
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"

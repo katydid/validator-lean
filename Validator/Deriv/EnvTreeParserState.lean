@@ -17,11 +17,11 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance : Enter.DeriveEnters TreeParserState where
-  deriveEnters xs := return Enter.enters xs
+instance : Enter.DeriveEnter TreeParserState where
+  deriveEnter xs := return Enter.deriveEnter xs
 
-instance : Leave.DeriveLeaves TreeParserState where
-  deriveLeaves xs ns := Leave.leaves xs ns
+instance : Leave.DeriveLeave TreeParserState where
+  deriveLeave xs ns := Leave.deriveLeave xs ns
 
 instance : Env TreeParserState where
   -- all instances have been created, so no implementations are required here

@@ -54,8 +54,8 @@ instance : MemEnter.MemEnter TreeParserStateWithMem where
       set (TreeParserAndMem.mk s.parser enter s.leave)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
-instance : Enter.DeriveEnters TreeParserStateWithMem where
-  deriveEnters (xs: List Expr): TreeParserStateWithMem (List IfExpr) := MemEnter.enter xs
+instance : Enter.DeriveEnter TreeParserStateWithMem where
+  deriveEnter (xs: List Expr): TreeParserStateWithMem (List IfExpr) := MemEnter.deriveEnter xs
 
 instance : MemLeave.MemLeave TreeParserStateWithMem where
   getLeave : TreeParserStateWithMem MemLeave.LeaveMap := do
@@ -67,8 +67,8 @@ instance : MemLeave.MemLeave TreeParserStateWithMem where
       set (TreeParserAndMem.mk s.parser s.enter leave)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance : Leave.DeriveLeaves TreeParserStateWithMem where
-  deriveLeaves (xs: List Expr) (ns: List Bool): TreeParserStateWithMem (List Expr) := MemLeave.leave xs ns
+instance : Leave.DeriveLeave TreeParserStateWithMem where
+  deriveLeave (xs: List Expr) (ns: List Bool): TreeParserStateWithMem (List Expr) := MemLeave.deriveLeave xs ns
 
 instance : Env TreeParserStateWithMem where
   -- all instances have been created, so no implementations are required here

@@ -15,11 +15,11 @@ def enter (x: Expr) (res: List IfExpr := []): List IfExpr :=
     else enter y res
   | Expr.star y => enter y res
 
-def enters (xs: List Expr): List IfExpr :=
+def deriveEnter (xs: List Expr): List IfExpr :=
   List.flatten (List.map Enter.enter xs)
 
-class DeriveEnters (m: Type -> Type u) where
-  deriveEnters (xs: List Expr): m (List IfExpr)
+class DeriveEnter (m: Type -> Type u) where
+  deriveEnter (xs: List Expr): m (List IfExpr)
 
-instance : DeriveEnters Id where
-  deriveEnters := enters
+instance : DeriveEnter Id where
+  deriveEnter := deriveEnter

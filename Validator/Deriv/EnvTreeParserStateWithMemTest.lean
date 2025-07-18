@@ -58,8 +58,8 @@ instance : MemEnter.MemEnter TreeParserStateWithMemTest where
       set (TreeParserAndMemTest.mk s.parser enter s.leave)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
-instance : Enter.DeriveEnters TreeParserStateWithMemTest where
-  deriveEnters (xs: List Expr): TreeParserStateWithMemTest (List IfExpr) := do
+instance : Enter.DeriveEnter TreeParserStateWithMemTest where
+  deriveEnter (xs: List Expr): TreeParserStateWithMemTest (List IfExpr) := do
     let memoized <- MemEnter.MemEnter.getEnter
     match memoized.get? xs with
     | Option.none =>
@@ -78,8 +78,8 @@ instance : MemLeave.MemLeave TreeParserStateWithMemTest where
       set (TreeParserAndMemTest.mk s.parser s.enter leave)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance : Leave.DeriveLeaves TreeParserStateWithMemTest where
-  deriveLeaves (xs: List Expr) (ns: List Bool): TreeParserStateWithMemTest (List Expr) := do
+instance : Leave.DeriveLeave TreeParserStateWithMemTest where
+  deriveLeave (xs: List Expr) (ns: List Bool): TreeParserStateWithMemTest (List Expr) := do
     let memoized <- MemLeave.MemLeave.getLeave
     match memoized.get? (xs, ns) with
     | Option.none =>

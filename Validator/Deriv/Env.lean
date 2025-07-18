@@ -18,7 +18,7 @@ class Env (m: Type -> Type u) extends
   Debug m,
   MonadExcept String m,
   Parser m,
-  Enter.DeriveEnters m,
-  Leave.DeriveLeaves m
+  Enter.DeriveEnter m,
+  Leave.DeriveLeave m
 
 namespace Env

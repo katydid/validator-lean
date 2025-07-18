@@ -16,19 +16,19 @@ class MemEnter (m: Type -> Type u) where
   getEnter : m EnterMap
   setEnter : EnterMap → m Unit
 
-def enter
+def deriveEnter
   [Monad m] [Debug m] [MemEnter m]
   (xs: List Expr): m (List IfExpr) := do
   let memoized <- MemEnter.getEnter
   match memoized.get? xs with
   | Option.none =>
     Debug.debug "cache miss"
-    let newvalue := Enter.enters xs
+    let newvalue := Enter.deriveEnter xs
     MemEnter.setEnter (memoized.insert xs newvalue)
     return newvalue
   | Option.some value =>
     Debug.debug "cache hit"
     return value
 
-instance [Monad m] [Debug m] [MemEnter m] : Enter.DeriveEnters m where
-  deriveEnters (xs: List Expr): m (List IfExpr) := enter xs
+instance [Monad m] [Debug m] [MemEnter m] : Enter.DeriveEnter m where
+  deriveEnter (xs: List Expr): m (List IfExpr) := deriveEnter xs

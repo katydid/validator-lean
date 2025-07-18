@@ -16,13 +16,13 @@ import Validator.Learning.ImperativeLeave
 namespace ImperativeCompress
 
 -- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
-def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) :=
+def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) :=
   if List.all xs Expr.unescapable
   then Except.ok xs
   else
     match t with
     | ParseTree.node label children =>
-      let ifexprs: List IfExpr := Enter.enters xs
+      let ifexprs: List IfExpr := Enter.deriveEnter xs
       let childxs: List Expr := IfExpr.evals ifexprs label
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
       let cchildxs' : Except String ((List Expr) × Compress.Indices) := Compress.compress childxs
@@ -31,7 +31,7 @@ def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) :=
       | Except.ok (cchildxs, indices) =>
       -- cdchildxs = compressed derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let cdchildxs' : Except String (List Expr) := List.foldlM deriv cchildxs children
+      let cdchildxs' : Except String (List Expr) := List.foldlM derive cchildxs children
       match cdchildxs' with
       | Except.error err => Except.error err
       | Except.ok cdchildxs =>
@@ -41,14 +41,14 @@ def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) :=
       | Except.error err => Except.error err
       | Except.ok dchildxs =>
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
-      let dxs': Except String (List Expr) := ImperativeLeave.leaves xs (List.map Expr.nullable dchildxs)
+      let dxs': Except String (List Expr) := ImperativeLeave.deriveLeave xs (List.map Expr.nullable dchildxs)
       match dxs' with
       | Except.error err => Except.error err
       | Except.ok dxs => Except.ok dxs
 
 def derivs (x: Expr) (forest: List ParseTree): Except String Expr :=
   -- see foldLoop for an explanation of what List.foldM does.
-  let dxs := List.foldlM deriv [x] forest
+  let dxs := List.foldlM derive [x] forest
   match dxs with
   | Except.error err => Except.error err
   | Except.ok [dx] => Except.ok dx
