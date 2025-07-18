@@ -2,34 +2,60 @@ import Validator.Parser.ParseTree
 
 import Validator.Deriv.Env
 import Validator.Deriv.EnvTreeParserStateWithMem
-import Validator.Deriv.ParserConcise
+import Validator.Deriv.EnvTreeParserStateWithMemTest
+import Validator.Deriv.Validate
 
-namespace ParserConciseMem
+namespace TestMemoize
 
 def validate {m} [Env m] (x: Expr): m Bool :=
-  ParserConcise.validate x
+  Validate.validate x
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
   EnvTreeParserStateWithMem.run (validate x) t
 
+-- Tests
+
+def testCacheIsHitOnSecondRun (x: Expr) (t: ParseTree): Except String Bool :=
+  match EnvTreeParserStateWithMem.run' (validate x) t with
+  | EStateM.Result.error err _ => Except.error err
+  | EStateM.Result.ok res1 (populatedEnter, populatedLeave) =>
+    match EnvTreeParserStateWithMemTest.run' (validate x) t populatedEnter populatedLeave with
+    | EStateM.Result.error err _ => Except.error err
+    | EStateM.Result.ok res2 _ =>
+      if res1 ≠ res2
+      then throw "memoization result doesn't match original"
+      else return res2
+
+-- A negaive test for the test above
+-- This tests that given an empty cache the test does actually fail.
+def testThatTestCacheBreaksWithEmptyCache (x: Expr) (t: ParseTree): Except String Bool :=
+  match EnvTreeParserStateWithMemTest.run' (validate x) t MemEnter.EnterMap.mk MemLeave.LeaveMap.mk with
+  | EStateM.Result.error err _ => Except.error err
+  | EStateM.Result.ok res _ => Except.ok res
+
 open ParseTree (node)
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   Expr.emptyset
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
   (node "a" []) =
   Except.ok true
 
-#guard run
+#guard testThatTestCacheBreaksWithEmptyCache
+  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (node "a" []) =
+  Except.error "test cache miss"
+
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
   (node "a" [node "b" []]) =
   Except.ok false
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.tree (Pred.eq (Token.string "b"))
       Expr.epsilon
@@ -38,7 +64,7 @@ open ParseTree (node)
   (node "a" [node "b" []]) =
   Except.ok true
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.concat
       (Expr.tree (Pred.eq (Token.string "b"))
@@ -52,7 +78,7 @@ open ParseTree (node)
   (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.concat
       (Expr.tree (Pred.eq (Token.string "b"))
@@ -69,14 +95,14 @@ open ParseTree (node)
   Except.ok true
 
 -- try to engage skip using emptyset, since it is unescapable
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     Expr.emptyset
   )
   (node "a" [node "b" []]) =
   Except.ok false
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.concat
       (Expr.tree (Pred.eq (Token.string "b"))
@@ -92,7 +118,7 @@ open ParseTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.concat
       (Expr.tree (Pred.eq (Token.string "b"))
@@ -104,7 +130,7 @@ open ParseTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.concat
       (Expr.tree (Pred.eq (Token.string "b"))
@@ -118,7 +144,7 @@ open ParseTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
-#guard run
+#guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.concat
       (Expr.tree (Pred.eq (Token.string "b"))

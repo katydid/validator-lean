@@ -3,4 +3,6 @@ import Validator.Learning.Compress
 import Validator.Learning.ImperativeBasic
 import Validator.Learning.ImperativeCompress
 import Validator.Learning.ImperativeLeave
+import Validator.Learning.Memoize
 import Validator.Learning.Original
+import Validator.Learning.Parser

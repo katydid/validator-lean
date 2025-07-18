@@ -24,10 +24,7 @@ import Validator.Deriv.Leave
 import Validator.Deriv.Mem
 import Validator.Deriv.MemEnter
 import Validator.Deriv.MemLeave
-import Validator.Deriv.ParserConcise
-import Validator.Deriv.ParserConciseMem
-import Validator.Deriv.ParserConciseMemTest
-import Validator.Deriv.ParserConciseCompress
-import Validator.Deriv.ParserConciseCompressMem
+import Validator.Deriv.Validate
+import Validator.Deriv.TestMemoize
 
 import Validator.Learning.Learning

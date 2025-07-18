@@ -1,4 +1,4 @@
--- ParserConcise is a memoizable version of the validation algorithm.
+-- Parser is a memoizable version of the validation algorithm.
 -- This version of the algorithm uses a Parser instead of a ParseTree.
 -- It is intended to be used for explanation purposes. This means that it gives up speed for readability. Thus it has no memoization implemented.
 
@@ -15,7 +15,7 @@ import Validator.Parser.Hint
 import Validator.Parser.Parser
 import Validator.Parser.ParseTree
 
-namespace ParserConcise
+namespace Parser
 
 def deriveEnter [Env m] (xs: List Expr): m (List Expr) := do
   let token <- Parser.token
@@ -54,6 +54,8 @@ def validate {m} [Env m] (x: Expr): m Bool := do
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
   EnvTreeParserState.run (validate x) t
+
+-- Tests
 
 open ParseTree (node)
 
