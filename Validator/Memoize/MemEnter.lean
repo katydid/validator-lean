@@ -5,7 +5,7 @@ import Validator.Std.Debug
 import Validator.Expr.Expr
 import Validator.Expr.IfExpr
 
-import Validator.Deriv.Enter
+import Validator.Derive.Enter
 
 namespace MemEnter
 

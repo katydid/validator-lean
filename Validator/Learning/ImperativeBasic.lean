@@ -6,8 +6,7 @@ import Validator.Parser.ParseTree
 import Validator.Expr.Expr
 import Validator.Expr.IfExpr
 
-import Validator.Deriv.Enter
-
+import Validator.Derive.Enter
 import Validator.Learning.ImperativeLeave
 
 namespace ImperativeBasic

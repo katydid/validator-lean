@@ -7,8 +7,8 @@ import Validator.Expr.Compress
 import Validator.Expr.Expr
 import Validator.Expr.IfExpr
 
-import Validator.Deriv.Enter
-import Validator.Deriv.Leave
+import Validator.Derive.Enter
+import Validator.Derive.Leave
 
 import Validator.Parser.ParseTree
 import Validator.Parser.Parser

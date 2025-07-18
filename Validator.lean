@@ -14,9 +14,7 @@ import Validator.Expr.IfExpr
 import Validator.Expr.Language
 import Validator.Expr.Pred
 
-import Validator.Deriv.Enter
-import Validator.Deriv.Leave
-
+import Validator.Derive.Derive
 import Validator.Validator.Validator
 import Validator.Env.Env
 import Validator.Memoize.Memoize

@@ -3,8 +3,8 @@ import Validator.Std.Debug
 import Validator.Parser.Parser
 import Validator.Parser.ParseTree
 
-import Validator.Deriv.Enter
-import Validator.Deriv.Leave
+import Validator.Derive.Enter
+import Validator.Derive.Leave
 
 -- EnvM is the derivative validator environment monad.
 -- Executing the derivative algorithm requires:
