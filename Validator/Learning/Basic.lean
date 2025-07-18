@@ -18,7 +18,7 @@ def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
   then return xs
   else
     match t with
-    | ParseTree.node label children =>
+    | ParseTree.mk label children =>
       -- enters is one of our two new memoizable functions.
       let ifExprs: List IfExpr := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
@@ -43,21 +43,21 @@ def run (x: Expr) (t: ParseTree): Except String Bool :=
 
 -- Tests
 
-open ParseTree (field)
+open ParseTree (node)
 
 #guard run
   Expr.emptyset
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" []) =
+  (node "a" []) =
   Except.ok true
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
@@ -66,7 +66,7 @@ open ParseTree (field)
       Expr.epsilon
     )
   )
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok true
 
 #guard run
@@ -80,7 +80,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" []]) =
+  (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard run
@@ -96,5 +96,5 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true

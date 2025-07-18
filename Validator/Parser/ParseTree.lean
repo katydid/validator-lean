@@ -7,23 +7,23 @@ import Validator.Parser.Parser
 
 -- ParseTree is a Labelled Tree.
 inductive ParseTree where
-  | node (label: Token) (children: List ParseTree)
+  | mk (label: Token) (children: List ParseTree)
 
 namespace ParseTree
 
-def field (s: String) (children: List ParseTree): ParseTree :=
-  ParseTree.node (Token.string s) children
+def node (s: String) (children: List ParseTree): ParseTree :=
+  ParseTree.mk (Token.string s) children
 
 def str (s: String): ParseTree :=
-  ParseTree.node (Token.string s) []
+  ParseTree.mk (Token.string s) []
 
 def getLabel (t: ParseTree): Token :=
   match t with
-  | ParseTree.node l _ => l
+  | ParseTree.mk l _ => l
 
 def getChildren (t: ParseTree): List ParseTree :=
   match t with
-  | ParseTree.node _ c => c
+  | ParseTree.mk _ c => c
 
 inductive ParserState where
   | unknown (children: List ParseTree)
@@ -45,13 +45,13 @@ def nextNode
   [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf TreeParser m]
   (current: ParseTree) (nexts: List ParseTree): m Hint := do
   match current with
-  | ParseTree.node v [] =>
+  | ParseTree.mk v [] =>
     Stack.setCurrent (ParserState.value v nexts)
     return Hint.value
-  | ParseTree.node f [ParseTree.node v []] =>
+  | ParseTree.mk f [ParseTree.mk v []] =>
     Stack.setCurrent (ParserState.pair f v nexts)
     return Hint.field
-  | ParseTree.node f children =>
+  | ParseTree.mk f children =>
     Stack.setCurrent (ParserState.opened nexts)
     Stack.push (ParserState.field f children)
     return Hint.field
@@ -147,76 +147,76 @@ open Parser
 
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.next])
-  (field "a" []) =
+  (node "a" []) =
   Except.ok ["{", "V", "}"]
 
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "F", "{", "V", "F", "V", "}", "}"]
 
 -- walk next just two
 #guard TreeParser.run
   (walk [Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
   = Except.ok ["{", "F"]
 
 -- walk next to end
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
   = Except.ok ["{", "F", "{", "V", "F", "V", "}", "}", "$"]
 
 -- walk next to end and tokenize all
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
   = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
 -- walk next to end and tokenize all
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.next, Action.token, Action.next, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
   = Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "V", "d", "}", "}", "$"]
 
 -- walk skip
 #guard TreeParser.run
   (walk [Action.skip, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["$"]
 
 -- walk next skip
 #guard TreeParser.run
   (walk [Action.next, Action.skip, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "$"]
 
 -- walk next next skip
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.skip, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "F", "}", "$"]
 
 -- walk next next token skip
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "F", "a", "}", "$"]
 
 -- walk next next token next skip
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.skip, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "}", "$"]
 
 -- walk next next token next next token skip
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.skip, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "}", "$"]
 
 -- walk next next token next next token next token skip
 #guard TreeParser.run
   (walk [Action.next, Action.next, Action.token, Action.next, Action.next, Action.token, Action.next, Action.token, Action.skip, Action.next, Action.next, Action.next])
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"]

@@ -55,21 +55,21 @@ def validate {m} [Env m] (x: Expr): m Bool := do
 def run (x: Expr) (t: ParseTree): Except String Bool :=
   EnvTreeParserState.run (validate x) t
 
-open ParseTree (field)
+open ParseTree (node)
 
 #guard run
   Expr.emptyset
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" []) =
+  (node "a" []) =
   Except.ok true
 
 #guard run
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
@@ -78,7 +78,7 @@ open ParseTree (field)
       Expr.epsilon
     )
   )
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok true
 
 #guard run
@@ -92,7 +92,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" []]) =
+  (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard run
@@ -108,7 +108,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
 -- try to engage skip using emptyset, since it is unescapable
@@ -116,7 +116,7 @@ open ParseTree (field)
   (Expr.tree (Pred.eq (Token.string "a"))
     Expr.emptyset
   )
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
@@ -132,7 +132,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -144,7 +144,7 @@ open ParseTree (field)
       Expr.emptyset
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -158,7 +158,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
@@ -174,5 +174,5 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false

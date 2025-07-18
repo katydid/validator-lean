@@ -31,26 +31,26 @@ def testThatTestCacheBreaksWithEmptyCache (x: Expr) (t: ParseTree): Except Strin
   | EStateM.Result.error err _ => Except.error err
   | EStateM.Result.ok res _ => Except.ok res
 
-open ParseTree (field)
+open ParseTree (node)
 
 #guard testCacheIsHitOnSecondRun
   Expr.emptyset
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" []) =
+  (node "a" []) =
   Except.ok true
 
 #guard testThatTestCacheBreaksWithEmptyCache
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" []) =
+  (node "a" []) =
   Except.error "test cache miss"
 
 #guard testCacheIsHitOnSecondRun
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok false
 
 #guard testCacheIsHitOnSecondRun
@@ -59,7 +59,7 @@ open ParseTree (field)
       Expr.epsilon
     )
   )
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok true
 
 #guard testCacheIsHitOnSecondRun
@@ -73,7 +73,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" []]) =
+  (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard testCacheIsHitOnSecondRun
@@ -89,7 +89,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
 -- try to engage skip using emptyset, since it is unescapable
@@ -97,7 +97,7 @@ open ParseTree (field)
   (Expr.tree (Pred.eq (Token.string "a"))
     Expr.emptyset
   )
-  (field "a" [field "b" []]) =
+  (node "a" [node "b" []]) =
   Except.ok false
 
 #guard testCacheIsHitOnSecondRun
@@ -113,7 +113,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard testCacheIsHitOnSecondRun
@@ -125,7 +125,7 @@ open ParseTree (field)
       Expr.emptyset
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard testCacheIsHitOnSecondRun
@@ -139,7 +139,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard testCacheIsHitOnSecondRun
@@ -155,5 +155,5 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]]) =
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
