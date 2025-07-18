@@ -40,11 +40,11 @@ def leaves [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool): m (
   | [] =>
     match ns with
     | [] => return []
-    | _ => throw "nulls are left, but there are no expressions to place them in"
+    | _ => throw "Not all nulls were consumed, but there are no expressions to place them in."
   | (x::xs') =>
-    let (dx, tailns) <- leave x ns
-    let dxs <- leaves xs' tailns
-    return (dx::dxs)
+    let (lx, tailns) <- leave x ns
+    let lxs <- leaves xs' tailns
+    return (lx::lxs)
 
 class DeriveLeaves (m: Type -> Type u) where
   deriveLeaves (xs: List Expr) (ns: List Bool): m (List Expr)

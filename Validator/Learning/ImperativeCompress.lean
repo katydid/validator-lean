@@ -15,38 +15,36 @@ import Validator.Learning.ImperativeLeave
 
 namespace ImperativeCompress
 
+-- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
 def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) :=
   if List.all xs Expr.unescapable
   then Except.ok xs
   else
     match t with
     | ParseTree.node label children =>
-      let ifExprs: List IfExpr := Enter.enters xs
-      -- des == derivatives of enter
-      let des : List Expr := IfExpr.evals ifExprs label
-      -- NEW: compress
-      -- cdes compressed derivatives of enter
-      let cdes' : Except String ((List Expr) × Compress.Indices) := Compress.compress des
-      match cdes' with
+      let ifexprs: List IfExpr := Enter.enters xs
+      let childxs: List Expr := IfExpr.evals ifexprs label
+      -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
+      let cchildxs' : Except String ((List Expr) × Compress.Indices) := Compress.compress childxs
+      match cchildxs' with
       | Except.error err => Except.error err
-      | Except.ok (cdes, indices) =>
-        -- cdcs == compressed derivatives of children, the ' is for the exception it is wrapped in
-        -- see foldLoop for an explanation of what List.foldM does.
-        let cdcs' : Except String (List Expr) := List.foldlM deriv cdes children
-        match cdcs' with
-        | Except.error err => Except.error err
-        | Except.ok cdcs =>
-          -- NEW: expand
-          let dcs' := Compress.expand indices cdcs
-          match dcs' with
-          | Except.error err => Except.error err
-          | Except.ok dcs =>
-            -- dls == derivatives of leave, the ' is for the exception it is wrapped in
-            let dls': Except String (List Expr) := ImperativeLeave.leaves xs (List.map Expr.nullable dcs)
-            match dls' with
-            | Except.error err => Except.error err
-            | Except.ok dls =>
-              Except.ok dls
+      | Except.ok (cchildxs, indices) =>
+      -- cdchildxs = compressed derivatives of children. The ' is for the exception it is wrapped in.
+      -- see foldLoop for an explanation of what List.foldM does.
+      let cdchildxs' : Except String (List Expr) := List.foldlM deriv cchildxs children
+      match cdchildxs' with
+      | Except.error err => Except.error err
+      | Except.ok cdchildxs =>
+      -- dchildxs = uncompressed derivatives of children. The ' is for the exception it is wrapped in.
+      let dchildxs' := Compress.expand indices cdchildxs
+      match dchildxs' with
+      | Except.error err => Except.error err
+      | Except.ok dchildxs =>
+      -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
+      let dxs': Except String (List Expr) := ImperativeLeave.leaves xs (List.map Expr.nullable dchildxs)
+      match dxs' with
+      | Except.error err => Except.error err
+      | Except.ok dxs => Except.ok dxs
 
 def derivs (x: Expr) (forest: List ParseTree): Except String Expr :=
   -- see foldLoop for an explanation of what List.foldM does.

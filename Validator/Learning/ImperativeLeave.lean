@@ -54,14 +54,14 @@ def leaves (xs: List Expr) (ns: List Bool): Except String (List Expr) :=
   | [] =>
     match ns with
     | [] => Except.ok []
-    | _ => Except.error "nulls are left, but there are no expressions to place them in"
+    | _ => Except.error "Not all nulls were consumed, but there are no expressions to place them in."
   | (x::xs') =>
-    let dl: Except String (Expr × List Bool) := leave x ns
-    match dl with
+    let lx': Except String (Expr × List Bool) := leave x ns
+    match lx' with
     | Except.error err => Except.error err
-    | Except.ok (dx, tailns) =>
-      let dls: Except String (List Expr) := leaves xs' tailns
-      match dls with
-      | Except.error err => Except.error err
-      | Except.ok dxs' =>
-        Except.ok (dx::dxs')
+    | Except.ok (lx, tailns) =>
+    let lxs': Except String (List Expr) := leaves xs' tailns
+    match lxs' with
+    | Except.error err => Except.error err
+    | Except.ok lxs =>
+      Except.ok (lx::lxs)

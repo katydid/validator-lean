@@ -16,23 +16,23 @@ private def foldLoop (deriv: Expr -> ParseTree -> Expr) (start: Expr) (forest: L
     res := deriv res tree
   return res
 
-partial def derive (x: Expr) (t: ParseTree): Expr :=
+partial def derive (x: Expr) (tree: ParseTree): Expr :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childrenExpr =>
     -- This is the only rule that differs from regular expressions.
     -- Although if we view this as a complicated predicate, then actually there is no difference.
-    if Pred.eval labelPred (ParseTree.getLabel t)
-    && Expr.nullable (List.foldl derive childrenExpr (ParseTree.getChildren t))
+    if Pred.eval labelPred (ParseTree.getLabel tree)
+    && Expr.nullable (List.foldl derive childrenExpr (ParseTree.getChildren tree))
     then Expr.epsilon
     else Expr.emptyset
-  | Expr.or y z => Expr.or (derive y t) (derive z t)
+  | Expr.or y z => Expr.or (derive y tree) (derive z tree)
   | Expr.concat y z =>
     if Expr.nullable y
-    then Expr.or (Expr.concat (derive y t) z) (derive z t)
-    else Expr.concat (derive y t) z
-  | Expr.star y => Expr.concat (derive y t) (Expr.star y)
+    then Expr.or (Expr.concat (derive y tree) z) (derive z tree)
+    else Expr.concat (derive y tree) z
+  | Expr.star y => Expr.concat (derive y tree) (Expr.star y)
 
 partial def validate (x: Expr) (forest: List ParseTree): Bool :=
   Expr.nullable (List.foldl derive x forest)

@@ -34,23 +34,23 @@ partial def derive [Env m] (xs: List Expr): m (List Expr) := do
     Parser.skip; return xs
   match <- Parser.next with
   | Hint.field =>
-    let xsEnter <- deriveEnter xs -- derive enter field
-    let xsChild <-
+    let childxs <- deriveEnter xs -- derive enter field
+    let dchildxs <-
       match <- Parser.next with
-      | Hint.value => deriveValue xsEnter -- derive child value
+      | Hint.value => deriveValue childxs -- derive child value
       | Hint.enter =>
-        let (xsCompress, indices) <- Compress.compressM xsEnter -- NEW: compress
-        let xsCompressed <- derive xsCompress -- derive children, until return from a Hint.leave
-        Compress.expandM indices xsCompressed -- NEW: expand
+        let (cchildxs, indices) <- Compress.compressM childxs -- NEW: compress
+        let cdchildxs <- derive cchildxs -- derive children, until return from a Hint.leave
+        Compress.expandM indices cdchildxs -- NEW: expand
       | hint => throw s!"unexpected {hint}"
-    let xsLeave <- deriveLeave xs xsChild -- derive leave field
+    let xsLeave <- deriveLeave xs dchildxs -- derive leave field
     derive xsLeave -- deriv next
   | Hint.value => deriveValue xs >>= derive -- derive value and then derive next
   | Hint.enter =>
-    let (xsCompress, indices) <- Compress.compressM xs -- NEW: compress
-    let xsCompressed <- derive xsCompress -- derive children, until return from a Hint.leave
-    let xsEpand <- Compress.expandM indices xsCompressed -- NEW: expand
-    derive xsEpand -- derive next
+    let (cchildxs, indices) <- Compress.compressM xs -- NEW: compress
+    let cdchildxs <- derive cchildxs -- derive children, until return from a Hint.leave
+    let dchildxs <- Compress.expandM indices cdchildxs -- NEW: expand
+    derive dchildxs -- derive next
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 

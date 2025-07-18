@@ -19,13 +19,14 @@ def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
   else
     match t with
     | ParseTree.node label children =>
+      -- enters is one of our two new memoizable functions.
       let ifExprs: List IfExpr := Enter.enters xs
-      -- des == derivatives of enter
-      let des : List Expr := IfExpr.evals ifExprs label
-      -- cdcs == compressed derivatives of children
-      let dcs <- List.foldlM deriv des children
-      -- dls == derivatives of leave, the ' is for the exception it is wrapped in
-      Leave.leaves xs (List.map Expr.nullable dcs)
+      -- childxs = expressions to evaluate on children.
+      let childxs : List Expr := IfExpr.evals ifExprs label
+      -- dchildxs = derivatives of children.
+      let dchildxs <- List.foldlM deriv childxs children
+      -- leaves is the other one of our two new memoizable functions.
+      Leave.leaves xs (List.map Expr.nullable dchildxs)
 
 def derivs (x: Expr) (forest: List ParseTree): Except String Expr := do
   let dxs <- List.foldlM deriv [x] forest
