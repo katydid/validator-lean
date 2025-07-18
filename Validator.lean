@@ -19,6 +19,7 @@ import Validator.Deriv.Env
 import Validator.Deriv.EnvTreeParserState
 import Validator.Deriv.EnvTreeParserIO
 import Validator.Deriv.EnvTreeParserStateWithMem
+import Validator.Deriv.EnvTreeParserStateWithMemTest
 import Validator.Deriv.Leave
 import Validator.Deriv.LeaveVerbose
 import Validator.Deriv.TreeConcise
@@ -31,5 +32,6 @@ import Validator.Deriv.MemEnter
 import Validator.Deriv.MemLeave
 import Validator.Deriv.ParserConcise
 import Validator.Deriv.ParserConciseMem
+import Validator.Deriv.ParserConciseMemTest
 import Validator.Deriv.ParserConciseCompress
 import Validator.Deriv.ParserConciseCompressMem

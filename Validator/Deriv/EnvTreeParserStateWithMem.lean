@@ -77,3 +77,8 @@ def run (f: TreeParserStateWithMem α) (t: ParseTree): Except String α :=
   match EStateM.run f (TreeParserStateWithMem.mk (ParseTree.TreeParser.mk t)) with
   | EStateM.Result.ok k _ => Except.ok k
   | EStateM.Result.error err _ => Except.error err
+
+def run' (f: TreeParserStateWithMem α) (t: ParseTree): EStateM.Result String (MemEnter.EnterMap × MemLeave.LeaveMap) α :=
+  match EStateM.run f (TreeParserStateWithMem.mk (ParseTree.TreeParser.mk t)) with
+  | EStateM.Result.ok res s => EStateM.Result.ok res (s.enter, s.leave)
+  | EStateM.Result.error err s => EStateM.Result.error err (s.enter, s.leave)

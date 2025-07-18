@@ -80,8 +80,11 @@ def run (f: TreeParserIO α) (t: ParseTree): EIO String α :=
   StateT.run' f (TreeParserIO.mk (ParseTree.TreeParser.mk t))
 
 -- runTwice is used to check if the cache was hit on the second run
-def runTwice (f: TreeParserIO α) (t: ParseTree): EIO String α := do
+def runTwice [DecidableEq α] (f: TreeParserIO α) (t: ParseTree): EIO String α := do
   let initial := TreeParserIO.mk (ParseTree.TreeParser.mk t)
-  let (_res, updated) <- StateT.run f initial
+  let (res1, updated) <- StateT.run f initial
   _ <- EIO.println "start second run"
-  StateT.run' f (TreeParserAndMem.mk (ParseTree.TreeParser.mk t) updated.enter updated.leave)
+  let res2 <- StateT.run' f (TreeParserAndMem.mk (ParseTree.TreeParser.mk t) updated.enter updated.leave)
+  if res1 ≠ res2
+  then throw "memoization changed result"
+  else return res1
