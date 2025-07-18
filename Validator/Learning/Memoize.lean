@@ -1,13 +1,13 @@
 import Validator.Parser.ParseTree
 
-import Validator.Deriv.Env
-import Validator.Deriv.EnvTreeParserStateWithMem
+import Validator.Env.EnvM
+import Validator.Env.EnvTreeParserStateWithMem
 
 import Validator.Learning.Parser
 
 namespace Memoize
 
-def validate {m} [Env m] (x: Expr): m Bool :=
+def validate {m} [EnvM m] (x: Expr): m Bool :=
   Parser.validate x
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=

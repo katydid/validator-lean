@@ -1,4 +1,4 @@
-import Validator.Deriv.Env
+import Validator.Env.EnvM
 
 namespace EnvTreeParserState
 
@@ -23,7 +23,7 @@ instance : Enter.DeriveEnter TreeParserState where
 instance : Leave.DeriveLeave TreeParserState where
   deriveLeave xs ns := Leave.deriveLeave xs ns
 
-instance : Env TreeParserState where
+instance : EnvM TreeParserState where
   -- all instances have been created, so no implementations are required here
 
 def run (x: TreeParserState α) (t: ParseTree): Except String α :=

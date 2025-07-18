@@ -1,6 +1,6 @@
 import Validator.Std.Debug
 
-import Validator.Deriv.Env
+import Validator.Env.EnvM
 import Validator.Memoize.MemEnter
 import Validator.Memoize.MemLeave
 
@@ -70,7 +70,7 @@ instance : MemLeave.MemLeave TreeParserStateWithMem where
 instance : Leave.DeriveLeave TreeParserStateWithMem where
   deriveLeave (xs: List Expr) (ns: List Bool): TreeParserStateWithMem (List Expr) := MemLeave.deriveLeave xs ns
 
-instance : Env TreeParserStateWithMem where
+instance : EnvM TreeParserStateWithMem where
   -- all instances have been created, so no implementations are required here
 
 def run (f: TreeParserStateWithMem α) (t: ParseTree): Except String α :=

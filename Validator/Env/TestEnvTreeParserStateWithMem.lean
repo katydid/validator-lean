@@ -1,12 +1,12 @@
 import Validator.Std.Debug
 
-import Validator.Deriv.Env
 import Validator.Memoize.MemEnter
 import Validator.Memoize.MemLeave
 
-import Validator.Deriv.EnvTreeParserStateWithMem
+import Validator.Env.EnvTreeParserStateWithMem
+import Validator.Env.EnvM
 
-namespace EnvTreeParserStateWithMemTest
+namespace TestEnvTreeParserStateWithMem
 
 structure TreeParserAndMemTest where
   parser: ParseTree.TreeParser
@@ -88,7 +88,7 @@ instance : Leave.DeriveLeave TreeParserStateWithMemTest where
       Debug.debug "test cache hit"
       return value
 
-instance : Env TreeParserStateWithMemTest where
+instance : EnvM TreeParserStateWithMemTest where
   -- all instances have been created, so no implementations are required here
 
 def run (f: TreeParserStateWithMemTest α) (t: ParseTree): Except String α :=

@@ -1,13 +1,14 @@
 import Validator.Parser.ParseTree
 
-import Validator.Deriv.Env
-import Validator.Deriv.EnvTreeParserIO
-import Validator.Deriv.ParserConciseCompress
+import Validator.Deriv.Validate
 
-namespace EnvTreeParserIOTest
+import Validator.Env.EnvTreeParserIO
+import Validator.Env.EnvM
 
-def validate {m} [Env m] (x: Expr): m Bool :=
-  ParserConciseCompress.validate x
+namespace TestEnvTreeParserIO
+
+def validate {m} [EnvM m] (x: Expr): m Bool :=
+  Validate.validate x
 
 unsafe def run (x: Expr) (t: ParseTree): Except String Bool :=
   unsafeEIO (EnvTreeParserIO.run (validate x) t)
@@ -16,19 +17,19 @@ unsafe def run (x: Expr) (t: ParseTree): Except String Bool :=
 unsafe def runTwice (x: Expr) (t: ParseTree): Except String Bool :=
   unsafeEIO (EnvTreeParserIO.runTwice (validate x) t)
 
-open ParseTree (field)
+open ParseTree (node)
 
 #eval runTwice
   Expr.emptyset
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" [])
+  (node "a" [])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (field "a" [field "b" []])
+  (node "a" [node "b" []])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
@@ -36,7 +37,7 @@ open ParseTree (field)
       Expr.epsilon
     )
   )
-  (field "a" [field "b" []])
+  (node "a" [node "b" []])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
@@ -49,7 +50,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" []])
+  (node "a" [node "b" [], node "c" []])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
@@ -64,14 +65,14 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- try to engage skip using emptyset, since it is unescapable
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
     Expr.emptyset
   )
-  (field "a" [field "b" []])
+  (node "a" [node "b" []])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
@@ -86,7 +87,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
@@ -97,7 +98,7 @@ open ParseTree (field)
       Expr.emptyset
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
@@ -110,7 +111,7 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
 
 #eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
@@ -125,4 +126,4 @@ open ParseTree (field)
       )
     )
   )
-  (field "a" [field "b" [], field "c" [field "d" []]])
+  (node "a" [node "b" [], node "c" [node "d" []]])
