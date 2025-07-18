@@ -6,7 +6,11 @@ Proofs written in [Lean4](https://leanprover.github.io/) for the core [katydid](
 
 ## Goal
 
-The goal is to formalize the core [katydid](https://katydid.github.io/) validation algorithm.  This algorithm allows us to validate millions of serialized data structures per second on a single core. The algorithm is based on derivatives for regular expressions and extends this to Visibly Pushdown Automata (VPA), by splitting the derivative function into two functions. It also includes several basic optimizations, such as memoization, simplification, laziness, zipping of multiple states, short circuiting, evaluation at compilation, symbolic derivatives and a pull based parser for serialized data structures that allows us to skip over some of the parsing.  You can play around with the validation language on its [playground](http://katydid.github.io/play/).
+The goal is to formalize the core [katydid](https://katydid.github.io/) validation algorithm.
+This algorithm allows us to validate millions of serialized data structures per second on a single core.
+The algorithm is based on derivatives for regular expressions and extends this to Visibly Pushdown Automata (VPA), by splitting the derivative function into two functions.
+It also includes several basic optimizations, such as memoization, simplification, laziness, zipping of multiple states, short circuiting, evaluation at compilation, symbolic derivatives and a pull based parser for serialized data structures that allows us to skip over some of the parsing. 
+You can play around with the validation language on its [playground](http://katydid.github.io/play/).
 
 ## Plan
 
@@ -14,7 +18,7 @@ This is just a quick overview of the steps towards our goal.
 
 - [ ] Create Language definition for the symbolic tree expressions.
 - [ ] Code Pull-based Parser class in Lean and implement JSON as an example.
-- [ ] Code Katydid validator algorithm in Lean.
+- [x] Code Katydid validator algorithm in Lean.
 - [ ] Prove correctness of derivative tree algorithm.
 - [ ] Prove decidablity of derivative tree algorithm.
 - [ ] Prove that the simple tree function and the VPA functions are equivalent and equivalent to the inductive predicate.
@@ -26,10 +30,10 @@ This is just a quick overview of the steps towards our goal.
 The contributing guidelines are short and shouldn't be surprising.
 Read the [contributing guidelines](./CONTRIBUTING.md).
 
-## Learning Lean
+## Learning
 
-If you find this repo interesting, but feel you missing some foundational concepts, then we have a [learning repo for you](https://github.com/katydid/regex-deriv-lean).
-This repo has pointers to learning Dependent Types, Lean and Derivatives for Regular Expressions.
+* An explanation of the core [validator algorithm](./Validator/Learning/Readme.md)
+* [learnings about Lean](./learnings/) we had while creating this code.
 
 ## Setup
 

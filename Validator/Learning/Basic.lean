@@ -1,5 +1,4 @@
--- TreeConciseCompress is a memoizable version of the validation algorithm.
--- On top of TreeConcise it also includes compress and expand, which is more efficient.
+-- Basic is a memoizable version of the validation algorithm.
 -- It is intended to be used for explanation purposes. This means that it gives up speed for readability. Thus it has no memoization implemented.
 -- This version of the algorithm uses Monads to create a more concisely readible version of the algorithm.
 
@@ -12,7 +11,7 @@ import Validator.Expr.IfExpr
 import Validator.Deriv.Enter
 import Validator.Deriv.Leave
 
-namespace TreeConciseCompress
+namespace Basic
 
 def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
   if List.all xs Expr.unescapable
@@ -23,13 +22,8 @@ def deriv (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
       let ifExprs: List IfExpr := Enter.enters xs
       -- des == derivatives of enter
       let des : List Expr := IfExpr.evals ifExprs label
-      -- NEW: compress
-      -- cdes compressed derivatives of enter
-      let (cdes, indices) <- Compress.compress des
       -- cdcs == compressed derivatives of children
-      let cdcs <- List.foldlM deriv cdes children
-      -- NEW: expand
-      let dcs <- Compress.expand indices cdcs
+      let dcs <- List.foldlM deriv des children
       -- dls == derivatives of leave, the ' is for the exception it is wrapped in
       Leave.leaves xs (List.map Expr.nullable dcs)
 
@@ -45,6 +39,8 @@ def validate (x: Expr) (forest: List ParseTree): Except String Bool := do
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
   validate x [t]
+
+-- Tests
 
 open ParseTree (field)
 

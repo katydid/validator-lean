@@ -1,14 +1,14 @@
--- LeaveVerbose.lean is an implementation of Leave.lean that does not use monads, so it is more verbose.
+-- ImperativeLeave.lean is an implementation of Leave.lean that does not use monads, so it is more verbose.
 -- This is supposed to make it easier to understand for programmers that have not used monads before.
 
 import Validator.Expr.Expr
 
-namespace LeaveVerbose
+namespace ImperativeLeave
 
 def leave (x: Expr) (ns: List Bool): Except String (Expr × List Bool) :=
   match x with
   | Expr.emptyset => Except.ok (Expr.emptyset, ns)
-  | Expr.epsilon => Except.ok (Expr.epsilon, ns)
+  | Expr.epsilon => Except.ok (Expr.emptyset, ns)
   | Expr.tree _ _ =>
     match ns with
     | [] => Except.error "wtf"

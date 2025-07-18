@@ -1,4 +1,4 @@
--- TreeOriginal is the original derivative algorithm that runs on a labelled tree.
+-- Original is the original derivative algorithm that runs on a labelled tree.
 -- It is intended to be used for explanation purposes.
 -- This version cannot be memoized effectively, but it is the easiest version to understand.
 
@@ -7,7 +7,14 @@ import Validator.Parser.ParseTree
 import Validator.Expr.Pred
 import Validator.Expr.Expr
 
-namespace TreeOriginal
+namespace Original
+
+-- foldLoop is a more readable version of List.foldl for imperative programmers:
+private def foldLoop (deriv: Expr -> ParseTree -> Expr) (start: Expr) (forest: List ParseTree): Id Expr := do
+  let mut res := start
+  for tree in forest do
+    res := deriv res tree
+  return res
 
 partial def derive (x: Expr) (t: ParseTree): Expr :=
   match x with
@@ -32,6 +39,9 @@ partial def validate (x: Expr) (forest: List ParseTree): Bool :=
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
   Except.ok (validate x [t])
+
+-- Tests
+-- Lean can use #guard to run these tests at compile time.
 
 open ParseTree (field)
 
