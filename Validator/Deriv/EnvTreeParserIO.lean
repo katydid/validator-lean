@@ -1,73 +1,87 @@
+import Validator.Std.Debug
+
 import Validator.Deriv.Env
+import Validator.Deriv.MemEnter
+import Validator.Deriv.MemLeave
 
 namespace EnvTreeParserIO
 
 structure TreeParserAndMem where
   parser: ParseTree.TreeParser
-  enter: Mem.MemEnter
-  leave: Mem.MemLeave
+  enter: MemEnter.EnterMap
+  leave: MemLeave.LeaveMap
 
-abbrev TreeParserIO α := StateT TreeParserAndMem (EIO String) α
+abbrev TreeParserIO (α: Type) := StateT TreeParserAndMem (EIO String) α
 
 def TreeParserIO.mk (p: ParseTree.TreeParser): TreeParserAndMem :=
-  TreeParserAndMem.mk p Std.ExtHashMap.emptyWithCapacity Std.ExtHashMap.emptyWithCapacity
+  TreeParserAndMem.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk
 
-def print (s: String): StateT TreeParserAndMem (EIO String) Unit := do
-  StateT.lift (IO.toEIO (fun x => "ERROR: " ++ x.toString) (IO.println s))
+def EIO.println [ToString α] (x: α): EIO String Unit :=
+  IO.toEIO (fun x => "ERROR: " ++ x.toString) (IO.println x)
 
--- TODO: find better way to write exactly the same code for each method.
--- There has to be shorter way to lift accross these monads.
-instance : Parser TreeParserIO where
-  next := do
-    print "next"
-    let s <- get
-    match StateT.run ParseTree.next s.parser with
-    | Except.ok (res, parser') =>
-      set (TreeParserAndMem.mk parser' s.enter s.leave)
-      return res
-    | Except.error err =>
-      throw err
-  skip := do
-    print "skip"
-    let s <- get
-    match StateT.run ParseTree.skip s.parser with
-    | Except.ok (res, parser') =>
-      set (TreeParserAndMem.mk parser' s.enter s.leave)
-      return res
-    | Except.error err =>
-      throw err
-  token := do
-    print "token"
-    let s <- get
-    match StateT.run ParseTree.token s.parser with
-    | Except.ok (res, parser') =>
-      set (TreeParserAndMem.mk parser' s.enter s.leave)
-      return res
-    | Except.error err =>
-      throw err
+instance : Debug TreeParserIO where
+  debug (line: String) := StateT.lift (EIO.println line)
 
+instance: MonadStateOf ParseTree.TreeParser TreeParserIO where
+  get : TreeParserIO ParseTree.TreeParser := do
+    let s <- StateT.get
+    return s.parser
+  set : ParseTree.TreeParser → TreeParserIO PUnit :=
+    fun parser => do
+      let s <- StateT.get
+      set (TreeParserAndMem.mk parser s.enter s.leave)
+  modifyGet {α: Type}: (ParseTree.TreeParser → Prod α ParseTree.TreeParser) → TreeParserIO α :=
+    fun f => do
+      let s <- StateT.get
+      let (res, parser) := f s.parser
+      set (TreeParserAndMem.mk parser s.enter s.leave)
+      return res
+
+instance
+  [Monad TreeParserIO] -- EStateM is monad
+  [Debug TreeParserIO] -- Debug instance is declared above
+  [MonadExcept String TreeParserIO] -- EStateM String is MonadExcept String
+  [MonadStateOf ParseTree.TreeParser TreeParserIO] -- MonadStateOf ParseTree.TreeParser is declared above
+  : Parser TreeParserIO where -- This should just follow, but apparently we need to spell it out
+  next := Parser.next
+  skip := Parser.skip
+  token := Parser.token
+
+instance : MemEnter.MemEnter TreeParserIO where
+  getEnter : TreeParserIO MemEnter.EnterMap := do
+    let s <- StateT.get
+    return s.enter
+  setEnter : MemEnter.EnterMap → TreeParserIO PUnit :=
+    fun enter => do
+      let s <- StateT.get
+      set (TreeParserAndMem.mk s.parser enter s.leave)
+
+-- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
 instance : Enter.DeriveEnters TreeParserIO where
-  deriveEnters xs := do
-    print "deriveEnters"
-    let s <- get
-    match StateT.run (m := Id) (Mem.enters xs) s.enter with
-    | (res, enter') =>
-      set (TreeParserAndMem.mk s.parser enter' s.leave)
-      return res
+  deriveEnters (xs: List Expr): TreeParserIO (List IfExpr) := MemEnter.enter xs
 
+instance : MemLeave.MemLeave TreeParserIO where
+  getLeave : TreeParserIO MemLeave.LeaveMap := do
+    let s <- StateT.get
+    return s.leave
+  setLeave : MemLeave.LeaveMap → TreeParserIO PUnit :=
+    fun leave => do
+      let s <- StateT.get
+      set (TreeParserAndMem.mk s.parser s.enter leave)
+
+-- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
 instance : Leave.DeriveLeaves TreeParserIO where
-  deriveLeaves xs ns := do
-    print "deriveLeaves"
-    let s <- get
-    match StateT.run (Mem.leaves xs ns) s.leave with
-    | Except.ok (res, leave') =>
-      set (TreeParserAndMem.mk s.parser s.enter leave')
-      return res
-    | Except.error err =>
-      throw err
+  deriveLeaves (xs: List Expr) (ns: List Bool): TreeParserIO (List Expr) := MemLeave.leave xs ns
 
 instance : Env TreeParserIO where
   -- all instances have been created, so no implementations are required here
 
 def run (f: TreeParserIO α) (t: ParseTree): EIO String α :=
   StateT.run' f (TreeParserIO.mk (ParseTree.TreeParser.mk t))
+
+-- runTwice is used to check if the cache was hit on the second run
+def runTwice (f: TreeParserIO α) (t: ParseTree): EIO String α := do
+  let initial := TreeParserIO.mk (ParseTree.TreeParser.mk t)
+  let (_res, updated) <- StateT.run f initial
+  _ <- EIO.println "start second run"
+  StateT.run' f (TreeParserAndMem.mk (ParseTree.TreeParser.mk t) updated.enter updated.leave)

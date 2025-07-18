@@ -1,3 +1,5 @@
+import Validator.Std.Debug
+
 import Validator.Parser.Parser
 import Validator.Parser.ParseTree
 
@@ -13,6 +15,7 @@ import Validator.Deriv.Mem
 -- Tagless final class inspired by https://jproyo.github.io/posts/2019-03-17-tagless-final-haskell/
 class Env (m: Type -> Type u) extends
   Monad m,
+  Debug m,
   MonadExcept String m,
   Parser m,
   Enter.DeriveEnters m,

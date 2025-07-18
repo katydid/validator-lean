@@ -4,6 +4,19 @@ namespace EnvTreeParserState
 
 abbrev TreeParserState α := EStateM String ParseTree.TreeParser α
 
+instance : Debug TreeParserState where
+  debug (_line: String) := return ()
+
+instance
+  [Monad TreeParserState] -- EStateM is monad
+  [Debug TreeParserState] -- Debug instance is declared above
+  [MonadExcept String TreeParserState] -- EStateM String is MonadExcept String
+  [MonadStateOf ParseTree.TreeParser TreeParserState] -- EStateM ε ParseTree.TreeParser is a MonadStateOf ParseTree.TreeParser
+  : Parser TreeParserState where -- This should just follow, but apparently we need to spell it out
+  next := Parser.next
+  skip := Parser.skip
+  token := Parser.token
+
 instance : Enter.DeriveEnters TreeParserState where
   deriveEnters xs := return Enter.enters xs
 

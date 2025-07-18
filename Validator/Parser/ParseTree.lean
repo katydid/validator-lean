@@ -1,3 +1,4 @@
+import Validator.Std.Debug
 import Validator.Std.Except
 
 import Validator.Parser.Token
@@ -41,7 +42,7 @@ def TreeParser.mk (t: ParseTree): TreeParser :=
   Stack.mk (ParserState.unknown [t]) []
 
 def nextNode
-  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf TreeParser m]
   (current: ParseTree) (nexts: List ParseTree): m Hint := do
   match current with
   | ParseTree.node v [] =>
@@ -56,8 +57,9 @@ def nextNode
     return Hint.field
 
 def next
-  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf TreeParser m]
   : m Hint := do
+  Debug.debug "next"
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown f =>
@@ -85,8 +87,9 @@ def next
     return Hint.eof
 
 def skip
-  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf TreeParser m]
   : m Unit := do
+  Debug.debug "skip"
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
@@ -111,8 +114,9 @@ def skip
     return ()
 
 def token
-  [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m]
+  [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf TreeParser m]
   : m Token := do
+  Debug.debug "token"
   let curr <- Stack.getCurrent
   match curr with
   | ParserState.unknown _ =>
@@ -128,13 +132,16 @@ def token
   | ParserState.eof =>
     throw "unknown"
 
-instance [Monad m] [MonadExcept String m] [MonadStateOf TreeParser m] : Parser m where
+instance [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf TreeParser m] : Parser m where
   next := next
   skip := skip
   token := token
 
 def TreeParser.run (x: StateT TreeParser (Except String) α) (t: ParseTree): Except String α :=
   StateT.run' x (TreeParser.mk t)
+
+instance : Debug (StateT TreeParser (Except String)) where
+  debug (_: String) := return ()
 
 open Parser
 

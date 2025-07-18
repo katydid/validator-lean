@@ -1,3 +1,5 @@
+import Validator.Std.Debug
+
 import Validator.Parser.Hint
 import Validator.Parser.Token
 
@@ -22,7 +24,7 @@ inductive Action where
   | skip
   | token
 
-def walk [Monad m] [Parser m] (actions: List Action) (logs: List String := []): m (List String) := do
+def walk [Monad m] [Debug m] [Parser m] (actions: List Action) (logs: List String := []): m (List String) := do
   match actions with
   | [] => return List.reverse logs
   | (Action.next::rest) => do

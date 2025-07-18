@@ -12,6 +12,10 @@ def validate {m} [Env m] (x: Expr): m Bool :=
 unsafe def run (x: Expr) (t: ParseTree): Except String Bool :=
   unsafeEIO (EnvTreeParserIO.run (validate x) t)
 
+-- runTwice is used to check if the cache was hit on the second run
+unsafe def runTwice (x: Expr) (t: ParseTree): Except String Bool :=
+  unsafeEIO (EnvTreeParserIO.runTwice (validate x) t)
+
 open ParseTree (field)
 
 #eval run
@@ -108,7 +112,7 @@ open ParseTree (field)
   )
   (field "a" [field "b" [], field "c" [field "d" []]])
 
-#eval run
+#eval runTwice
   (Expr.tree (Pred.eq (Token.string "a"))
     (Expr.concat
       (Expr.tree (Pred.eq (Token.string "b"))
