@@ -33,13 +33,13 @@ partial def derive [Env m] (xs: List Expr): m (List Expr) := do
     Parser.skip; return xs
   match <- Parser.next with
   | Hint.field =>
-    let xsEnter <- deriveEnter xs -- derive enter field
-    let xsChild <-
+    let childxs <- deriveEnter xs -- derive enter field
+    let dchildxs <-
       match <- Parser.next with
-      | Hint.value => deriveValue xsEnter -- derive child value
-      | Hint.enter => derive xsEnter -- derive children, until return from a Hint.leave
+      | Hint.value => deriveValue childxs -- derive child value
+      | Hint.enter => derive childxs -- derive children, until return from a Hint.leave
       | hint => throw s!"unexpected {hint}"
-    let xsLeave <- deriveLeave xs xsChild -- derive leave field
+    let xsLeave <- deriveLeave xs dchildxs -- derive leave field
     derive xsLeave -- deriv next
   | Hint.value => deriveValue xs >>= derive -- derive value and then derive next
   | Hint.enter => derive xs >>= derive -- derive children, until return from a Hint.leave and then derive next
