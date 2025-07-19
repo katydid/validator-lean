@@ -8,37 +8,38 @@ import Validator.Memoize.MemLeave
 
 import Validator.Validator.ValidateM
 
-namespace TreeParserIO
+namespace TreeParserMemLogM
 
 structure State where
   parser: TreeParser.TreeParser
   enter: MemEnter.EnterMap
   leave: MemLeave.LeaveMap
+  logs : List String
 
-abbrev Impl (α: Type) := StateT State (EIO String) α
+abbrev Impl α := EStateM String State α
 
 def Impl.mk (p: TreeParser.TreeParser): State :=
-  State.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk
-
-def EIO.println [ToString α] (x: α): EIO String Unit :=
-  IO.toEIO (fun x => "ERROR: " ++ x.toString) (IO.println x)
+  State.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk []
 
 instance : Debug Impl where
-  debug (line: String) := StateT.lift (EIO.println line)
+  debug (line: String) := do
+    let s <- EStateM.get
+    set (State.mk s.parser s.enter s.leave (s.logs ++ [line]))
+    return ()
 
 instance: MonadStateOf TreeParser.TreeParser Impl where
   get : Impl TreeParser.TreeParser := do
-    let s <- StateT.get
+    let s <- EStateM.get
     return s.parser
   set : TreeParser.TreeParser → Impl PUnit :=
     fun parser => do
-      let s <- StateT.get
-      set (State.mk parser s.enter s.leave)
+      let s <- EStateM.get
+      EStateM.set (State.mk parser s.enter s.leave s.logs)
   modifyGet {α: Type}: (TreeParser.TreeParser → Prod α TreeParser.TreeParser) → Impl α :=
     fun f => do
-      let s <- StateT.get
+      let s <- EStateM.get
       let (res, parser) := f s.parser
-      set (State.mk parser s.enter s.leave)
+      EStateM.set (State.mk parser s.enter s.leave s.logs)
       return res
 
 instance
@@ -53,12 +54,12 @@ instance
 
 instance : MemEnter.MemEnter Impl where
   getEnter : Impl MemEnter.EnterMap := do
-    let s <- StateT.get
+    let s <- EStateM.get
     return s.enter
   setEnter : MemEnter.EnterMap → Impl PUnit :=
     fun enter => do
-      let s <- StateT.get
-      set (State.mk s.parser enter s.leave)
+      let s <- EStateM.get
+      set (State.mk s.parser enter s.leave s.logs)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
 instance : Enter.DeriveEnter Impl where
@@ -66,12 +67,12 @@ instance : Enter.DeriveEnter Impl where
 
 instance : MemLeave.MemLeave Impl where
   getLeave : Impl MemLeave.LeaveMap := do
-    let s <- StateT.get
+    let s <- EStateM.get
     return s.leave
   setLeave : MemLeave.LeaveMap → Impl PUnit :=
     fun leave => do
-      let s <- StateT.get
-      set (State.mk s.parser s.enter leave)
+      let s <- EStateM.get
+      set (State.mk s.parser s.enter leave s.logs)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
 instance : Leave.DeriveLeave Impl where
@@ -80,5 +81,13 @@ instance : Leave.DeriveLeave Impl where
 instance : ValidateM Impl where
   -- all instances have been created, so no implementations are required here
 
-def run' (f: Impl α) (t: ParseTree): EIO String α :=
-  StateT.run' f (Impl.mk (TreeParser.TreeParser.mk t))
+def run (f: Impl α) (t: ParseTree): EStateM.Result String State α :=
+  EStateM.run f (Impl.mk (TreeParser.TreeParser.mk t))
+
+def run' (f: Impl α) (t: ParseTree): (List String × (Except String α)) :=
+  match EStateM.run f (Impl.mk (TreeParser.TreeParser.mk t)) with
+  | EStateM.Result.ok res s => (s.logs, Except.ok res)
+  | EStateM.Result.error err s => (s.logs, Except.error err)
+
+def runPopulatedMem (f: Impl α) (t: ParseTree) (e: MemEnter.EnterMap) (l: MemLeave.LeaveMap): EStateM.Result String State α :=
+  EStateM.run f (State.mk (TreeParser.TreeParser.mk t) e l [])

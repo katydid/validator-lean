@@ -11,7 +11,7 @@ def validate {m} [ValidateM m] (x: Expr): m Bool :=
   Parser.validate x
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  TreeParserMemM.run (validate x) t
+  TreeParserMemM.run' (validate x) t
 
 -- Tests
 

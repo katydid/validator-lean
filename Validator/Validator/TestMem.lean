@@ -1,26 +1,25 @@
 import Validator.Parser.ParseTree
 
 import Validator.Validator.Validate
-
 import Validator.Validator.ValidateM
 import Validator.Validator.Inst.TreeParserMemM
 import Validator.Validator.Inst.TreeParserMemTestM
 
-namespace TestMemoize
+namespace TestMem
 
 def validate {m} [ValidateM m] (x: Expr): m Bool :=
   Validate.validate x
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  TreeParserMemM.run (validate x) t
+  TreeParserMemM.run' (validate x) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun (x: Expr) (t: ParseTree): Except String Bool :=
-  match TreeParserMemM.run' (validate x) t with
+  match TreeParserMemM.run (validate x) t with
   | EStateM.Result.error err _ => Except.error err
-  | EStateM.Result.ok res1 (populatedEnter, populatedLeave) =>
-    match TreeParserMemTestM.run' (validate x) t populatedEnter populatedLeave with
+  | EStateM.Result.ok res1 state =>
+    match TreeParserMemTestM.runPopulatedMem (validate x) t state.enter state.leave with
     | EStateM.Result.error err _ => Except.error err
     | EStateM.Result.ok res2 _ =>
       if res1 ≠ res2
@@ -30,9 +29,7 @@ def testCacheIsHitOnSecondRun (x: Expr) (t: ParseTree): Except String Bool :=
 -- A negaive test for the test above
 -- This tests that given an empty cache the test does actually fail.
 def testThatTestCacheBreaksWithEmptyCache (x: Expr) (t: ParseTree): Except String Bool :=
-  match TreeParserMemTestM.run' (validate x) t MemEnter.EnterMap.mk MemLeave.LeaveMap.mk with
-  | EStateM.Result.error err _ => Except.error err
-  | EStateM.Result.ok res _ => Except.ok res
+  TreeParserMemTestM.run' (validate x) t
 
 open ParseTree (node)
 

@@ -1,7 +1,8 @@
 import Validator.Validator.Validate
 import Validator.Validator.ValidateM
-import Validator.Validator.TestMemoize
-import Validator.Validator.TestDebug
+import Validator.Validator.TestMem
+import Validator.Validator.TestMemLog
+import Validator.Validator.TestIO
 
 import Validator.Validator.Inst.TreeParserM
 import Validator.Validator.Inst.TreeParserIO

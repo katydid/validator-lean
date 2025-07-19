@@ -54,7 +54,7 @@ def validate {m} [ValidateM m] (x: Expr): m Bool := do
   | _ => throw "expected one expression"
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  TreeParserM.run (validate x) t
+  TreeParserM.run' (validate x) t
 
 -- Tests
 
