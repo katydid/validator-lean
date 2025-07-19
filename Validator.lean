@@ -3,7 +3,6 @@ import Validator.Std.Debug
 import Validator.Std.Except
 
 import Validator.Derive
-import Validator.Env
 import Validator.Expr
 import Validator.Learning
 import Validator.Memoize

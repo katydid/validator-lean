@@ -10,4 +10,4 @@ We assume a background in Lean and an understanding of derivatives for regular e
  * [Basic](./Basic.lean) is the simplest version of the memoizable algorithm, which using [enter](../Deriv/Enter.lean) and [leave](../Deriv/Leave.lean). It uses monads to make the code more concise. NO compression, NO parser, NO memoization.
  * [Compress](./Compress.lean) adds compression to [Basic](./Basic.lean) for a little extra efficiency. NO parser, NO memoization.
  * [Parser](./Parser.lean) adds the use of a pull-based Parser which makes it possible to only parse what is truly necessary to parse. NO memoization. NO compression.
- * [Memoize](./Memoize.lean) adds memoization, by simply swapping out the implementation of Env. NO compression.
+ * [Memoize](./Memoize.lean) adds memoization, by simply swapping out the implementation of ValidateM. NO compression.

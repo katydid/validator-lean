@@ -3,11 +3,12 @@ import Validator.Std.Debug
 import Validator.Parser.ParseTree
 import Validator.Parser.TreeParser
 
-import Validator.Env.Env
 import Validator.Memoize.MemEnter
 import Validator.Memoize.MemLeave
 
-namespace EnvTreeParserIO
+import Validator.Validator.ValidateM
+
+namespace TreeParserIO
 
 structure TreeParserAndMem where
   parser: TreeParser.TreeParser
@@ -76,7 +77,7 @@ instance : MemLeave.MemLeave TreeParserIO where
 instance : Leave.DeriveLeave TreeParserIO where
   deriveLeave (xs: List Expr) (ns: List Bool): TreeParserIO (List Expr) := MemLeave.deriveLeave xs ns
 
-instance : Env TreeParserIO where
+instance : ValidateM TreeParserIO where
   -- all instances have been created, so no implementations are required here
 
 def run (f: TreeParserIO α) (t: ParseTree): EIO String α :=

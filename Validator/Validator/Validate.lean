@@ -14,23 +14,23 @@ import Validator.Parser.ParseTree
 import Validator.Parser.Parser
 import Validator.Parser.Hint
 
-import Validator.Env.Env
-import Validator.Env.EnvTreeParserStateWithMem
+import Validator.Validator.ValidateM
+import Validator.Validator.Inst.TreeParserMemM
 
 namespace Validate
 
-def deriveEnter [Env m] (xs: List Expr): m (List Expr) := do
+def deriveEnter [ValidateM m] (xs: List Expr): m (List Expr) := do
   let token <- Parser.token
   let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals enters token
 
-def deriveLeave [Env m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
+def deriveLeave [ValidateM m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
   Leave.DeriveLeave.deriveLeave xs (List.map Expr.nullable cs)
 
-def deriveValue [Env m] (xs: List Expr): m (List Expr) := do
+def deriveValue [ValidateM m] (xs: List Expr): m (List Expr) := do
   deriveLeave xs (<- deriveEnter xs)
 
-partial def derive [Env m] (xs: List Expr): m (List Expr) := do
+partial def derive [ValidateM m] (xs: List Expr): m (List Expr) := do
   if List.all xs Expr.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
@@ -55,14 +55,14 @@ partial def derive [Env m] (xs: List Expr): m (List Expr) := do
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} [Env m] (x: Expr): m Bool := do
+def validate {m} [ValidateM m] (x: Expr): m Bool := do
   let dxs <- derive [x]
   match dxs with
   | [dx] => return Expr.nullable dx
   | _ => throw "expected one expression"
 
 def run (x: Expr) (t: ParseTree): Except String Bool :=
-  EnvTreeParserStateWithMem.run (validate x) t
+  TreeParserMemM.run (validate x) t
 
 -- Tests
 

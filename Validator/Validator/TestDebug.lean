@@ -2,20 +2,20 @@ import Validator.Parser.ParseTree
 
 import Validator.Validator.Validate
 
-import Validator.Env.EnvTreeParserIO
-import Validator.Env.Env
+import Validator.Validator.Inst.TreeParserIO
+import Validator.Validator.ValidateM
 
 namespace TestDebug
 
-def validate {m} [Env m] (x: Expr): m Bool :=
+def validate {m} [ValidateM m] (x: Expr): m Bool :=
   Validate.validate x
 
 unsafe def run (x: Expr) (t: ParseTree): Except String Bool :=
-  unsafeEIO (EnvTreeParserIO.run (validate x) t)
+  unsafeEIO (TreeParserIO.run (validate x) t)
 
 -- runTwice is used to check if the cache was hit on the second run
 unsafe def runTwice (x: Expr) (t: ParseTree): Except String Bool :=
-  unsafeEIO (EnvTreeParserIO.runTwice (validate x) t)
+  unsafeEIO (TreeParserIO.runTwice (validate x) t)
 
 open ParseTree (node)
 
