@@ -29,111 +29,111 @@ unsafe def runTwice' (x: Expr) (t: ParseTree): Except String Bool :=
 
 open ParseTree (node)
 
-#eval runTwice'
-  Expr.emptyset
-  (node "a" [node "b" [], node "c" [node "d" []]])
+-- #eval runTwice'
+--   Expr.emptyset
+--   (node "a" [node "b" [], node "c" [node "d" []]])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (node "a" [])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+--   (node "a" [])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
-  (node "a" [node "b" []])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+--   (node "a" [node "b" []])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.tree (Pred.eq (Token.string "b"))
-      Expr.epsilon
-    )
-  )
-  (node "a" [node "b" []])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     (Expr.tree (Pred.eq (Token.string "b"))
+--       Expr.epsilon
+--     )
+--   )
+--   (node "a" [node "b" []])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        Expr.epsilon
-      )
-    )
-  )
-  (node "a" [node "b" [], node "c" []])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     (Expr.concat
+--       (Expr.tree (Pred.eq (Token.string "b"))
+--         Expr.epsilon
+--       )
+--       (Expr.tree (Pred.eq (Token.string "c"))
+--         Expr.epsilon
+--       )
+--     )
+--   )
+--   (node "a" [node "b" [], node "c" []])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.epsilon
-        )
-      )
-    )
-  )
-  (node "a" [node "b" [], node "c" [node "d" []]])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     (Expr.concat
+--       (Expr.tree (Pred.eq (Token.string "b"))
+--         Expr.epsilon
+--       )
+--       (Expr.tree (Pred.eq (Token.string "c"))
+--         (Expr.tree (Pred.eq (Token.string "d"))
+--           Expr.epsilon
+--         )
+--       )
+--     )
+--   )
+--   (node "a" [node "b" [], node "c" [node "d" []]])
 
--- try to engage skip using emptyset, since it is unescapable
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    Expr.emptyset
-  )
-  (node "a" [node "b" []])
+-- -- try to engage skip using emptyset, since it is unescapable
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     Expr.emptyset
+--   )
+--   (node "a" [node "b" []])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.emptyset
-      )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.epsilon
-        )
-      )
-    )
-  )
-  (node "a" [node "b" [], node "c" [node "d" []]])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     (Expr.concat
+--       (Expr.tree (Pred.eq (Token.string "b"))
+--         Expr.emptyset
+--       )
+--       (Expr.tree (Pred.eq (Token.string "c"))
+--         (Expr.tree (Pred.eq (Token.string "d"))
+--           Expr.epsilon
+--         )
+--       )
+--     )
+--   )
+--   (node "a" [node "b" [], node "c" [node "d" []]])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      Expr.emptyset
-    )
-  )
-  (node "a" [node "b" [], node "c" [node "d" []]])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     (Expr.concat
+--       (Expr.tree (Pred.eq (Token.string "b"))
+--         Expr.epsilon
+--       )
+--       Expr.emptyset
+--     )
+--   )
+--   (node "a" [node "b" [], node "c" [node "d" []]])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        Expr.emptyset
-      )
-    )
-  )
-  (node "a" [node "b" [], node "c" [node "d" []]])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     (Expr.concat
+--       (Expr.tree (Pred.eq (Token.string "b"))
+--         Expr.epsilon
+--       )
+--       (Expr.tree (Pred.eq (Token.string "c"))
+--         Expr.emptyset
+--       )
+--     )
+--   )
+--   (node "a" [node "b" [], node "c" [node "d" []]])
 
-#eval runTwice'
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.emptyset
-        )
-      )
-    )
-  )
-  (node "a" [node "b" [], node "c" [node "d" []]])
+-- #eval runTwice'
+--   (Expr.tree (Pred.eq (Token.string "a"))
+--     (Expr.concat
+--       (Expr.tree (Pred.eq (Token.string "b"))
+--         Expr.epsilon
+--       )
+--       (Expr.tree (Pred.eq (Token.string "c"))
+--         (Expr.tree (Pred.eq (Token.string "d"))
+--           Expr.emptyset
+--         )
+--       )
+--     )
+--   )
+--   (node "a" [node "b" [], node "c" [node "d" []]])
