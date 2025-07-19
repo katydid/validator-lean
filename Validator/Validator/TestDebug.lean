@@ -3,11 +3,11 @@ import Validator.Parser.ParseTree
 import Validator.Validator.Validate
 
 import Validator.Env.EnvTreeParserIO
-import Validator.Env.EnvM
+import Validator.Env.Env
 
 namespace TestDebug
 
-def validate {m} [EnvM m] (x: Expr): m Bool :=
+def validate {m} [Env m] (x: Expr): m Bool :=
   Validate.validate x
 
 unsafe def run (x: Expr) (t: ParseTree): Except String Bool :=
