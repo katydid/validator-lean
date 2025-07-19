@@ -12,7 +12,9 @@ The "detectClassical" linter emits a warning on declarations that depend on the 
 axiom.
 -/
 
-open Lean Elab Command
+open Lean (Linter collectAxioms logInfoAt addLinter withSetOptionIn)
+open Lean.Linter (getLinterOptions getLinterValue logLint)
+open Mathlib.Linter (getNamesFrom)
 
 namespace RegexDeriv.Std.Linter
 
@@ -38,14 +40,14 @@ namespace DetectClassical
 
 @[inherit_doc RegexDeriv.Std.Linter.linter.detectClassical]
 def detectClassicalLinter : Linter where run := withSetOptionIn fun stx ↦ do
-  unless Linter.getLinterValue linter.detectClassical (← Linter.getLinterOptions) do
+  unless getLinterValue linter.detectClassical (← getLinterOptions) do
     return
   if (← get).messages.hasErrors then
     return
   let d := (stx.getPos?.getD default)
-  let nmsd := (← Mathlib.Linter.getNamesFrom d)
+  let nmsd := (← getNamesFrom d)
   let nms := nmsd.filter (! ·.getId.isInternal)
-  let verbose? := Linter.getLinterValue linter.verbose.detectClassical (← Linter.getLinterOptions)
+  let verbose? := getLinterValue linter.verbose.detectClassical (← getLinterOptions)
   for constStx in nms do
     let constName := constStx.getId
     let axioms ← collectAxioms constName
@@ -58,7 +60,7 @@ def detectClassicalLinter : Linter where run := withSetOptionIn fun stx ↦ do
         logInfoAt constStx
           m!"'{constName}' is non-classical and depends on axioms: {axioms.toList}"
     else
-      Linter.logLint linter.detectClassical constStx
+      logLint linter.detectClassical constStx
         m!"'{constName}' depends on 'Classical.choice' on axioms: {axioms.toList}"
 
 initialize addLinter detectClassicalLinter

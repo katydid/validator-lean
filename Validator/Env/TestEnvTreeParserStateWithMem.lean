@@ -13,8 +13,6 @@ structure TreeParserAndMemTest where
   enter: MemEnter.EnterMap
   leave: MemLeave.LeaveMap
 
-open EnvTreeParserStateWithMem
-
 abbrev TreeParserStateWithMemTest α := EStateM String TreeParserAndMemTest α
 
 def TreeParserStateWithMemTest.mk (p: TreeParser.TreeParser): TreeParserAndMemTest :=

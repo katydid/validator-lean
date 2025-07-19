@@ -4,7 +4,19 @@ import Validator.Std.Linter.DetectClassical
 
 namespace Language
 
-open List
+open List (
+  append_assoc
+  append_eq_nil_iff
+  append_nil
+  cons
+  cons_append
+  cons.injEq
+  foldl_nil
+  nil
+  nil_append
+  nil_eq
+  singleton_append
+)
 
 -- Definitions
 

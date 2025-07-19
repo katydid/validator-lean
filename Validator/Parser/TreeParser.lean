@@ -126,8 +126,7 @@ def TreeParser.run (x: StateT TreeParser (Except String) α) (t: ParseTree): Exc
 instance : Debug (StateT TreeParser (Except String)) where
   debug (_: String) := return ()
 
-open Parser (walk)
-open Parser (Action)
+open Parser (walk Action)
 open ParseTree (node)
 
 #guard TreeParser.run
