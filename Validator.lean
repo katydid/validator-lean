@@ -2,20 +2,10 @@ import Validator.Std.Linter.DetectClassical
 import Validator.Std.Debug
 import Validator.Std.Except
 
-import Validator.Parser.Hint
-import Validator.Parser.ParseTree
-import Validator.Parser.Parser
-import Validator.Parser.Stack
-import Validator.Parser.Token
-
-import Validator.Expr.Compress
-import Validator.Expr.Expr
-import Validator.Expr.IfExpr
-import Validator.Expr.Language
-import Validator.Expr.Pred
-
-import Validator.Derive.Derive
-import Validator.Validator.Validator
-import Validator.Env.Env
-import Validator.Memoize.Memoize
-import Validator.Learning.Learning
+import Validator.Derive
+import Validator.Env
+import Validator.Expr
+import Validator.Learning
+import Validator.Memoize
+import Validator.Parser
+import Validator.Validator

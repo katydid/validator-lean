@@ -3,10 +3,6 @@ import Validator.Std.Debug
 import Validator.Parser.Hint
 import Validator.Parser.Token
 
--- * `Next : () -> (Hint | error | EOF)`
--- * `Skip : () -> (error | EOF)?`
--- * `Token: () -> (Token | error)`
-
 class Parser (m: Type -> Type u) where
   next: m Hint
   skip: m Unit

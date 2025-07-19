@@ -9,9 +9,7 @@ inductive Expr where
   | star (y: Expr)
   deriving DecidableEq, Ord, Repr, Hashable
 
-namespace Expr
-
-def nullable (x: Expr): Bool :=
+def Expr.nullable (x: Expr): Bool :=
   match x with
   | Expr.emptyset => false
   | Expr.epsilon => true
@@ -20,7 +18,9 @@ def nullable (x: Expr): Bool :=
   | Expr.concat y z => nullable y && nullable z
   | Expr.star _ => true
 
-def unescapable (x: Expr): Bool :=
+def Expr.unescapable (x: Expr): Bool :=
   match x with
   | Expr.emptyset => true
   | _ => false
+
+namespace Expr
