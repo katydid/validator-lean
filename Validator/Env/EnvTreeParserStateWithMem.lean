@@ -1,5 +1,8 @@
 import Validator.Std.Debug
 
+import Validator.Parser.ParseTree
+import Validator.Parser.TreeParser
+
 import Validator.Env.EnvM
 import Validator.Memoize.MemEnter
 import Validator.Memoize.MemLeave
@@ -7,27 +10,27 @@ import Validator.Memoize.MemLeave
 namespace EnvTreeParserStateWithMem
 
 structure TreeParserAndMem where
-  parser: ParseTree.TreeParser
+  parser: TreeParser.TreeParser
   enter: MemEnter.EnterMap
   leave: MemLeave.LeaveMap
 
 abbrev TreeParserStateWithMem α := EStateM String TreeParserAndMem α
 
-def TreeParserStateWithMem.mk (p: ParseTree.TreeParser): TreeParserAndMem :=
+def TreeParserStateWithMem.mk (p: TreeParser.TreeParser): TreeParserAndMem :=
   TreeParserAndMem.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk
 
 instance : Debug TreeParserStateWithMem where
   debug (_line: String) := return ()
 
-instance: MonadStateOf ParseTree.TreeParser TreeParserStateWithMem where
-  get : TreeParserStateWithMem ParseTree.TreeParser := do
+instance: MonadStateOf TreeParser.TreeParser TreeParserStateWithMem where
+  get : TreeParserStateWithMem TreeParser.TreeParser := do
     let s <- EStateM.get
     return s.parser
-  set : ParseTree.TreeParser → TreeParserStateWithMem PUnit :=
+  set : TreeParser.TreeParser → TreeParserStateWithMem PUnit :=
     fun parser => do
       let s <- EStateM.get
       EStateM.set (TreeParserAndMem.mk parser s.enter s.leave)
-  modifyGet {α: Type}: (ParseTree.TreeParser → Prod α ParseTree.TreeParser) → TreeParserStateWithMem α :=
+  modifyGet {α: Type}: (TreeParser.TreeParser → Prod α TreeParser.TreeParser) → TreeParserStateWithMem α :=
     fun f => do
       let s <- EStateM.get
       let (res, parser) := f s.parser
@@ -38,7 +41,7 @@ instance
   [Monad TreeParserStateWithMem] -- EStateM is monad
   [Debug TreeParserStateWithMem] -- Debug instance is declared above
   [MonadExcept String TreeParserStateWithMem] -- EStateM String is MonadExcept String
-  [MonadStateOf ParseTree.TreeParser TreeParserStateWithMem] -- MonadStateOf ParseTree.TreeParser is declared above
+  [MonadStateOf TreeParser.TreeParser TreeParserStateWithMem] -- MonadStateOf ParseTree.TreeParser is declared above
   : Parser TreeParserStateWithMem where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
@@ -74,11 +77,11 @@ instance : EnvM TreeParserStateWithMem where
   -- all instances have been created, so no implementations are required here
 
 def run (f: TreeParserStateWithMem α) (t: ParseTree): Except String α :=
-  match EStateM.run f (TreeParserStateWithMem.mk (ParseTree.TreeParser.mk t)) with
+  match EStateM.run f (TreeParserStateWithMem.mk (TreeParser.TreeParser.mk t)) with
   | EStateM.Result.ok k _ => Except.ok k
   | EStateM.Result.error err _ => Except.error err
 
 def run' (f: TreeParserStateWithMem α) (t: ParseTree): EStateM.Result String (MemEnter.EnterMap × MemLeave.LeaveMap) α :=
-  match EStateM.run f (TreeParserStateWithMem.mk (ParseTree.TreeParser.mk t)) with
+  match EStateM.run f (TreeParserStateWithMem.mk (TreeParser.TreeParser.mk t)) with
   | EStateM.Result.ok res s => EStateM.Result.ok res (s.enter, s.leave)
   | EStateM.Result.error err s => EStateM.Result.error err (s.enter, s.leave)

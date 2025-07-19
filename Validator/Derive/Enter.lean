@@ -20,6 +20,3 @@ def deriveEnter (xs: List Expr): List IfExpr :=
 
 class DeriveEnter (m: Type -> Type u) where
   deriveEnter (xs: List Expr): m (List IfExpr)
-
-instance : DeriveEnter Id where
-  deriveEnter := deriveEnter

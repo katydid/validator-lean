@@ -3,6 +3,8 @@
 -- It is intended to be used for explanation purposes. This means that it gives up speed for readability. Thus it has no memoization implemented.
 -- This version of the algorithm also avoids using any Monads, so it is verbose compared to a version that would use monads.
 
+import Validator.Std.Except
+
 import Validator.Parser.ParseTree
 
 import Validator.Expr.Compress

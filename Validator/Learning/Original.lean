@@ -2,6 +2,8 @@
 -- It is intended to be used for explanation purposes.
 -- This version cannot be memoized effectively, but it is the easiest version to understand.
 
+import Validator.Std.Except
+
 import Validator.Parser.ParseTree
 
 import Validator.Expr.Pred

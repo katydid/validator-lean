@@ -1,6 +1,8 @@
 -- ImperativeBasic is a memoizable version of the validation algorithm.
 -- This is intended to be as approachable as possible to imperative programmers and avoids using Monads.
 
+import Validator.Std.Except
+
 import Validator.Parser.ParseTree
 
 import Validator.Expr.Expr

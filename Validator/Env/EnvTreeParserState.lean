@@ -1,8 +1,10 @@
+import Validator.Parser.TreeParser
+
 import Validator.Env.EnvM
 
 namespace EnvTreeParserState
 
-abbrev TreeParserState α := EStateM String ParseTree.TreeParser α
+abbrev TreeParserState α := EStateM String TreeParser.TreeParser α
 
 instance : Debug TreeParserState where
   debug (_line: String) := return ()
@@ -11,7 +13,7 @@ instance
   [Monad TreeParserState] -- EStateM is monad
   [Debug TreeParserState] -- Debug instance is declared above
   [MonadExcept String TreeParserState] -- EStateM String is MonadExcept String
-  [MonadStateOf ParseTree.TreeParser TreeParserState] -- EStateM ε ParseTree.TreeParser is a MonadStateOf ParseTree.TreeParser
+  [MonadStateOf TreeParser.TreeParser TreeParserState] -- EStateM ε ParseTree.TreeParser is a MonadStateOf ParseTree.TreeParser
   : Parser TreeParserState where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
@@ -27,6 +29,6 @@ instance : EnvM TreeParserState where
   -- all instances have been created, so no implementations are required here
 
 def run (x: TreeParserState α) (t: ParseTree): Except String α :=
-  match EStateM.run x (ParseTree.TreeParser.mk t) with
+  match EStateM.run x (TreeParser.TreeParser.mk t) with
   | EStateM.Result.ok k _ => Except.ok k
   | EStateM.Result.error err _ => Except.error err

@@ -1,5 +1,8 @@
 import Validator.Std.Debug
 
+import Validator.Parser.ParseTree
+import Validator.Parser.TreeParser
+
 import Validator.Env.EnvM
 import Validator.Memoize.MemEnter
 import Validator.Memoize.MemLeave
@@ -7,13 +10,13 @@ import Validator.Memoize.MemLeave
 namespace EnvTreeParserIO
 
 structure TreeParserAndMem where
-  parser: ParseTree.TreeParser
+  parser: TreeParser.TreeParser
   enter: MemEnter.EnterMap
   leave: MemLeave.LeaveMap
 
 abbrev TreeParserIO (α: Type) := StateT TreeParserAndMem (EIO String) α
 
-def TreeParserIO.mk (p: ParseTree.TreeParser): TreeParserAndMem :=
+def TreeParserIO.mk (p: TreeParser.TreeParser): TreeParserAndMem :=
   TreeParserAndMem.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk
 
 def EIO.println [ToString α] (x: α): EIO String Unit :=
@@ -22,15 +25,15 @@ def EIO.println [ToString α] (x: α): EIO String Unit :=
 instance : Debug TreeParserIO where
   debug (line: String) := StateT.lift (EIO.println line)
 
-instance: MonadStateOf ParseTree.TreeParser TreeParserIO where
-  get : TreeParserIO ParseTree.TreeParser := do
+instance: MonadStateOf TreeParser.TreeParser TreeParserIO where
+  get : TreeParserIO TreeParser.TreeParser := do
     let s <- StateT.get
     return s.parser
-  set : ParseTree.TreeParser → TreeParserIO PUnit :=
+  set : TreeParser.TreeParser → TreeParserIO PUnit :=
     fun parser => do
       let s <- StateT.get
       set (TreeParserAndMem.mk parser s.enter s.leave)
-  modifyGet {α: Type}: (ParseTree.TreeParser → Prod α ParseTree.TreeParser) → TreeParserIO α :=
+  modifyGet {α: Type}: (TreeParser.TreeParser → Prod α TreeParser.TreeParser) → TreeParserIO α :=
     fun f => do
       let s <- StateT.get
       let (res, parser) := f s.parser
@@ -41,7 +44,7 @@ instance
   [Monad TreeParserIO] -- EStateM is monad
   [Debug TreeParserIO] -- Debug instance is declared above
   [MonadExcept String TreeParserIO] -- EStateM String is MonadExcept String
-  [MonadStateOf ParseTree.TreeParser TreeParserIO] -- MonadStateOf ParseTree.TreeParser is declared above
+  [MonadStateOf TreeParser.TreeParser TreeParserIO] -- MonadStateOf ParseTree.TreeParser is declared above
   : Parser TreeParserIO where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
@@ -77,14 +80,14 @@ instance : EnvM TreeParserIO where
   -- all instances have been created, so no implementations are required here
 
 def run (f: TreeParserIO α) (t: ParseTree): EIO String α :=
-  StateT.run' f (TreeParserIO.mk (ParseTree.TreeParser.mk t))
+  StateT.run' f (TreeParserIO.mk (TreeParser.TreeParser.mk t))
 
 -- runTwice is used to check if the cache was hit on the second run
 def runTwice [DecidableEq α] (f: TreeParserIO α) (t: ParseTree): EIO String α := do
-  let initial := TreeParserIO.mk (ParseTree.TreeParser.mk t)
+  let initial := TreeParserIO.mk (TreeParser.TreeParser.mk t)
   let (res1, updated) <- StateT.run f initial
   _ <- EIO.println "start second run"
-  let res2 <- StateT.run' f (TreeParserAndMem.mk (ParseTree.TreeParser.mk t) updated.enter updated.leave)
+  let res2 <- StateT.run' f (TreeParserAndMem.mk (TreeParser.TreeParser.mk t) updated.enter updated.leave)
   if res1 ≠ res2
   then throw "memoization changed result"
   else return res1

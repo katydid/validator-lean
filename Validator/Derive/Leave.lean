@@ -48,6 +48,3 @@ def deriveLeave [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool)
 
 class DeriveLeave (m: Type -> Type u) where
   deriveLeave (xs: List Expr) (ns: List Bool): m (List Expr)
-
-instance : DeriveLeave (Except String) where
-  deriveLeave := deriveLeave
