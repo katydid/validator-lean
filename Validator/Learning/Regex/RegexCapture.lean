@@ -1,18 +1,22 @@
 -- This algorithm is from Regular Expression Sub-Matching using Partial Derivatives - Martin Sulzmann and Kenny Zhuo Ming Lu
 
+-- Thank you Keegan Perry for simplifying and explaining this to me.
 import Validator.Learning.Regex.Regex
 
 namespace RegexCapture
 
-def charToEmptySet (x: Regex): Regex :=
+-- neutralize replaces all chars with emptyset.
+-- This way the expression will stay nullable and not change based on derivative input.
+-- This makes it possible to keep all the capture groups inside for later extraction.
+def neutralize (x: Regex): Regex :=
   match x with
   | Regex.emptyset => Regex.emptyset
   | Regex.epsilon => Regex.epsilon
   | Regex.char _ => Regex.emptyset
-  | Regex.or y z => Regex.smartOr (charToEmptySet y) (charToEmptySet z)
-  | Regex.concat y z => Regex.concat (charToEmptySet y) (charToEmptySet z)
-  | Regex.star y => Regex.star (charToEmptySet y)
-  | Regex.group id c y => Regex.group id c (charToEmptySet y)
+  | Regex.or y z => Regex.smartOr (neutralize y) (neutralize z)
+  | Regex.concat y z => Regex.concat (neutralize y) (neutralize z)
+  | Regex.star y => Regex.star (neutralize y)
+  | Regex.group id c y => Regex.group id c (neutralize y)
 
 partial def derive (x: Regex) (char: Char): Regex :=
   match x with
@@ -29,7 +33,7 @@ partial def derive (x: Regex) (char: Char): Regex :=
       (Regex.smartConcat (derive y char) z)
       -- A difference from the usual derive algorithm:
       -- Instead of (derive z tree), we write:
-      (Regex.smartConcat (charToEmptySet y) (derive z char))
+      (Regex.smartConcat (neutralize y) (derive z char))
     else Regex.concat (derive y char) z
   | Regex.star y => Regex.smartConcat (derive y char) x
   -- group is the new operator compared to Expr.
