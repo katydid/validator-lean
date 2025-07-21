@@ -24,7 +24,7 @@ def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
     match t with
     | ParseTree.mk label children =>
       let ifexprs: List IfExpr := Enter.deriveEnter xs
-      let childxs : List Expr := IfExpr.evals ifexprs label
+      let childxs: List Expr := IfExpr.evals ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
       let (cchildxs, indices) <- Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.

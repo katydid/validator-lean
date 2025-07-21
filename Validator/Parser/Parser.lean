@@ -3,6 +3,7 @@ import Validator.Std.Debug
 import Validator.Parser.Hint
 import Validator.Parser.Token
 
+-- TODO: explain error is in except monad and state is also in m, but could also use IO
 class Parser (m: Type -> Type u) where
   next: m Hint
   skip: m Unit
@@ -10,9 +11,9 @@ class Parser (m: Type -> Type u) where
 
 namespace Parser
 
--- StateParser is the default Parser, where the State type (S) still needs to be specified.
-private def StateParser (S: Type) := Parser (StateM S)
--- Various Parsers implementations (other than StateM) are possible, just an example, here we have a parser with IO.
+-- example: StateParser is the default Parser, where the State type (S) still needs to be specified.
+private def StateParser (S: Type) := Parser (StateT S (Except String))
+-- example: Various Parsers implementations (other than StateT) are possible, just an example, here we have a parser with IO.
 private def IOParser := Parser IO
 
 inductive Action where

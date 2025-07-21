@@ -24,7 +24,7 @@ def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
       -- enters is one of our two new memoizable functions.
       let ifExprs: List IfExpr := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs : List Expr := IfExpr.evals ifExprs label
+      let childxs: List Expr := IfExpr.evals ifExprs label
       -- dchildxs = derivatives of children.
       let dchildxs <- List.foldlM derive childxs children
       -- leaves is the other one of our two new memoizable functions.
