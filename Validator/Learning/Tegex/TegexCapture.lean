@@ -112,6 +112,45 @@ def capture (name: Nat) (x: Tegex) (forest: List ParseTree): Option (List ParseT
     ) cs
   List.head? (List.reverse (List.mergeSort forests (le := fun x y => (Ord.compare x y).isLE)))
 
+-- extractPathGroups is just like extractGroups, except for the Tregex.matched case.
+-- This now records the full path if a group below was matched.
+def extractPathGroups (x: Tegex): List (Nat × List ParseTree) :=
+  match x with
+  | Tegex.emptyset => []
+  | Tegex.epsilon => []
+  | Tegex.tree _ _ => []
+  | Tegex.matched tok childExpr =>
+  -- NEW: The only line that is different from extractGroups
+    List.map (fun (id, children) => (id, [ParseTree.mk tok children])) (extractPathGroups childExpr)
+  | Tegex.or y z =>
+    if y.nullable
+    then extractPathGroups y
+    else extractPathGroups z
+  | Tegex.concat y z =>
+    extractPathGroups y ++ extractPathGroups z
+  | Tegex.star _ => []
+  | Tegex.group id y => (id, extract y) :: extractPathGroups y
+
+-- capturePaths is just like captures, except extractGroups is replaced by extractPathGroups
+def capturePaths (x: Tegex) (forest: List ParseTree): Option (List (Nat × List ParseTree)) :=
+  let dx := List.foldl derive x forest
+  if dx.nullable
+  then Option.some (extractPathGroups dx)
+  else Option.none
+
+-- capturePath is just like capture, except captures is replaced by capturePaths
+def capturePath (name: Nat) (x: Tegex) (forest: List ParseTree): Option (List ParseTree) :=
+  match capturePaths x forest with
+  | Option.none => Option.none
+  | Option.some cs =>
+  let forests := List.filterMap
+    (fun (name', forest) =>
+      if name = name'
+      then Option.some forest
+      else Option.none
+    ) cs
+  List.head? (List.reverse (List.mergeSort forests (le := fun x y => (Ord.compare x y).isLE)))
+
 def Tegex.char (c: Char): Tegex :=
   (Tegex.tree (Token.string (String.mk [c])) Tegex.epsilon)
 
@@ -207,6 +246,20 @@ def treeString (s: String): List ParseTree :=
     ParseTree.mk (Token.string "c") []
   ]
 
+#guard capturePath 1
+    (Tegex.tree (Token.string "b")
+      (Tegex.group 1 (Tegex.tree (Token.string "c") Tegex.epsilon))
+    )
+  [
+    ParseTree.mk (Token.string "b") [
+      ParseTree.mk (Token.string "c") [],
+    ],
+  ] = Option.some [
+    ParseTree.mk (Token.string "b") [
+      ParseTree.mk (Token.string "c") []
+    ]
+  ]
+
 #guard capture 1 (Tegex.concat (Tegex.concat
     (Tegex.star (Tegex.char 'a'))
     (Tegex.tree (Token.string "b")
@@ -237,4 +290,37 @@ def treeString (s: String): List ParseTree :=
   ] =
   Option.some [
     ParseTree.mk (Token.string "c") []
+  ]
+
+#guard capturePath 1 (Tegex.concat (Tegex.concat
+    (Tegex.star (Tegex.char 'a'))
+    (Tegex.tree (Token.string "b")
+      (Tegex.concat (Tegex.concat
+        (Tegex.star (Tegex.char 'a'))
+        (Tegex.group 1 (Tegex.char 'c')))
+        (Tegex.star (Tegex.char 'a'))
+      )
+    ))
+    (Tegex.star (Tegex.char 'a'))
+  )
+  [
+    ParseTree.mk (Token.string "a") [],
+    ParseTree.mk (Token.string "a") [],
+    ParseTree.mk (Token.string "a") [],
+    ParseTree.mk (Token.string "b") [
+      ParseTree.mk (Token.string "a") [],
+      ParseTree.mk (Token.string "a") [],
+      ParseTree.mk (Token.string "a") [],
+      ParseTree.mk (Token.string "c") [],
+      ParseTree.mk (Token.string "a") [],
+      ParseTree.mk (Token.string "a") [],
+      ParseTree.mk (Token.string "a") [],
+    ],
+    ParseTree.mk (Token.string "a") [],
+    ParseTree.mk (Token.string "a") [],
+    ParseTree.mk (Token.string "a") []
+  ] = Option.some [
+    ParseTree.mk (Token.string "b") [
+      ParseTree.mk (Token.string "c") []
+    ]
   ]
