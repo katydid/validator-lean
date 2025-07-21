@@ -1,3 +1,4 @@
+import Validator.Parser.DeserializeTest
 import Validator.Parser.EncodeTree
 import Validator.Parser.Hint
 import Validator.Parser.ParseTree
