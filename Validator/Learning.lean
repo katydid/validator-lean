@@ -12,3 +12,6 @@ import Validator.Learning.Regex.RegexCapture
 
 import Validator.Learning.Cegex.Cegex
 import Validator.Learning.Cegex.CegexCapture
+
+import Validator.Learning.Tegex.Tegex
+import Validator.Learning.Tegex.TegexCapture
