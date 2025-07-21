@@ -18,14 +18,10 @@ partial def encode [Monad m] [MonadExcept String m] [Parser m]: m (List ParseTre
     let name <- Parser.token
     let children <-
       match <- Parser.next with
-      | Hint.value =>
-          let value <- Parser.token
-          -- use pure instead of return, because return would short circuit
-          pure [ParseTree.mk value []]
-      | Hint.enter =>
-          encode
-      | hint =>
-          throw s!"unexpected {hint}"
+      -- use pure instead of return, because return would short circuit
+      | Hint.value => pure [ParseTree.mk (<- Parser.token) []]
+      | Hint.enter => encode
+      | hint => throw s!"unexpected {hint}"
     let siblings <- encode
     return (ParseTree.mk name children) :: siblings
   | Hint.value =>
