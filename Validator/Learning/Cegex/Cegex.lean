@@ -2,24 +2,26 @@
 inductive Cegex where
   | emptyset
   | epsilon
+  | matched (c: Char)
   | char (c: Char)
   | or (y z: Cegex)
   | concat (y z: Cegex)
   | star (y: Cegex)
   -- group is the only new operator compared to a Cegex without capturing groups.
-  | group (id: Nat) (capture: List Char) (x: Cegex)
+  | group (id: Nat) (x: Cegex)
   deriving DecidableEq, Ord, Repr, Hashable
 
 def Cegex.nullable (x: Cegex): Bool :=
   match x with
   | Cegex.emptyset => false
   | Cegex.epsilon => true
+  | Cegex.matched _ => true
   | Cegex.char _ => false
   | Cegex.or y z => nullable y || nullable z
   | Cegex.concat y z => nullable y && nullable z
   | Cegex.star _ => true
   -- The group is nullable if its embedded expression is nullable.
-  | Cegex.group _ _ y => nullable y
+  | Cegex.group _ y => nullable y
 
 def Cegex.unescapable (x: Cegex): Bool :=
   match x with

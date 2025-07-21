@@ -39,7 +39,7 @@ partial def derive (x: Regex) (char: Char): Regex :=
   -- group is the new operator compared to Expr.
   -- We store the input tree in the expression.
   | Regex.group n chars y =>
-    Regex.group n (char :: chars) (derive y char)
+    Regex.group n (chars ++ [char]) (derive y char)
 
 def extract (x: Regex): List (Nat × List Char) :=
   match x with
@@ -108,3 +108,16 @@ def capture (name: Nat) (x: Regex) (input: String): Option String :=
   )
   "aaacccaaa" =
   Option.some "ccc"
+
+#guard capture 1 (Regex.concat (Regex.concat
+    (Regex.star (Regex.char 'a'))
+    (Regex.group 1 []
+      (Regex.or
+        (Regex.star (Regex.char 'b'))
+        (Regex.concat (Regex.char 'b') (Regex.star (Regex.char 'c')))
+      )
+    ))
+    (Regex.star (Regex.char 'a'))
+  )
+  "aaabccaaa" =
+  Option.some "bcc"
