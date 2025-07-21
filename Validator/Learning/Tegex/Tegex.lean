@@ -1,9 +1,12 @@
+import Validator.Parser.Token
+import Validator.Parser.ParseTree
+
 -- Tegex includes capturing groups
 inductive Tegex where
   | emptyset
   | epsilon
-  | matched (c: Char)
-  | char (c: Char)
+  | matched (tok: Token) (childExpr: Tegex)
+  | tree (tok: Token) (childExpr: Tegex)
   | or (y z: Tegex)
   | concat (y z: Tegex)
   | star (y: Tegex)
@@ -15,8 +18,8 @@ def Tegex.nullable (x: Tegex): Bool :=
   match x with
   | Tegex.emptyset => false
   | Tegex.epsilon => true
-  | Tegex.matched _ => true
-  | Tegex.char _ => false
+  | Tegex.matched _ _ => true
+  | Tegex.tree _ _ => false
   | Tegex.or y z => nullable y || nullable z
   | Tegex.concat y z => nullable y && nullable z
   | Tegex.star _ => true

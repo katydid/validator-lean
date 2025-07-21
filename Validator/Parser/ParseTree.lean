@@ -7,6 +7,12 @@ inductive ParseTree where
 
 namespace ParseTree
 
+instance: LE ParseTree where
+  le x y := (Ord.compare x y).isLE
+
+instance: LT ParseTree where
+  lt x y := (Ord.compare x y).isLT
+
 def node (s: String) (children: List ParseTree): ParseTree :=
   ParseTree.mk (Token.string s) children
 
