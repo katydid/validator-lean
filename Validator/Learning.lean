@@ -1,4 +1,5 @@
 import Validator.Learning.Basic
+import Validator.Learning.Capture.CaptureExprCapture
 import Validator.Learning.Compress
 import Validator.Learning.ImperativeBasic
 import Validator.Learning.ImperativeCompress
@@ -6,6 +7,3 @@ import Validator.Learning.ImperativeLeave
 import Validator.Learning.Memoize
 import Validator.Learning.Original
 import Validator.Learning.Parser
-
-import Validator.Learning.Capture.CaptureExpr
-import Validator.Learning.Capture.CaptureExprCapture

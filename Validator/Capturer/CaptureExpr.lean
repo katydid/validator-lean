@@ -1,6 +1,3 @@
--- This extends the data type in https://github.com/katydid/regex-deriv-lean/blob/main/RegexDeriv/Group/Capture/CaptureRegex.lean
--- It extends the data type to handle capturing on ParseTrees.
-
 import Validator.Parser.Token
 import Validator.Parser.ParseTree
 

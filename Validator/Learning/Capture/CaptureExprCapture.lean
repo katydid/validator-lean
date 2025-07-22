@@ -4,7 +4,7 @@
 import Validator.Parser.Token
 import Validator.Parser.ParseTree
 
-import Validator.Learning.Capture.CaptureExpr
+import Validator.Capturer.CaptureExpr
 
 namespace CaptureExprCapture
 
