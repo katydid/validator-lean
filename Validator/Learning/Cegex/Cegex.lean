@@ -2,6 +2,7 @@
 inductive Cegex where
   | emptyset
   | epsilon
+  -- NEW: matched operator
   | matched (c: Char)
   | char (c: Char)
   | or (y z: Cegex)

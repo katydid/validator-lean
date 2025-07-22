@@ -8,9 +8,9 @@ import Validator.Learning.Tegex.Tegex
 
 namespace TegexCapture
 
--- neutralize replaces all chars with emptyset.
--- This way the expression will stay nullable and not change based on derivative input.
--- This makes it possible to keep all the capture groups inside for later extraction.
+-- neutralize replaces all tree operators with emptyset.
+-- It is used when deriving concat.
+-- This way we do not lose capture information on nullable expressions.
 def neutralize (x: Tegex): Tegex :=
   match x with
   | Tegex.emptyset => Tegex.emptyset
@@ -26,6 +26,7 @@ partial def derive (x: Tegex) (tree: ParseTree): Tegex :=
   match x with
   | Tegex.emptyset => Tegex.emptyset
   | Tegex.epsilon => Tegex.emptyset
+  -- remember matched is just epsilon, so has the same derivative.
   | Tegex.matched _ _ => Tegex.emptyset
   | Tegex.tree tok' childExpr =>
     match tree with
@@ -43,12 +44,11 @@ partial def derive (x: Tegex) (tree: ParseTree): Tegex :=
     then Tegex.smartOr
       (Tegex.smartConcat (derive y tree) z)
       -- A difference from the usual derive algorithm:
-      -- Instead of (derive z tree), we write:
+      -- To preserve the capture information in the nullable expression y,
+      -- instead of (derive z tree), we write:
       (Tegex.smartConcat (neutralize y) (derive z tree))
     else Tegex.concat (derive y tree) z
   | Tegex.star y => Tegex.smartConcat (derive y tree) x
-  -- group is the new operator compared to Expr.
-  -- We store the input tree in the expression.
   | Tegex.group n y =>
     Tegex.group n (derive y tree)
 
@@ -57,7 +57,7 @@ def extract (x: Tegex): List ParseTree :=
   -- should never be encountered, since emptyset is not nullable.
   | Tegex.emptyset => []
   | Tegex.epsilon => []
-  -- should never be encountered, since char is not nullable.
+  -- should never be encountered, since tree is not nullable.
   | Tegex.tree _ _ => []
   | Tegex.matched tok childExpr => [ParseTree.mk tok (extract childExpr)]
   | Tegex.or y z =>
@@ -70,7 +70,7 @@ def extract (x: Tegex): List ParseTree :=
     -- Groups under a star are ignored.
     -- Recursively extracting under the star causes empty captures to be reported, which we do not want under POSIX semantics.
   | Tegex.star _ => []
-    -- ignore group, this group will be extracted later by extractGroups.
+    -- Ignore group, this group will be extracted later by extractGroups.
   | Tegex.group _ y => extract y
 
 def extractGroups (x: Tegex): List (Nat × List ParseTree) :=
@@ -80,6 +80,7 @@ def extractGroups (x: Tegex): List (Nat × List ParseTree) :=
   | Tegex.epsilon => []
   -- should never be encountered, since tree is not nullable.
   | Tegex.tree _ _ => []
+  -- There may be groups in the childExpr that needs to be extracted.
   | Tegex.matched _ childExpr => extractGroups childExpr
   | Tegex.or y z =>
     -- Under POSIX semantics, we prefer matching the left alternative.
@@ -91,7 +92,7 @@ def extractGroups (x: Tegex): List (Nat × List ParseTree) :=
     -- Groups under a star are ignored.
     -- Recursively extracting under the star causes empty captures to be reported, which we do not want under POSIX semantics.
   | Tegex.star _ => []
-    -- extract the string
+    -- extract the forest for the single group id
   | Tegex.group id y => (id, extract y) :: extractGroups y
 
 def captures (x: Tegex) (forest: List ParseTree): Option (List (Nat × List ParseTree)) :=

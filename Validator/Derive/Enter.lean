@@ -7,7 +7,7 @@ def enter (x: Expr) (res: List IfExpr := []): List IfExpr :=
   match x with
   | Expr.emptyset => res
   | Expr.epsilon => res
-  | Expr.tree p y => (IfExpr.mk p y Expr.emptyset) :: res
+  | Expr.tree pred childrenExpr => (IfExpr.mk pred childrenExpr Expr.emptyset) :: res
   | Expr.or y z => enter y (enter z res)
   | Expr.concat y z =>
     if Expr.nullable y

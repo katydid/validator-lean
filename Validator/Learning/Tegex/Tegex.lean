@@ -5,12 +5,13 @@ import Validator.Parser.ParseTree
 inductive Tegex where
   | emptyset
   | epsilon
+  -- Cegex.matched is extended to trees
   | matched (tok: Token) (childExpr: Tegex)
   | tree (tok: Token) (childExpr: Tegex)
   | or (y z: Tegex)
   | concat (y z: Tegex)
   | star (y: Tegex)
-  -- group is the only new operator compared to a Tegex without capturing groups.
+  -- group is a copy of Cegex.group without the captured string.
   | group (id: Nat) (x: Tegex)
   deriving DecidableEq, Ord, Repr, Hashable
 
@@ -18,6 +19,7 @@ def Tegex.nullable (x: Tegex): Bool :=
   match x with
   | Tegex.emptyset => false
   | Tegex.epsilon => true
+  -- matched is technically the same as epsilon, except that it stores the matched token and childExpr.
   | Tegex.matched _ _ => true
   | Tegex.tree _ _ => false
   | Tegex.or y z => nullable y || nullable z

@@ -27,7 +27,7 @@ def deriveLeave [ValidateM m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
   Leave.DeriveLeave.deriveLeave xs (List.map Expr.nullable cs)
 
 def deriveValue [ValidateM m] (xs: List Expr): m (List Expr) := do
-  deriveLeave xs (<- deriveEnter xs)
+  deriveEnter xs >>= deriveLeave xs
 
 -- TODO: Is it possible to have a Parser type that can be proved to be of the correct shape, and have not expection throwing
 -- for example: can you prove that your Parser will never return an Hint.leave after returning a Hint.field.

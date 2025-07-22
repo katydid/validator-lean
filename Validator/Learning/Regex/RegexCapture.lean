@@ -12,6 +12,7 @@ def neutralize (x: Regex): Regex :=
   match x with
   | Regex.emptyset => Regex.emptyset
   | Regex.epsilon => Regex.epsilon
+  -- only char changes to emptyset
   | Regex.char _ => Regex.emptyset
   | Regex.or y z => Regex.smartOr (neutralize y) (neutralize z)
   | Regex.concat y z => Regex.concat (neutralize y) (neutralize z)
