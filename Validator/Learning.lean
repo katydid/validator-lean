@@ -7,11 +7,5 @@ import Validator.Learning.Memoize
 import Validator.Learning.Original
 import Validator.Learning.Parser
 
-import Validator.Learning.Regex.Regex
-import Validator.Learning.Regex.RegexCapture
-
-import Validator.Learning.Cegex.Cegex
-import Validator.Learning.Cegex.CegexCapture
-
-import Validator.Learning.Tegex.Tegex
-import Validator.Learning.Tegex.TegexCapture
+import Validator.Learning.Capture.CaptureExpr
+import Validator.Learning.Capture.CaptureExprCapture
