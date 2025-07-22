@@ -21,8 +21,11 @@ abbrev TreeParser := Stack ParserState
 def TreeParser.pop [Monad m] [MonadStateOf TreeParser m]: m Bool :=
   Stack.pop (α := ParserState)
 
-def TreeParser.mk (t: ParseTree): TreeParser :=
-  Stack.mk (ParserState.unknown [t]) []
+def TreeParser.mk (tree: ParseTree): TreeParser :=
+  Stack.mk (ParserState.unknown [tree]) []
+
+def TreeParser.mks (forest: List ParseTree): TreeParser :=
+  Stack.mk (ParserState.unknown forest) []
 
 def nextNode
   [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf TreeParser m]

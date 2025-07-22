@@ -8,11 +8,19 @@ import Validator.Capturer.CaptureExpr
 import Validator.Capturer.CaptureExtract
 import Validator.Capturer.CaptureIfExpr
 import Validator.Capturer.CaptureLeave
+import Validator.Capturer.CaptureM
+
+import Validator.Capturer.Inst.TreeParserLogCaptureM
 
 namespace Capture
 
+def deriveEnter [CaptureM m] (xs: List CaptureExpr): m (List CaptureExpr) := do
+  let token <- Parser.token
+  let enters := CaptureEnter.deriveEnter xs
+  return CaptureIfExpr.evals enters token
+
 def deriveLeave
-  [Monad m] [MonadExcept String m]
+  [CaptureM m]
   (xs: List CaptureExpr) (label: Token) (dchildxs: List CaptureExpr): m (List CaptureExpr) :=
   CaptureLeave.deriveLeave xs (List.map (fun dchildx =>
     if CaptureExpr.nullable dchildx
@@ -20,45 +28,58 @@ def deriveLeave
     else CaptureExpr.emptyset
   ) dchildxs)
 
-def derive (xs: List CaptureExpr) (tree: ParseTree): Except String (List CaptureExpr) := do
-  if List.all xs CaptureExpr.unescapable
-  then return xs
-  else
-    match tree with
-    | ParseTree.mk label children =>
-      let ifExprs: List CaptureIfExpr := CaptureEnter.deriveEnter xs
-      -- childxs = expressions to evaluate on children.
-      let childxs: List CaptureExpr := CaptureIfExpr.evals ifExprs label
-      -- dchildxs = derivatives of children.
-      let dchildxs <- List.foldlM derive childxs children
-      deriveLeave xs label dchildxs
+def deriveValue [CaptureM m] (xs: List CaptureExpr) (label: Token): m (List CaptureExpr) := do
+  deriveLeave xs label (<- deriveEnter xs)
+
+partial def derive [CaptureM m] (xs: List CaptureExpr): m (List CaptureExpr) := do
+  if List.all xs CaptureExpr.unescapable then
+    Parser.skip; return xs
+  match <- Parser.next with
+  | Hint.field =>
+    let childxs <- deriveEnter xs
+    let token <- Parser.token
+    let dchildxs: List CaptureExpr <-
+      match <- Parser.next with
+      | Hint.value => deriveValue childxs (<- Parser.token)
+      | Hint.enter => derive childxs
+      | hint => throw s!"unexpected {hint}"
+    let xsLeave <- deriveLeave xs token dchildxs
+    derive xsLeave
+  | Hint.value =>
+    let token <- Parser.token
+    deriveValue xs token >>= derive
+  | Hint.enter =>
+    let dchildxs <- derive xs
+    derive dchildxs
+  | Hint.leave => return xs
+  | Hint.eof => return xs
 
 -- captures returns all captured forests for all groups.
-def captures (includePath: Bool) (x: CaptureExpr) (forest: List ParseTree): Except String (List (Nat × List ParseTree)) :=
-  let dx' := List.foldlM derive [x] forest
-  match dx' with
-  | Except.error err => Except.error err
-  | Except.ok [dx] =>
+def captures [CaptureM m] (includePath: Bool) (x: CaptureExpr): m (List (Nat × List ParseTree)) := do
+  let dxs <- derive [x]
+  match dxs with
+  | [dx] =>
     if dx.nullable
-    then Except.ok (CaptureExtract.extractGroups includePath dx)
-    else Except.error "no match"
-  | Except.ok _dxs =>
-    Except.error "wtf"
+    then return (CaptureExtract.extractGroups includePath dx)
+    else throw "no match"
+  | _ =>
+    throw "wtf"
 
 -- capture only returns the longest capture for a specific group.
-def capture (name: Nat) (x: CaptureExpr) (forest: List ParseTree) (includePath: Bool := false): Except String (List ParseTree) :=
-  match captures includePath x forest with
+def capture (name: Nat) (x: CaptureExpr) (forest: List ParseTree) (includePath: Bool := false): Except String (List ParseTree) := do
+  let (_logs, dx) := TreeParserLogCaptureM.run' (captures includePath x) forest
+  match dx with
   | Except.error err => Except.error err
   | Except.ok cs =>
-  let forests := List.filterMap
-    (fun (name', forest) =>
-      if name = name'
-      then Option.some forest
-      else Option.none
-    ) cs
-  match List.head? (List.reverse (List.mergeSort forests (le := fun x y => (Ord.compare x y).isLE))) with
-  | Option.some k => Except.ok k
-  | Option.none => Except.error "unknown group"
+    let forests := List.filterMap
+      (fun (name', forest) =>
+        if name = name'
+        then Option.some forest
+        else Option.none
+      ) cs
+    match List.head? (List.reverse (List.mergeSort forests (le := fun x y => (Ord.compare x y).isLE))) with
+    | Option.some k => return k
+    | Option.none => throw "unknown group"
 
 -- capturePath includes the path of the captured tree.
 def capturePath (name: Nat) (x: CaptureExpr) (forest: List ParseTree): Except String (List ParseTree) :=
