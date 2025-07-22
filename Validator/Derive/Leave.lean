@@ -29,7 +29,7 @@ def leave [Monad m] [MonadExcept String m] (x: Expr) (ns: List Bool): m (Expr ×
       return (Smart.concat ly z, yns)
   | Expr.star y =>
       let (ly, yns) <- leave y ns
-      return (Smart.star ly, yns)
+      return (Smart.concat ly (Smart.star y), yns)
 
 -- deriveLeave takes a list of expressions and list of bools.
 -- The list of bools represent the nullability of the derived child expressions.

@@ -1,69 +1,67 @@
--- This extends the algorithm in https://github.com/katydid/regex-deriv-lean/blob/main/RegexDeriv/Group/Capture/CaptureRegexCapture.lean
--- It extends the algorithm to implement capturing on ParseTrees.
+import Validator.Std.Except
 
 import Validator.Parser.Token
 import Validator.Parser.ParseTree
 
-import Validator.Expr.Pred
-
+import Validator.Capturer.CaptureEnter
 import Validator.Capturer.CaptureExpr
 import Validator.Capturer.CaptureExtract
+import Validator.Capturer.CaptureIfExpr
+import Validator.Capturer.CaptureLeave
 
-namespace CaptureExprCapture
+namespace Capture
 
-partial def derive (x: CaptureExpr) (tree: ParseTree): CaptureExpr :=
-  match x with
-  | CaptureExpr.emptyset => CaptureExpr.emptyset
-  | CaptureExpr.epsilon => CaptureExpr.emptyset
-  -- remember matched is just epsilon, so has the same derivative.
-  | CaptureExpr.matched _ _ => CaptureExpr.emptyset
-  | CaptureExpr.tree pred childExpr =>
+def deriveLeave
+  [Monad m] [MonadExcept String m]
+  (xs: List CaptureExpr) (label: Token) (dchildxs: List CaptureExpr): m (List CaptureExpr) :=
+  CaptureLeave.deriveLeave xs (List.map (fun dchildx =>
+    if CaptureExpr.nullable dchildx
+    then CaptureExpr.matched label dchildx
+    else CaptureExpr.emptyset
+  ) dchildxs)
+
+def derive (xs: List CaptureExpr) (tree: ParseTree): Except String (List CaptureExpr) := do
+  if List.all xs CaptureExpr.unescapable
+  then return xs
+  else
     match tree with
-    | ParseTree.mk tok children =>
-      if Pred.eval pred tok
-      then
-        let dchild := List.foldl derive childExpr children
-        if dchild.nullable
-        -- instead of epsilon we return the token matched and the derivative of children with the captured characters.
-        then CaptureExpr.matched tok dchild
-        else CaptureExpr.emptyset
-      else CaptureExpr.emptyset
-  | CaptureExpr.or y z => CaptureExpr.smartOr (derive y tree) (derive z tree)
-  | CaptureExpr.concat y z =>
-    if CaptureExpr.nullable y
-    then CaptureExpr.smartOr
-      (CaptureExpr.smartConcat (derive y tree) z)
-      -- A difference from the usual derive algorithm:
-      -- To preserve the capture information in the nullable expression y,
-      -- instead of (derive z tree), we write:
-      (CaptureExpr.smartConcat (CaptureExpr.neutralize y) (derive z tree))
-    else CaptureExpr.smartConcat (derive y tree) z
-  | CaptureExpr.star y => CaptureExpr.smartConcat (derive y tree) x
-  | CaptureExpr.group n y =>
-    CaptureExpr.smartGroup n (derive y tree)
+    | ParseTree.mk label children =>
+      let ifExprs: List CaptureIfExpr := CaptureEnter.deriveEnter xs
+      -- childxs = expressions to evaluate on children.
+      let childxs: List CaptureExpr := CaptureIfExpr.evals ifExprs label
+      -- dchildxs = derivatives of children.
+      let dchildxs <- List.foldlM derive childxs children
+      deriveLeave xs label dchildxs
 
 -- captures returns all captured forests for all groups.
-def captures (includePath: Bool) (x: CaptureExpr) (forest: List ParseTree): Option (List (Nat × List ParseTree)) :=
-  let dx := List.foldl derive x forest
-  if dx.nullable
-  then Option.some (CaptureExtract.extractGroups includePath dx)
-  else Option.none
+def captures (includePath: Bool) (x: CaptureExpr) (forest: List ParseTree): Except String (List (Nat × List ParseTree)) :=
+  let dx' := List.foldlM derive [x] forest
+  match dx' with
+  | Except.error err => Except.error err
+  | Except.ok [dx] =>
+    if dx.nullable
+    then Except.ok (CaptureExtract.extractGroups includePath dx)
+    else Except.error "no match"
+  | Except.ok _dxs =>
+    Except.error "wtf"
 
 -- capture only returns the longest capture for a specific group.
-def capture (name: Nat) (x: CaptureExpr) (forest: List ParseTree) (includePath: Bool := false): Option (List ParseTree) :=
+def capture (name: Nat) (x: CaptureExpr) (forest: List ParseTree) (includePath: Bool := false): Except String (List ParseTree) :=
   match captures includePath x forest with
-  | Option.none => Option.none
-  | Option.some cs =>
+  | Except.error err => Except.error err
+  | Except.ok cs =>
   let forests := List.filterMap
     (fun (name', forest) =>
       if name = name'
       then Option.some forest
       else Option.none
     ) cs
-  List.head? (List.reverse (List.mergeSort forests (le := fun x y => (Ord.compare x y).isLE)))
+  match List.head? (List.reverse (List.mergeSort forests (le := fun x y => (Ord.compare x y).isLE))) with
+  | Option.some k => Except.ok k
+  | Option.none => Except.error "unknown group"
 
 -- capturePath includes the path of the captured tree.
-def capturePath (name: Nat) (x: CaptureExpr) (forest: List ParseTree): Option (List ParseTree) :=
+def capturePath (name: Nat) (x: CaptureExpr) (forest: List ParseTree): Except String (List ParseTree) :=
   capture name x forest (includePath := true)
 
 def CaptureExpr.char (c: Char): CaptureExpr :=
@@ -80,7 +78,7 @@ def treeString (s: String): List ParseTree :=
     (CaptureExpr.star (CaptureExpr.char 'a'))
   )
   (treeString "aaabaaa") =
-  Option.some (treeString "b")
+  Except.ok (treeString "b")
 
 #guard capture 1 (CaptureExpr.concat (CaptureExpr.concat
     (CaptureExpr.star (CaptureExpr.char 'a'))
@@ -88,7 +86,7 @@ def treeString (s: String): List ParseTree :=
     (CaptureExpr.star (CaptureExpr.char 'a'))
   )
   (treeString "aaabbbaaa") =
-  Option.some (treeString "bbb")
+  Except.ok (treeString "bbb")
 
 #guard capture 1 (CaptureExpr.concat (CaptureExpr.concat
     (CaptureExpr.star (CaptureExpr.char 'a'))
@@ -101,7 +99,7 @@ def treeString (s: String): List ParseTree :=
     (CaptureExpr.star (CaptureExpr.char 'a'))
   )
   (treeString "aaacccaaa") =
-  Option.some (treeString "ccc")
+  Except.ok (treeString "ccc")
 
 #guard capture 1 (CaptureExpr.concat (CaptureExpr.concat
     (CaptureExpr.star (CaptureExpr.char 'a'))
@@ -114,7 +112,7 @@ def treeString (s: String): List ParseTree :=
     (CaptureExpr.star (CaptureExpr.char 'a'))
   )
   (treeString "aaabccaaa") =
-  Option.some (treeString "bcc")
+  Except.ok (treeString "bcc")
 
 #guard capture 1 (CaptureExpr.concat (CaptureExpr.concat
     (CaptureExpr.star (CaptureExpr.char 'a'))
@@ -130,7 +128,7 @@ def treeString (s: String): List ParseTree :=
     ParseTree.mk (Token.string "a") [],
     ParseTree.mk (Token.string "a") []
   ] =
-  Option.some [
+  Except.ok [
     ParseTree.mk (Token.string "b") []
   ]
 
@@ -143,7 +141,7 @@ def treeString (s: String): List ParseTree :=
       ParseTree.mk (Token.string "c") [],
     ],
   ] =
-  Option.some [
+  Except.ok [
     ParseTree.mk (Token.string "b") [
       ParseTree.mk (Token.string "c") []
     ]
@@ -157,7 +155,7 @@ def treeString (s: String): List ParseTree :=
     ParseTree.mk (Token.string "b") [
       ParseTree.mk (Token.string "c") [],
     ],
-  ] = Option.some [
+  ] = Except.ok [
     ParseTree.mk (Token.string "c") []
   ]
 
@@ -169,7 +167,7 @@ def treeString (s: String): List ParseTree :=
     ParseTree.mk (Token.string "b") [
       ParseTree.mk (Token.string "c") [],
     ],
-  ] = Option.some [
+  ] = Except.ok [
     ParseTree.mk (Token.string "b") [
       ParseTree.mk (Token.string "c") []
     ]
@@ -203,7 +201,7 @@ def treeString (s: String): List ParseTree :=
     ParseTree.mk (Token.string "a") [],
     ParseTree.mk (Token.string "a") []
   ] =
-  Option.some [
+  Except.ok [
     ParseTree.mk (Token.string "c") []
   ]
 
@@ -234,7 +232,7 @@ def treeString (s: String): List ParseTree :=
     ParseTree.mk (Token.string "a") [],
     ParseTree.mk (Token.string "a") [],
     ParseTree.mk (Token.string "a") []
-  ] = Option.some [
+  ] = Except.ok [
     ParseTree.mk (Token.string "b") [
       ParseTree.mk (Token.string "c") []
     ]

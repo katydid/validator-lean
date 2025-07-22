@@ -13,3 +13,6 @@ namespace Pred
 def eval (p: Pred) (t: Token): Bool :=
   match p with
   | eq t' => t == t'
+
+def eqStr (s: String): Pred :=
+  Pred.eq (Token.string s)
