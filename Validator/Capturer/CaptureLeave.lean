@@ -2,7 +2,7 @@ import Validator.Capturer.CaptureExpr
 
 namespace CaptureLeave
 
-def leave [Monad m] [MonadExcept String m] (x: CaptureExpr) (ms: List CaptureExpr): m (CaptureExpr × List CaptureExpr) := do
+def leave [Monad m] [MonadExcept String m] (x: CaptureExpr α) (ms: CaptureExprs α): m (CaptureExpr α × CaptureExprs α) := do
   match x with
   | CaptureExpr.emptyset => return (CaptureExpr.emptyset, ms)
   | CaptureExpr.epsilon => return (CaptureExpr.emptyset, ms)
@@ -40,7 +40,7 @@ def leave [Monad m] [MonadExcept String m] (x: CaptureExpr) (ms: List CaptureExp
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def deriveLeave [Monad m] [MonadExcept String m] (xs: List CaptureExpr) (ms: List CaptureExpr): m (List CaptureExpr) := do
+def deriveLeave [Monad m] [MonadExcept String m] (xs: CaptureExprs α) (ms: CaptureExprs α): m (CaptureExprs α) := do
   match xs with
   | [] =>
     match ms with
@@ -52,4 +52,4 @@ def deriveLeave [Monad m] [MonadExcept String m] (xs: List CaptureExpr) (ms: Lis
     return (lx::lxs)
 
 class DeriveLeave (m: Type -> Type u) where
-  deriveLeave (xs: List CaptureExpr) (ns: List Bool): m (List CaptureExpr)
+  deriveLeave (xs: CaptureExprs α) (ns: List Bool): m (CaptureExprs α)

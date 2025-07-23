@@ -5,6 +5,7 @@
 import Validator.Std.Except
 
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 
 import Validator.Expr.Pred
 import Validator.Expr.Expr
@@ -13,14 +14,14 @@ namespace Original
 
 -- foldLoop is a more readable version of List.foldl for imperative programmers:
 -- TODO: explain to ignore Id
-private def foldLoop (deriv: Expr -> ParseTree -> Expr) (start: Expr) (forest: List ParseTree): Id Expr := do
+private def foldLoop (deriv: Expr α -> ParseTree α -> Expr α) (start: Expr α) (forest: ParseForest α): Id (Expr α) := do
   let mut res := start
   for tree in forest do
     res := deriv res tree
   return res
 
 -- TODO: explain to ignore partial or try to rewrite this to be easier for termination checker to see this is terminating.
-partial def derive (x: Expr) (tree: ParseTree): Expr :=
+partial def derive [DecidableEq α] (x: Expr α) (tree: ParseTree α): Expr α :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
@@ -40,16 +41,16 @@ partial def derive (x: Expr) (tree: ParseTree): Expr :=
     else Expr.concat (derive y tree) z
   | Expr.star y => Expr.concat (derive y tree) (Expr.star y)
 
-partial def validate (x: Expr) (forest: List ParseTree): Bool :=
+partial def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Bool :=
   Expr.nullable (List.foldl derive x forest)
 
-def run (x: Expr) (t: ParseTree): Except String Bool :=
+def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   Except.ok (validate x [t])
 
 -- Tests
 -- Lean can use #guard to run these tests at compile time.
 
-open ParseTree (node)
+open TokenTree (node)
 
 #guard run
   Expr.emptyset

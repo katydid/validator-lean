@@ -1,4 +1,5 @@
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 
 import Validator.Validator.Validate
 
@@ -7,14 +8,14 @@ import Validator.Validator.ValidateM
 
 namespace TestIO
 
-def validate {m} [ValidateM m] (x: Expr): m Bool :=
+def validate {m} [DecidableEq α] [ValidateM m α] (x: Expr α): m Bool :=
   Validate.validate x
 
-unsafe def run (x: Expr) (t: ParseTree): Except String Bool :=
+unsafe def run [DecidableEq α] [Hashable α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   unsafeEIO (TreeParserIO.run' (validate x) t)
 
 -- runTwice is used to check if the cache was hit on the second run
-def runTwice [DecidableEq α] (f: TreeParserIO.Impl α) (t: ParseTree): EIO String α := do
+def runTwice [DecidableEq α] [Hashable α] [DecidableEq β] (f: TreeParserIO.Impl α β) (t: ParseTree α): EIO String β := do
   let initial := TreeParserIO.Impl.mk (TreeParser.TreeParser.mk t)
   let (res1, updated) <- StateT.run f initial
   _ <- TreeParserIO.EIO.println "start second run"
@@ -24,10 +25,10 @@ def runTwice [DecidableEq α] (f: TreeParserIO.Impl α) (t: ParseTree): EIO Stri
   else return res1
 
 -- runTwice is used to check if the cache was hit on the second run
-unsafe def runTwice' (x: Expr) (t: ParseTree): Except String Bool :=
+unsafe def runTwice' [DecidableEq α] [Hashable α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   unsafeEIO (runTwice (validate x) t)
 
-open ParseTree (node)
+open TokenTree (node)
 
 -- #eval runTwice'
 --   Expr.emptyset

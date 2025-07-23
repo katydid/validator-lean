@@ -9,20 +9,17 @@ import Validator.Derive.Leave
 
 namespace MemLeave
 
-abbrev LeaveMap := Std.ExtHashMap (List Expr × List Bool) (List Expr)
-def LeaveMap.mk: LeaveMap := Std.ExtHashMap.emptyWithCapacity
+abbrev LeaveMap α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Exprs α × List Bool) (Exprs α)
+def LeaveMap.mk [DecidableEq α] [Hashable α]: LeaveMap α := Std.ExtHashMap.emptyWithCapacity
 
-class MemLeave (m: Type -> Type u) where
-  getLeave : m LeaveMap
-  setLeave : LeaveMap → m Unit
-
-instance [Monad m] [MonadStateOf LeaveMap m] : MemLeave m where
-  getLeave := MonadStateOf.get
-  setLeave s := MonadStateOf.set s
+class MemLeave (m: Type -> Type u) (α: outParam Type) [DecidableEq α] [Hashable α] where
+  getLeave : m (LeaveMap α)
+  setLeave : LeaveMap α → m Unit
 
 def deriveLeave
-  [Monad m] [Debug m] [MonadExcept String m] [MemLeave m]
-  (xs: List Expr) (ns: List Bool): m (List Expr) := do
+  [DecidableEq α] [Hashable α]
+  [Monad m] [Debug m] [MonadExcept String m] [MemLeave m α]
+  (xs: Exprs α) (ns: List Bool): m (Exprs α) := do
   let memoized <- MemLeave.getLeave
   match memoized.get? (xs, ns) with
   | Option.none =>
@@ -34,5 +31,5 @@ def deriveLeave
     Debug.debug "cache hit"
     return value
 
-instance [Monad m] [Debug m] [MonadExcept String m] [MemLeave m] : Leave.DeriveLeave m where
-  deriveLeave (xs: List Expr) (ns: List Bool): m (List Expr) := deriveLeave xs ns
+instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m α] : Leave.DeriveLeave m α where
+  deriveLeave (xs: Exprs α) (ns: List Bool): m (Exprs α) := deriveLeave xs ns

@@ -3,7 +3,7 @@ import Validator.Capturer.CaptureIfExpr
 
 namespace CaptureEnter
 
-def enter (x: CaptureExpr) (res: List CaptureIfExpr := []): List CaptureIfExpr :=
+def enter (x: CaptureExpr α) (res: CaptureIfExprs α := []): CaptureIfExprs α :=
   match x with
   | CaptureExpr.emptyset => res
   | CaptureExpr.epsilon => res
@@ -19,8 +19,8 @@ def enter (x: CaptureExpr) (res: List CaptureIfExpr := []): List CaptureIfExpr :
   -- The group is not relevant at this point, are only extracting if expressions.
   | CaptureExpr.group _id y => enter y res
 
-def deriveEnter (xs: List CaptureExpr): List CaptureIfExpr :=
+def deriveEnter (xs: CaptureExprs α): CaptureIfExprs α :=
   List.flatten (List.map CaptureEnter.enter xs)
 
 class DeriveEnter (m: Type -> Type u) where
-  deriveEnter (xs: List CaptureExpr): m (List CaptureIfExpr)
+  deriveEnter (xs: CaptureExprs α): m (CaptureIfExprs α)

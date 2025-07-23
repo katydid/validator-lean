@@ -1,34 +1,28 @@
-import Validator.Parser.Token
-
 -- ParseTree is a Labelled Tree.
-inductive ParseTree where
-  | mk (label: Token) (children: List ParseTree)
+inductive ParseTree (α: Type) where
+  | mk (label: α) (children: List (ParseTree α))
   deriving BEq, Ord, Repr, Hashable
+
+abbrev ParseForest α := List (ParseTree α)
 
 namespace ParseTree
 
-instance: LE ParseTree where
+instance [Ord α]: LE (ParseTree α) where
   le x y := (Ord.compare x y).isLE
 
-instance: LT ParseTree where
+instance [Ord α]: LT (ParseTree α) where
   lt x y := (Ord.compare x y).isLT
 
-def node (s: String) (children: List ParseTree): ParseTree :=
-  ParseTree.mk (Token.string s) children
-
-def str (s: String): ParseTree :=
-  ParseTree.mk (Token.string s) []
-
-def getLabel (t: ParseTree): Token :=
+def getLabel (t: ParseTree α): α :=
   match t with
   | ParseTree.mk l _ => l
 
-def getChildren (t: ParseTree): List ParseTree :=
+def getChildren (t: ParseTree α): ParseForest α :=
   match t with
   | ParseTree.mk _ c => c
 
 mutual
-def ParseTree.hasDecEq : (a b : ParseTree) → Decidable (Eq a b)
+def ParseTree.hasDecEq [DecidableEq α]: (a b : ParseTree α) → Decidable (Eq a b)
   | ParseTree.mk la as, ParseTree.mk lb bs =>
     match decEq la lb with
     | isFalse nlab => isFalse (by
@@ -47,7 +41,7 @@ def ParseTree.hasDecEq : (a b : ParseTree) → Decidable (Eq a b)
           rw [hlab]
           rw [habs]
         )
-def ParseTree.hasDecEqs : (as bs : List ParseTree) → Decidable (Eq as bs)
+def ParseTree.hasDecEqs [DecidableEq α]: (as bs : ParseForest α) → Decidable (Eq as bs)
   | [], [] => isTrue rfl
   | (a::as), [] => isFalse (by
       intro h
@@ -70,4 +64,4 @@ def ParseTree.hasDecEqs : (as bs : List ParseTree) → Decidable (Eq as bs)
       | isTrue habs => isTrue (hab ▸ habs ▸ rfl)
 end
 
-instance : DecidableEq ParseTree := ParseTree.hasDecEq
+instance[DecidableEq α] : DecidableEq (ParseTree α) := ParseTree.hasDecEq

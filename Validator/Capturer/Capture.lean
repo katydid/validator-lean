@@ -1,7 +1,9 @@
 import Validator.Std.Except
 
-import Validator.Parser.Token
 import Validator.Parser.ParseTree
+import Validator.Parser.Token
+import Validator.Parser.TokenTree
+import Validator.Expr.TokenPred
 
 import Validator.Capturer.CaptureEnter
 import Validator.Capturer.CaptureExpr
@@ -14,31 +16,31 @@ import Validator.Capturer.Inst.TreeParserLogCaptureM
 
 namespace Capture
 
-def deriveEnter [CaptureM m] (xs: List CaptureExpr): m (List CaptureExpr) := do
+def deriveEnter [DecidableEq α] [CaptureM m α] (xs: CaptureExprs α): m (CaptureExprs α) := do
   let token <- Parser.token
   let enters := CaptureEnter.deriveEnter xs
   return CaptureIfExpr.evals enters token
 
 def deriveLeave
-  [CaptureM m]
-  (xs: List CaptureExpr) (label: Token) (dchildxs: List CaptureExpr): m (List CaptureExpr) :=
+  [CaptureM m α]
+  (xs: CaptureExprs α) (label: α) (dchildxs: CaptureExprs α): m (CaptureExprs α) :=
   CaptureLeave.deriveLeave xs (List.map (fun dchildx =>
     if CaptureExpr.nullable dchildx
     then CaptureExpr.matched label dchildx
     else CaptureExpr.emptyset
   ) dchildxs)
 
-def deriveValue [CaptureM m] (xs: List CaptureExpr) (label: Token): m (List CaptureExpr) := do
+def deriveValue  [DecidableEq α] [CaptureM m α] (xs: CaptureExprs α) (label: α): m (CaptureExprs α) := do
   deriveLeave xs label (<- deriveEnter xs)
 
-partial def derive [CaptureM m] (xs: List CaptureExpr): m (List CaptureExpr) := do
+partial def derive  [DecidableEq α] [CaptureM m α] (xs: CaptureExprs α): m (CaptureExprs α) := do
   if List.all xs CaptureExpr.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
   | Hint.field =>
     let childxs <- deriveEnter xs
     let token <- Parser.token
-    let dchildxs: List CaptureExpr <-
+    let dchildxs: CaptureExprs α <-
       match <- Parser.next with
       | Hint.value => deriveValue childxs (<- Parser.token)
       | Hint.enter => derive childxs
@@ -55,7 +57,7 @@ partial def derive [CaptureM m] (xs: List CaptureExpr): m (List CaptureExpr) := 
   | Hint.eof => return xs
 
 -- captures returns all captured forests for all groups.
-def captures [CaptureM m] (includePath: Bool) (x: CaptureExpr): m (List (Nat × List ParseTree)) := do
+def captures  [DecidableEq α] [CaptureM m α] (includePath: Bool) (x: CaptureExpr α): m (List (Nat × ParseForest α)) := do
   let dxs <- derive [x]
   match dxs with
   | [dx] =>
@@ -66,7 +68,7 @@ def captures [CaptureM m] (includePath: Bool) (x: CaptureExpr): m (List (Nat × 
     throw "wtf"
 
 -- capture only returns the longest capture for a specific group.
-def capture (name: Nat) (x: CaptureExpr) (forest: List ParseTree) (includePath: Bool := false): Except String (List ParseTree) := do
+def capture [DecidableEq α] [Ord α] (name: Nat) (x: CaptureExpr α) (forest: ParseForest α) (includePath: Bool := false): Except String (ParseForest α) := do
   let (_logs, dx) := TreeParserLogCaptureM.run' (captures includePath x) forest
   match dx with
   | Except.error err => Except.error err
@@ -82,13 +84,13 @@ def capture (name: Nat) (x: CaptureExpr) (forest: List ParseTree) (includePath: 
     | Option.none => throw "unknown group"
 
 -- capturePath includes the path of the captured tree.
-def capturePath (name: Nat) (x: CaptureExpr) (forest: List ParseTree): Except String (List ParseTree) :=
+def capturePath  [DecidableEq α] [Ord α] (name: Nat) (x: CaptureExpr α) (forest: ParseForest α): Except String (ParseForest α) :=
   capture name x forest (includePath := true)
 
-def CaptureExpr.char (c: Char): CaptureExpr :=
-  (CaptureExpr.tree (Pred.eqStr (String.mk [c])) CaptureExpr.epsilon)
+def CaptureExpr.char (c: Char): CaptureExpr Token :=
+  (CaptureExpr.tree (TokenPred.eqStr (String.mk [c])) CaptureExpr.epsilon)
 
-def treeString (s: String): List ParseTree :=
+def treeString (s: String): TokenForest :=
   match s with
   | String.mk cs =>
     List.map (fun c => ParseTree.mk (Token.string (String.mk [c])) []) cs
@@ -154,8 +156,8 @@ def treeString (s: String): List ParseTree :=
   ]
 
 #guard capture 1
-    (CaptureExpr.group 1 (CaptureExpr.tree (Pred.eqStr "b")
-      (CaptureExpr.tree (Pred.eqStr "c") CaptureExpr.epsilon))
+    (CaptureExpr.group 1 (CaptureExpr.tree (TokenPred.eqStr "b")
+      (CaptureExpr.tree (TokenPred.eqStr "c") CaptureExpr.epsilon))
     )
   [
     ParseTree.mk (Token.string "b") [
@@ -169,8 +171,8 @@ def treeString (s: String): List ParseTree :=
   ]
 
 #guard capture 1
-    (CaptureExpr.tree (Pred.eqStr "b")
-      (CaptureExpr.group 1 (CaptureExpr.tree (Pred.eqStr "c") CaptureExpr.epsilon))
+    (CaptureExpr.tree (TokenPred.eqStr "b")
+      (CaptureExpr.group 1 (CaptureExpr.tree (TokenPred.eqStr "c") CaptureExpr.epsilon))
     )
   [
     ParseTree.mk (Token.string "b") [
@@ -181,8 +183,8 @@ def treeString (s: String): List ParseTree :=
   ]
 
 #guard capturePath 1
-    (CaptureExpr.tree (Pred.eqStr "b")
-      (CaptureExpr.group 1 (CaptureExpr.tree (Pred.eqStr "c") CaptureExpr.epsilon))
+    (CaptureExpr.tree (TokenPred.eqStr "b")
+      (CaptureExpr.group 1 (CaptureExpr.tree (TokenPred.eqStr "c") CaptureExpr.epsilon))
     )
   [
     ParseTree.mk (Token.string "b") [
@@ -196,7 +198,7 @@ def treeString (s: String): List ParseTree :=
 
 #guard capture 1 (CaptureExpr.concat (CaptureExpr.concat
     (CaptureExpr.star (CaptureExpr.char 'a'))
-    (CaptureExpr.tree (Pred.eqStr "b")
+    (CaptureExpr.tree (TokenPred.eqStr "b")
       (CaptureExpr.concat (CaptureExpr.concat
         (CaptureExpr.star (CaptureExpr.char 'a'))
         (CaptureExpr.group 1 (CaptureExpr.char 'c')))
@@ -228,7 +230,7 @@ def treeString (s: String): List ParseTree :=
 
 #guard capturePath 1 (CaptureExpr.concat (CaptureExpr.concat
     (CaptureExpr.star (CaptureExpr.char 'a'))
-    (CaptureExpr.tree (Pred.eqStr "b")
+    (CaptureExpr.tree (TokenPred.eqStr "b")
       (CaptureExpr.concat (CaptureExpr.concat
         (CaptureExpr.star (CaptureExpr.char 'a'))
         (CaptureExpr.group 1 (CaptureExpr.char 'c')))

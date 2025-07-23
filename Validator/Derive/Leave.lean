@@ -1,9 +1,8 @@
 import Validator.Expr.Expr
-import Validator.Expr.Smart
 
 namespace Leave
 
-def leave [Monad m] [MonadExcept String m] (x: Expr) (ns: List Bool): m (Expr × List Bool) := do
+def leave [Monad m] [MonadExcept String m] (x: Expr α) (ns: List Bool): m (Expr α × List Bool) := do
   match x with
   | Expr.emptyset => return (Expr.emptyset, ns)
   | Expr.epsilon => return (Expr.emptyset, ns)
@@ -17,25 +16,25 @@ def leave [Monad m] [MonadExcept String m] (x: Expr) (ns: List Bool): m (Expr ×
   | Expr.or y z =>
     let (ly, yns) <- leave y ns
     let (lz, zns) <- leave z yns
-    return (Smart.or ly lz, zns)
+    return (Expr.smartOr ly lz, zns)
   | Expr.concat y z =>
     if Expr.nullable y
     then
       let (ly, yns) <- leave y ns
       let (lz, zns) <- leave z yns
-      return (Smart.or (Smart.concat ly z) lz, zns)
+      return (Expr.smartOr  (Expr.smartConcat ly z) lz, zns)
     else
       let (ly, yns) <- leave y ns
-      return (Smart.concat ly z, yns)
+      return (Expr.smartConcat ly z, yns)
   | Expr.star y =>
       let (ly, yns) <- leave y ns
-      return (Smart.concat ly (Smart.star y), yns)
+      return (Expr.smartConcat ly (Expr.smartStar y), yns)
 
 -- deriveLeave takes a list of expressions and list of bools.
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def deriveLeave [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool): m (List Expr) := do
+def deriveLeave [Monad m] [MonadExcept String m] (xs: Exprs α) (ns: List Bool): m (Exprs α) := do
   match xs with
   | [] =>
     match ns with
@@ -46,5 +45,5 @@ def deriveLeave [Monad m] [MonadExcept String m] (xs: List Expr) (ns: List Bool)
     let lxs <- deriveLeave xs' tailns
     return (lx::lxs)
 
-class DeriveLeave (m: Type -> Type u) where
-  deriveLeave (xs: List Expr) (ns: List Bool): m (List Expr)
+class DeriveLeave (m: Type -> Type u) (α: outParam Type) where
+  deriveLeave (xs: Exprs α) (ns: List Bool): m (Exprs α)

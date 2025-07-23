@@ -9,16 +9,17 @@ import Validator.Derive.Enter
 
 namespace MemEnter
 
-abbrev EnterMap := Std.ExtHashMap (List Expr) (List IfExpr)
-def EnterMap.mk: EnterMap := Std.ExtHashMap.emptyWithCapacity
+abbrev EnterMap α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Exprs α) (IfExprs α)
+def EnterMap.mk [DecidableEq α] [Hashable α] : EnterMap α := Std.ExtHashMap.emptyWithCapacity
 
-class MemEnter (m: Type -> Type u) where
-  getEnter : m EnterMap
-  setEnter : EnterMap → m Unit
+class MemEnter (m: Type -> Type u) (α: outParam Type) [DecidableEq α] [Hashable α] where
+  getEnter : m (EnterMap α)
+  setEnter : (EnterMap α) → m Unit
 
 def deriveEnter
-  [Monad m] [Debug m] [MemEnter m]
-  (xs: List Expr): m (List IfExpr) := do
+  [DecidableEq α] [Hashable α]
+  [Monad m] [Debug m] [MemEnter m α]
+  (xs: Exprs α): m (IfExprs α) := do
   let memoized <- MemEnter.getEnter
   match memoized.get? xs with
   | Option.none =>
@@ -30,5 +31,5 @@ def deriveEnter
     Debug.debug "cache hit"
     return value
 
-instance [Monad m] [Debug m] [MemEnter m] : Enter.DeriveEnter m where
-  deriveEnter (xs: List Expr): m (List IfExpr) := deriveEnter xs
+instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MemEnter m α] : Enter.DeriveEnter m α where
+  deriveEnter (xs: Exprs α): m (IfExprs α) := deriveEnter xs

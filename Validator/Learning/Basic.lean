@@ -5,6 +5,7 @@
 import Validator.Std.Except
 
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
 import Validator.Expr.Expr
@@ -15,37 +16,37 @@ import Validator.Derive.Leave
 
 namespace Basic
 
-def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) := do
+def derive [DecidableEq α] (xs: Exprs α) (t: ParseTree α): Except String (Exprs α) := do
   if List.all xs Expr.unescapable
   then return xs
   else
     match t with
     | ParseTree.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifExprs: List IfExpr := Enter.deriveEnter xs
+      let ifExprs: IfExprs α := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: List Expr := IfExpr.evals ifExprs label
+      let childxs: Exprs α := IfExpr.evals ifExprs label
       -- dchildxs = derivatives of children.
       let dchildxs <- List.foldlM derive childxs children
       -- leaves is the other one of our two new memoizable functions.
       Leave.deriveLeave xs (List.map Expr.nullable dchildxs)
 
-def derivs (x: Expr) (forest: List ParseTree): Except String Expr := do
+def derivs [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String (Expr α) := do
   let dxs <- List.foldlM derive [x] forest
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
 
-def validate (x: Expr) (forest: List ParseTree): Except String Bool := do
+def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String Bool := do
   let dx <- derivs x forest
   return Expr.nullable dx
 
-def run (x: Expr) (t: ParseTree): Except String Bool :=
+def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   validate x [t]
 
 -- Tests
 
-open ParseTree (node)
+open TokenTree (node)
 
 #guard run
   Expr.emptyset

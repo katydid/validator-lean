@@ -4,7 +4,7 @@ namespace CaptureExtract
 
 -- extract extracts a single forest for the whole expression.
 -- This based on extractGroups, but only returns one captured forest.
-def extract (x: CaptureExpr): List ParseTree :=
+def extract (x: CaptureExpr α): ParseForest α :=
   match x with
   | CaptureExpr.emptyset => []
   | CaptureExpr.epsilon => []
@@ -25,7 +25,7 @@ def extract (x: CaptureExpr): List ParseTree :=
   | CaptureExpr.group _ y => extract y
 
 -- extractGroups returns the captured forest for each group.
-def extractGroups (includePath: Bool) (x: CaptureExpr): List (Nat × List ParseTree) :=
+def extractGroups (includePath: Bool) (x: CaptureExpr α): List (Nat × ParseForest α) :=
   match x with
   | CaptureExpr.emptyset => []
   | CaptureExpr.epsilon => []

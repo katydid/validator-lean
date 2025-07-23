@@ -4,19 +4,31 @@ import Validator.Parser.Token
 import Validator.Parser.ParseTree
 
 -- CaptureExpr includes capturing groups
-inductive CaptureExpr where
+inductive CaptureExpr α where
   | emptyset
   | epsilon
   -- matched is extended to trees
-  | matched (tok: Token) (childExpr: CaptureExpr)
-  | tree (pred: Pred) (childExpr: CaptureExpr)
-  | or (y z: CaptureExpr)
-  | concat (y z: CaptureExpr)
-  | star (y: CaptureExpr)
-  | group (id: Nat) (x: CaptureExpr)
+  | matched (tok: α) (childExpr: CaptureExpr α)
+  | tree (pred: Pred α) (childExpr: CaptureExpr α)
+  | or (y z: CaptureExpr α)
+  | concat (y z: CaptureExpr α)
+  | star (y: CaptureExpr α)
+  | group (id: Nat) (x: CaptureExpr α)
   deriving DecidableEq, Ord, Repr, Hashable
 
-def CaptureExpr.nullable (x: CaptureExpr): Bool :=
+abbrev CaptureExprs α := List (CaptureExpr α)
+
+instance [Ord α]: Ord (CaptureExpr α) := inferInstance
+
+instance [Repr α]: Repr (CaptureExpr α) := inferInstance
+
+instance [DecidableEq α]: DecidableEq (CaptureExpr α) := inferInstance
+
+instance [DecidableEq α]: BEq (CaptureExpr α) := inferInstance
+
+instance [Hashable α]: Hashable (CaptureExpr α) := inferInstance
+
+def CaptureExpr.nullable (x: CaptureExpr α): Bool :=
   match x with
   | CaptureExpr.emptyset => false
   | CaptureExpr.epsilon => true
@@ -28,13 +40,13 @@ def CaptureExpr.nullable (x: CaptureExpr): Bool :=
   | CaptureExpr.star _ => true
   | CaptureExpr.group _ y => nullable y
 
-def CaptureExpr.unescapable (x: CaptureExpr): Bool :=
+def CaptureExpr.unescapable (x: CaptureExpr α): Bool :=
   match x with
   | CaptureExpr.emptyset => true
   | _ => false
 
 -- smartOr is a smart constructor for the or operator.
-def CaptureExpr.smartOr (x y: CaptureExpr): CaptureExpr :=
+def CaptureExpr.smartOr (x y: CaptureExpr α): CaptureExpr α :=
   match x with
   | CaptureExpr.emptyset => y
   | _ =>
@@ -43,7 +55,7 @@ def CaptureExpr.smartOr (x y: CaptureExpr): CaptureExpr :=
     | _ => CaptureExpr.or x y
 
 -- smartConcat is a smart constructor for the concat operator.
-def CaptureExpr.smartConcat (x y: CaptureExpr): CaptureExpr :=
+def CaptureExpr.smartConcat (x y: CaptureExpr α): CaptureExpr α :=
   match x with
   | CaptureExpr.emptyset => CaptureExpr.emptyset
   | CaptureExpr.epsilon => y
@@ -54,13 +66,13 @@ def CaptureExpr.smartConcat (x y: CaptureExpr): CaptureExpr :=
     | _ => CaptureExpr.concat x y
 
 -- smartStar is a smart constructor for the star operator.
-def CaptureExpr.smartStar (x: CaptureExpr): CaptureExpr :=
+def CaptureExpr.smartStar (x: CaptureExpr α): CaptureExpr α :=
   match x with
   | CaptureExpr.star _ => x
   | CaptureExpr.emptyset => CaptureExpr.epsilon
   | _ => CaptureExpr.star x
 
-def CaptureExpr.smartGroup (id: Nat) (x: CaptureExpr): CaptureExpr :=
+def CaptureExpr.smartGroup (id: Nat) (x: CaptureExpr α): CaptureExpr α :=
   match x with
   | CaptureExpr.emptyset => CaptureExpr.emptyset
   | _ => CaptureExpr.group id x
@@ -68,7 +80,7 @@ def CaptureExpr.smartGroup (id: Nat) (x: CaptureExpr): CaptureExpr :=
 -- neutralize replaces all tree operators with emptyset.
 -- It is used when deriving concat.
 -- This way we do not lose capture information on nullable expressions.
-def CaptureExpr.neutralize (x: CaptureExpr): CaptureExpr :=
+def CaptureExpr.neutralize (x: CaptureExpr α): CaptureExpr α :=
   match x with
   | CaptureExpr.emptyset => CaptureExpr.emptyset
   | CaptureExpr.epsilon => CaptureExpr.epsilon

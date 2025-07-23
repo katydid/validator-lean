@@ -3,7 +3,7 @@ import Validator.Expr.IfExpr
 
 namespace Enter
 
-def enter (x: Expr) (res: List IfExpr := []): List IfExpr :=
+def enter (x: Expr α) (res: IfExprs α := []): IfExprs α :=
   match x with
   | Expr.emptyset => res
   | Expr.epsilon => res
@@ -15,8 +15,8 @@ def enter (x: Expr) (res: List IfExpr := []): List IfExpr :=
     else enter y res
   | Expr.star y => enter y res
 
-def deriveEnter (xs: List Expr): List IfExpr :=
+def deriveEnter (xs: Exprs α): IfExprs α :=
   List.flatten (List.map Enter.enter xs)
 
-class DeriveEnter (m: Type -> Type u) where
-  deriveEnter (xs: List Expr): m (List IfExpr)
+class DeriveEnter (m: Type -> Type u) (α: outParam Type)  where
+  deriveEnter (xs: Exprs α): m (IfExprs α)

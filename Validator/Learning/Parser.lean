@@ -9,6 +9,7 @@ import Validator.Expr.IfExpr
 import Validator.Parser.Hint
 import Validator.Parser.Parser
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 
 import Validator.Derive.Enter
 import Validator.Derive.Leave
@@ -18,21 +19,21 @@ import Validator.Validator.Inst.TreeParserM
 
 namespace Parser
 
-def deriveEnter [ValidateM m] (xs: List Expr): m (List Expr) := do
+def deriveEnter [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) := do
   let enters <- Enter.DeriveEnter.deriveEnter xs
   let token <- Parser.token
   return IfExpr.evals enters token
 
-def deriveLeave [ValidateM m] (xs: List Expr) (cs: List Expr): m (List Expr) :=
+def deriveLeave [DecidableEq α] [ValidateM m α] (xs: Exprs α) (cs: Exprs α): m (Exprs α) :=
   Leave.DeriveLeave.deriveLeave xs (List.map Expr.nullable cs)
 
-def deriveValue [ValidateM m] (xs: List Expr): m (List Expr) := do
+def deriveValue [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) := do
   deriveEnter xs >>= deriveLeave xs
 
 -- TODO: Is it possible to have a Parser type that can be proved to be of the correct shape, and have not expection throwing
 -- for example: can you prove that your Parser will never return an Hint.leave after returning a Hint.field.
 -- This class can be called the LawfulParser.
-partial def derive [ValidateM m] (xs: List Expr): m (List Expr) := do
+partial def derive [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) := do
   if List.all xs Expr.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
@@ -50,18 +51,18 @@ partial def derive [ValidateM m] (xs: List Expr): m (List Expr) := do
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} [ValidateM m] (x: Expr): m Bool := do
+def validate {m} [DecidableEq α] [ValidateM m α] (x: Expr α): m Bool := do
   let dxs <- derive [x]
   match dxs with
   | [dx] => return Expr.nullable dx
   | _ => throw "expected one expression"
 
-def run (x: Expr) (t: ParseTree): Except String Bool :=
+def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   TreeParserM.run' (validate x) t
 
 -- Tests
 
-open ParseTree (node)
+open TokenTree (node)
 
 #guard run
   Expr.emptyset

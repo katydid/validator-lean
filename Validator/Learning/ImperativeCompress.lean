@@ -6,6 +6,7 @@
 import Validator.Std.Except
 
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
 import Validator.Expr.Expr
@@ -17,22 +18,22 @@ import Validator.Learning.ImperativeLeave
 namespace ImperativeCompress
 
 -- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
-def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) :=
+def derive [DecidableEq α] (xs: Exprs α) (t: ParseTree α): Except String (Exprs α) :=
   if List.all xs Expr.unescapable
   then Except.ok xs
   else
     match t with
     | ParseTree.mk label children =>
-      let ifexprs: List IfExpr := Enter.deriveEnter xs
-      let childxs: List Expr := IfExpr.evals ifexprs label
+      let ifexprs: IfExprs α := Enter.deriveEnter xs
+      let childxs: Exprs α := IfExpr.evals ifexprs label
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
-      let cchildxs' : Except String ((List Expr) × Compress.Indices) := Compress.compress childxs
+      let cchildxs' : Except String ((Exprs α) × Compress.Indices) := Compress.compress childxs
       match cchildxs' with
       | Except.error err => Except.error err
       | Except.ok (cchildxs, indices) =>
       -- cdchildxs = compressed derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let cdchildxs' : Except String (List Expr) := List.foldlM derive cchildxs children
+      let cdchildxs' : Except String (Exprs α) := List.foldlM derive cchildxs children
       match cdchildxs' with
       | Except.error err => Except.error err
       | Except.ok cdchildxs =>
@@ -42,12 +43,12 @@ def derive (xs: List Expr) (t: ParseTree): Except String (List Expr) :=
       | Except.error err => Except.error err
       | Except.ok dchildxs =>
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
-      let dxs': Except String (List Expr) := ImperativeLeave.deriveLeave xs (List.map Expr.nullable dchildxs)
+      let dxs': Except String (Exprs α) := ImperativeLeave.deriveLeave xs (List.map Expr.nullable dchildxs)
       match dxs' with
       | Except.error err => Except.error err
       | Except.ok dxs => Except.ok dxs
 
-def derivs (x: Expr) (forest: List ParseTree): Except String Expr :=
+def derivs [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String (Expr α) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM derive [x] forest
   match dxs with
@@ -55,15 +56,15 @@ def derivs (x: Expr) (forest: List ParseTree): Except String Expr :=
   | Except.ok [dx] => Except.ok dx
   | Except.ok _ => Except.error "expected one expression"
 
-def validate (x: Expr) (forest: List ParseTree): Except String Bool :=
+def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String Bool :=
   match derivs x forest with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Expr.nullable x')
 
-def run (x: Expr) (t: ParseTree): Except String Bool :=
+def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   validate x [t]
 
-open ParseTree (node)
+open TokenTree (node)
 
 #guard run
   Expr.emptyset

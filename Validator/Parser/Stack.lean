@@ -3,7 +3,7 @@ inductive Stack (α: Type u) where
 
 namespace Stack
 
-def getCurrent [Monad m] [MonadState (Stack α) m]: m α := do
+def getCurrent {α: outParam Type} [Monad m] [MonadState (Stack α) m]: m α := do
   let s <- get
   match s with
   | Stack.mk curr _ => return curr

@@ -10,31 +10,31 @@ import Validator.Validator.ValidateM
 
 namespace TreeParserIO
 
-structure State where
-  parser: TreeParser.TreeParser
-  enter: MemEnter.EnterMap
-  leave: MemLeave.LeaveMap
+structure State (α: Type) [DecidableEq α] [Hashable α] where
+  parser: TreeParser.TreeParser α
+  enter: MemEnter.EnterMap α
+  leave: MemLeave.LeaveMap α
 
-abbrev Impl (α: Type) := StateT State (EIO String) α
+abbrev Impl α [DecidableEq α] [Hashable α] β := StateT (State α) (EIO String) β
 
-def Impl.mk (p: TreeParser.TreeParser): State :=
+def Impl.mk [DecidableEq α] [Hashable α] (p: TreeParser.TreeParser α): State α :=
   State.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk
 
 def EIO.println [ToString α] (x: α): EIO String Unit :=
   IO.toEIO (fun x => "ERROR: " ++ x.toString) (IO.println x)
 
-instance : Debug Impl where
+instance [DecidableEq α] [Hashable α] : Debug (Impl α) where
   debug (line: String) := StateT.lift (EIO.println line)
 
-instance: MonadStateOf TreeParser.TreeParser Impl where
-  get : Impl TreeParser.TreeParser := do
+instance [DecidableEq α] [Hashable α]: MonadStateOf (TreeParser.TreeParser α) (Impl α) where
+  get : Impl α (TreeParser.TreeParser α) := do
     let s <- StateT.get
     return s.parser
-  set : TreeParser.TreeParser → Impl PUnit :=
+  set : TreeParser.TreeParser α → Impl α PUnit :=
     fun parser => do
       let s <- StateT.get
       set (State.mk parser s.enter s.leave)
-  modifyGet {α: Type}: (TreeParser.TreeParser → Prod α TreeParser.TreeParser) → Impl α :=
+  modifyGet {β: Type}: (TreeParser.TreeParser α → Prod β (TreeParser.TreeParser α)) → Impl α β :=
     fun f => do
       let s <- StateT.get
       let (res, parser) := f s.parser
@@ -42,43 +42,45 @@ instance: MonadStateOf TreeParser.TreeParser Impl where
       return res
 
 instance
-  [Monad Impl] -- EStateM is monad
-  [Debug Impl] -- Debug instance is declared above
-  [MonadExcept String Impl] -- EStateM String is MonadExcept String
-  [MonadStateOf TreeParser.TreeParser Impl] -- MonadStateOf ParseTree.TreeParser is declared above
-  : Parser Impl where -- This should just follow, but apparently we need to spell it out
+  [DecidableEq α]
+  [Hashable α]
+  [Monad (Impl α)] -- EStateM is monad
+  [Debug (Impl α)] -- Debug instance is declared above
+  [MonadExcept String (Impl α)] -- EStateM String is MonadExcept String
+  [MonadStateOf (TreeParser.TreeParser α) (Impl α)] -- MonadStateOf ParseTree.TreeParser is declared above
+  : Parser (Impl α) α where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
   token := Parser.token
 
-instance : MemEnter.MemEnter Impl where
-  getEnter : Impl MemEnter.EnterMap := do
+instance [DecidableEq α] [Hashable α]: MemEnter.MemEnter (Impl α) α where
+  getEnter : Impl α (MemEnter.EnterMap α) := do
     let s <- StateT.get
     return s.enter
-  setEnter : MemEnter.EnterMap → Impl PUnit :=
+  setEnter : MemEnter.EnterMap α → Impl α PUnit :=
     fun enter => do
       let s <- StateT.get
       set (State.mk s.parser enter s.leave)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
-instance : Enter.DeriveEnter Impl where
-  deriveEnter (xs: List Expr): Impl (List IfExpr) := MemEnter.deriveEnter xs
+instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl α) α where
+  deriveEnter (xs: Exprs α): Impl α (IfExprs α) := MemEnter.deriveEnter xs
 
-instance : MemLeave.MemLeave Impl where
-  getLeave : Impl MemLeave.LeaveMap := do
+instance [DecidableEq α] [Hashable α]: MemLeave.MemLeave (Impl α) α where
+  getLeave : Impl α (MemLeave.LeaveMap α) := do
     let s <- StateT.get
     return s.leave
-  setLeave : MemLeave.LeaveMap → Impl PUnit :=
+  setLeave : MemLeave.LeaveMap α → Impl α PUnit :=
     fun leave => do
       let s <- StateT.get
       set (State.mk s.parser s.enter leave)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance : Leave.DeriveLeave Impl where
-  deriveLeave (xs: List Expr) (ns: List Bool): Impl (List Expr) := MemLeave.deriveLeave xs ns
+instance [DecidableEq α] [Hashable α]: Leave.DeriveLeave (Impl α) α where
+  deriveLeave (xs: Exprs α) (ns: List Bool): Impl α (Exprs α) := MemLeave.deriveLeave xs ns
 
-instance : ValidateM Impl where
+instance [DecidableEq α] [Hashable α]: ValidateM (Impl α) α where
   -- all instances have been created, so no implementations are required here
 
-def run' (f: Impl α) (t: ParseTree): EIO String α :=
+def run' [DecidableEq α] [Hashable α] (f: Impl α β) (t: ParseTree α): EIO String β :=
   StateT.run' f (Impl.mk (TreeParser.TreeParser.mk t))

@@ -2,13 +2,14 @@ import Validator.Std.Except
 
 import Validator.Parser.Hint
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 import Validator.Parser.Parser
 import Validator.Parser.Token
 import Validator.Parser.TreeParser
 
 namespace EncodeTree
 
-partial def encode [Monad m] [MonadExcept String m] [Parser m]: m (List ParseTree) := do
+partial def encode [Monad m] [MonadExcept String m] [Parser m α]: m (ParseForest α) := do
   match <- Parser.next with
   | Hint.enter =>
     let children <- encode
@@ -31,12 +32,12 @@ partial def encode [Monad m] [MonadExcept String m] [Parser m]: m (List ParseTre
   | Hint.leave => return []
   | Hint.eof => return []
 
-def run (x: StateT TreeParser.TreeParser (Except String) α) (t: ParseTree): Except String α :=
+def run (x: StateT (TreeParser.TreeParser α) (Except String) β) (t: ParseTree α): Except String β :=
   StateT.run' x (TreeParser.TreeParser.mk t)
 
 -- Tests
 
-open ParseTree (node)
+open TokenTree (node)
 
 #guard run
   encode

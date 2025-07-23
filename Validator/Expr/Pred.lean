@@ -4,15 +4,22 @@ import Validator.Parser.Token
 -- https://github.com/katydid/regex-deriv-lean/blob/main/RegexDeriv/Regex/Predicate.lean
 -- First do upgrade the regex-deriv-lean to lean 4.21 and update definitions to LawfulOrd
 
-inductive Pred where
-  | eq (t: Token)
+inductive Pred (α: Type) where
+  | eq (t: α)
   deriving DecidableEq, Ord, Repr, Hashable
+
+instance [Ord α]: Ord (Pred α) := inferInstance
+
+instance [Repr α]: Repr (Pred α) := inferInstance
+
+instance [DecidableEq α]: DecidableEq (Pred α) := inferInstance
+
+instance [DecidableEq α]: BEq (Pred α) := inferInstance
+
+instance [Hashable α]: Hashable (Pred α) := inferInstance
 
 namespace Pred
 
-def eval (p: Pred) (t: Token): Bool :=
+def eval [BEq α] (p: Pred α) (t: α): Bool :=
   match p with
   | eq t' => t == t'
-
-def eqStr (s: String): Pred :=
-  Pred.eq (Token.string s)

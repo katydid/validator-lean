@@ -4,6 +4,7 @@
 import Validator.Std.Except
 
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 
 import Validator.Expr.Expr
 import Validator.Expr.IfExpr
@@ -14,7 +15,7 @@ import Validator.Learning.ImperativeLeave
 namespace ImperativeBasic
 
 -- foldLoop is a more readable version of List.foldlM for imperative programmers:
-private def foldLoop (deriv: List Expr -> ParseTree -> Except String (List Expr)) (start: List Expr) (forest: List ParseTree): Except String (List Expr) := do
+private def foldLoop (deriv: Exprs α -> ParseTree α -> Except String (Exprs α)) (start: Exprs α) (forest: ParseForest α): Except String (Exprs α) := do
   let mut res := start
   for tree in forest do
     match deriv res tree with
@@ -22,7 +23,7 @@ private def foldLoop (deriv: List Expr -> ParseTree -> Except String (List Expr)
     | Except.ok r => res := r
   return res
 
-def derive (xs: List Expr) (tree: ParseTree): Except String (List Expr) :=
+def derive [DecidableEq α] (xs: Exprs α) (tree: ParseTree α): Except String (Exprs α) :=
   -- If all expressions are unescapable, then simply return without look at the input tree.
   -- An example of an unescapable expression is emptyset, since its derivative is always emptyset, no matter the input.
   if List.all xs Expr.unescapable
@@ -32,23 +33,23 @@ def derive (xs: List Expr) (tree: ParseTree): Except String (List Expr) :=
     match tree with
     | ParseTree.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifexprs: List IfExpr := Enter.deriveEnter xs
+      let ifexprs: IfExprs α := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: List Expr := IfExpr.evals ifexprs label
+      let childxs: Exprs α := IfExpr.evals ifexprs label
       -- dchildxs = derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let dchildxs': Except String (List Expr) := List.foldlM derive childxs children
+      let dchildxs': Except String (Exprs α) := List.foldlM derive childxs children
       match dchildxs' with
       | Except.error err => Except.error err
       | Except.ok dchildxs =>
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
       -- leaves is the other one of our two new memoizable functions.
-      let dxs': Except String (List Expr) := ImperativeLeave.deriveLeave xs (List.map Expr.nullable dchildxs)
+      let dxs': Except String (Exprs α) := ImperativeLeave.deriveLeave xs (List.map Expr.nullable dchildxs)
       match dxs' with
       | Except.error err => Except.error err
       | Except.ok dxs => Except.ok dxs
 
-def derivs (x: Expr) (forest: List ParseTree): Except String Expr :=
+def derivs [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String (Expr α) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM derive [x] forest
   match dxs with
@@ -56,18 +57,18 @@ def derivs (x: Expr) (forest: List ParseTree): Except String Expr :=
   | Except.ok [dx] => Except.ok dx
   | Except.ok _ => Except.error "expected one expression"
 
-def validate (x: Expr) (forest: List ParseTree): Except String Bool :=
+def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String Bool :=
   match derivs x forest with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Expr.nullable x')
 
-def run (x: Expr) (t: ParseTree): Except String Bool :=
+def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   validate x [t]
 
 -- Tests
 -- Lean can use #guard to run these tests at compile time.
 
-open ParseTree (node)
+open TokenTree (node)
 
 #guard run
   Expr.emptyset

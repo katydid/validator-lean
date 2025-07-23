@@ -1,4 +1,5 @@
 import Validator.Parser.ParseTree
+import Validator.Parser.TokenTree
 
 import Validator.Validator.ValidateM
 import Validator.Validator.Inst.TreeParserMemM
@@ -7,15 +8,15 @@ import Validator.Learning.Parser
 
 namespace Memoize
 
-def validate {m} [ValidateM m] (x: Expr): m Bool :=
+def validate {m} [DecidableEq α] [ValidateM m α] (x: Expr α): m Bool :=
   Parser.validate x
 
-def run (x: Expr) (t: ParseTree): Except String Bool :=
+def run [DecidableEq α] [Hashable α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   TreeParserMemM.run' (validate x) t
 
 -- Tests
 
-open ParseTree (node)
+open TokenTree (node)
 
 #guard run
   Expr.emptyset
