@@ -26,7 +26,7 @@ def ParseTree.hasDecEq [DecidableEq α]: (a b : ParseTree α) → Decidable (Eq 
   | ParseTree.mk la as, ParseTree.mk lb bs =>
     match decEq la lb with
     | isFalse nlab => isFalse (by
-        simp only [ParseTree.mk.injEq, List.cons.injEq, not_and]
+        simp only [ParseTree.mk.injEq, not_and]
         intro h
         contradiction
       )
@@ -54,7 +54,7 @@ def ParseTree.hasDecEqs [DecidableEq α]: (as bs : ParseForest α) → Decidable
   | (a::as), (b::bs) =>
     match ParseTree.hasDecEq a b with
     | isFalse nab => isFalse (by
-        simp only [ParseTree.mk.injEq, List.cons.injEq, not_and]
+        simp only [List.cons.injEq, not_and]
         intro _ hab
         contradiction
       )
