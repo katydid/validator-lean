@@ -2,6 +2,8 @@
 
 `obtain` is a tactic much like `have`, but when used for destruction it also clears the original hypothesis, which makes it possible to reuse names.
 
+It is especially useful for destruction of types with only one case, for example `And.intro` and `Exists.intro`.
+
 ## destruct
 
 We can use `obtain` as a substitute for Coq's `destruct` tactic.
