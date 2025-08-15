@@ -4,7 +4,7 @@ inductive Hint where
   | field
   | value
   | eof
-  deriving Repr
+  deriving Repr, DecidableEq
 
 instance : ToString Hint :=
   ⟨ fun h =>

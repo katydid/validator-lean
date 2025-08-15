@@ -16,10 +16,10 @@ unsafe def run [DecidableEq α] [Hashable α] (x: Expr α) (t: ParseTree α): Ex
 
 -- runTwice is used to check if the cache was hit on the second run
 def runTwice [DecidableEq α] [Hashable α] [DecidableEq β] (f: TreeParserIO.Impl α β) (t: ParseTree α): EIO String β := do
-  let initial := TreeParserIO.Impl.mk (TreeParser.TreeParser.mk t)
+  let initial := TreeParserIO.Impl.mk (TreeParser.ParserState.mk' t)
   let (res1, updated) <- StateT.run f initial
   _ <- TreeParserIO.EIO.println "start second run"
-  let res2 <- StateT.run' f (TreeParserIO.State.mk (TreeParser.TreeParser.mk t) updated.enter updated.leave)
+  let res2 <- StateT.run' f (TreeParserIO.State.mk (TreeParser.ParserState.mk' t) updated.enter updated.leave)
   if res1 ≠ res2
   then throw "memoization changed result"
   else return res1

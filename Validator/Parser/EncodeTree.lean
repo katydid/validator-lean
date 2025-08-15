@@ -32,8 +32,8 @@ partial def encode [Monad m] [MonadExcept String m] [Parser m α]: m (ParseFores
   | Hint.leave => return []
   | Hint.eof => return []
 
-def run (x: StateT (TreeParser.TreeParser α) (Except String) β) (t: ParseTree α): Except String β :=
-  StateT.run' x (TreeParser.TreeParser.mk t)
+def run (x: StateT (TreeParser.ParserState α) (Except String) β) (t: ParseTree α): Except String β :=
+  StateT.run' x (TreeParser.ParserState.mk' t)
 
 -- Tests
 

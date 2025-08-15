@@ -11,27 +11,27 @@ import Validator.Validator.ValidateM
 namespace TreeParserMemM
 
 structure State (α: Type) [DecidableEq α] [Hashable α] where
-  parser: TreeParser.TreeParser α
+  parser: TreeParser.ParserState α
   enter : MemEnter.EnterMap α
   leave : MemLeave.LeaveMap α
 
 abbrev Impl α [DecidableEq α] [Hashable α] β := EStateM String (State α) β
 
-def Impl.mk [DecidableEq α] [Hashable α] (p: TreeParser.TreeParser α): State α :=
+def Impl.mk [DecidableEq α] [Hashable α] (p: TreeParser.ParserState α): State α :=
   State.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk
 
 instance [DecidableEq α] [Hashable α] : Debug (Impl α) where
   debug (_line: String) := return ()
 
-instance [DecidableEq α] [Hashable α] : MonadStateOf (TreeParser.TreeParser α) (Impl α) where
-  get : Impl α (TreeParser.TreeParser α) := do
+instance [DecidableEq α] [Hashable α] : MonadStateOf (TreeParser.ParserState α) (Impl α) where
+  get : Impl α (TreeParser.ParserState α) := do
     let s <- EStateM.get
     return s.parser
-  set : TreeParser.TreeParser α → Impl α PUnit :=
+  set : TreeParser.ParserState α → Impl α PUnit :=
     fun parser => do
       let s <- EStateM.get
       EStateM.set (State.mk parser s.enter s.leave)
-  modifyGet {β: Type}: (TreeParser.TreeParser α → Prod β (TreeParser.TreeParser α)) → Impl α β :=
+  modifyGet {β: Type}: (TreeParser.ParserState α → Prod β (TreeParser.ParserState α)) → Impl α β :=
     fun f => do
       let s <- EStateM.get
       let (res, parser) := f s.parser
@@ -44,7 +44,7 @@ instance
   [Monad (Impl α)] -- EStateM is monad
   [Debug (Impl α)] -- Debug instance is declared above
   [MonadExcept String (Impl α)] -- EStateM String is MonadExcept String
-  [MonadStateOf (TreeParser.TreeParser α) (Impl α)] -- MonadStateOf ParseTree.TreeParser is declared above
+  [MonadStateOf (TreeParser.ParserState α) (Impl α)] -- MonadStateOf ParseTree.TreeParser is declared above
   : Parser (Impl α) α where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
@@ -80,9 +80,9 @@ instance [DecidableEq α] [Hashable α]: ValidateM (Impl α) α where
   -- all instances have been created, so no implementations are required here
 
 def run [DecidableEq α] [Hashable α] (f: Impl α β) (t: ParseTree α): EStateM.Result String (State α) β :=
-  EStateM.run f (Impl.mk (TreeParser.TreeParser.mk t))
+  EStateM.run f (Impl.mk (TreeParser.ParserState.mk' t))
 
 def run' [DecidableEq α] [Hashable α] (f: Impl α β) (t: ParseTree α): Except String β :=
-  match EStateM.run f (Impl.mk (TreeParser.TreeParser.mk t)) with
+  match EStateM.run f (Impl.mk (TreeParser.ParserState.mk' t)) with
   | EStateM.Result.ok k _ => Except.ok k
   | EStateM.Result.error err _ => Except.error err
