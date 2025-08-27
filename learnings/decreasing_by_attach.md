@@ -45,6 +45,8 @@ tree : ParseTree α
 
 The relation between `tree` and `tree✝` has been lost, even if we know that `tree` is a child of `tree✝`, Lean has forgotten this fact.
 
+At least this was the case in lean v4.22.0-rc4, but seems to have been fixed in v4.22.0.
+
 We can use `List.attach` to remind Lean.
 The function maps the list to a list where each element includes a proof that it is an element of the original list.
 

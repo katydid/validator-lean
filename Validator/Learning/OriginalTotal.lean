@@ -23,17 +23,7 @@ def derive [DecidableEq α] (x: Expr α) (tree: ParseTree α): Expr α :=
       Expr.onlyif
         (
           (Pred.eval labelPred label)
-          && Expr.nullable (
-            List.foldl
-              -- _hc represents the proof that the element is in the list.
-              -- We ignore _hc in the implementation of the function,
-              -- but we use it in the termination proof.
-              (fun res ⟨c, _hc⟩ => derive res c)
-              childrenExpr
-              -- We use List.attach to create a list of pairs of element and
-              -- proofs that the element is in the list.
-              children.attach
-          )
+          && Expr.nullable (List.foldl derive childrenExpr children)
         )
       Expr.epsilon
   | Expr.or y z => Expr.or (derive y tree) (derive z tree)
@@ -160,7 +150,6 @@ theorem derive_commutes {α: Type} [DecidableEq α] (x: Expr α) (a: ParseTree �
     rw [Denote.denote_onlyif]
     simp only [Denote.denote]
     apply (congrArg fun x => Language.onlyif x Language.emptystr)
-    rw [List.list_foldl_attach]
     simp only [Bool.and_eq_true]
     simp only [decide_eq_true_eq]
     congr
