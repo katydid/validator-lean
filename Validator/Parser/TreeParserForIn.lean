@@ -8,9 +8,9 @@ def forIn {α: Type} {β: Type v} {m: Type v -> Type v'} [Monad m]
   (initParser: TreeParser.ParserState α) (initLoop: β) (f: Hint -> β -> m (ForInStep β)): m β :=
   let rec loop (loopState: β) (parserState: TreeParser.ParserState α): m β :=
     match _hnext: TreeParser.run TreeParser.next parserState with
-    | Except.error err =>
+    | Except.error _err =>
       pure loopState
-      -- TODO do not just terminate, but `throw err`
+      -- TODO do not just terminate, but `throw _err`
     | Except.ok ⟨ hint, parserState' ⟩ =>
       if hint = Hint.eof
       then pure loopState
