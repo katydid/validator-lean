@@ -37,6 +37,9 @@ def Expr.unescapable (x: Expr α): Bool :=
 
 namespace Expr
 
+def onlyif (cond: Prop) [dcond: Decidable cond] (x: Expr α): Expr α :=
+  if cond then x else Expr.emptyset
+
 def smartOr (x y: Expr α): Expr α :=
   match x with
   | Expr.emptyset => y

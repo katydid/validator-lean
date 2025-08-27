@@ -21,8 +21,12 @@ def getChildren (t: ParseTree α): ParseForest α :=
   match t with
   | ParseTree.mk _ c => c
 
+def getAttachedChildren (t: ParseTree α): List {x // x ∈ t.getChildren} :=
+  match t with
+  | ParseTree.mk _ c => c.attach
+
 mutual
-def ParseTree.hasDecEq [DecidableEq α]: (a b : ParseTree α) → Decidable (Eq a b)
+def hasDecEq [DecidableEq α]: (a b : ParseTree α) → Decidable (Eq a b)
   | ParseTree.mk la as, ParseTree.mk lb bs =>
     match decEq la lb with
     | isFalse nlab => isFalse (by
@@ -41,7 +45,7 @@ def ParseTree.hasDecEq [DecidableEq α]: (a b : ParseTree α) → Decidable (Eq 
           rw [hlab]
           rw [habs]
         )
-def ParseTree.hasDecEqs [DecidableEq α]: (as bs : ParseForest α) → Decidable (Eq as bs)
+def hasDecEqs [DecidableEq α]: (as bs : ParseForest α) → Decidable (Eq as bs)
   | [], [] => isTrue rfl
   | (a::as), [] => isFalse (by
       intro h
@@ -64,4 +68,4 @@ def ParseTree.hasDecEqs [DecidableEq α]: (as bs : ParseForest α) → Decidable
       | isTrue habs => isTrue (hab ▸ habs ▸ rfl)
 end
 
-instance[DecidableEq α] : DecidableEq (ParseTree α) := ParseTree.hasDecEq
+instance[DecidableEq α] : DecidableEq (ParseTree α) := hasDecEq

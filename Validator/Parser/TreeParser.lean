@@ -5,7 +5,7 @@ import Validator.Std.Except
 import Validator.Parser.Token
 import Validator.Parser.TokenTree
 import Validator.Parser.Stack
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.Parser
 
 local elab "simp_monads" : tactic => do
@@ -540,7 +540,7 @@ open TokenTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok ["{", "F", "a", "{", "V", "b", "F", "c", "}", "}", "$"]
 
-theorem next_decreases_stack_size
+theorem next_decreases_size_of_parserstate
   {hint: Hint}
   {thisParserState nextParserState: ParserState α}
   (hneof: hint ≠ Hint.eof)

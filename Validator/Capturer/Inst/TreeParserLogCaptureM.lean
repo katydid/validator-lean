@@ -1,6 +1,6 @@
 import Validator.Std.Debug
 
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.TreeParser
 
 import Validator.Capturer.CaptureM

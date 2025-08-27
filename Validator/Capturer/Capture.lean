@@ -1,6 +1,6 @@
 import Validator.Std.Except
 
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.Token
 import Validator.Parser.TokenTree
 import Validator.Expr.TokenPred

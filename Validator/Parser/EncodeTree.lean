@@ -1,7 +1,7 @@
 import Validator.Std.Except
 
 import Validator.Parser.Hint
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.TokenTree
 import Validator.Parser.Parser
 import Validator.Parser.Token

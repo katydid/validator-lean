@@ -8,12 +8,12 @@ abbrev IfExprs α := List (IfExpr α)
 
 namespace IfExpr
 
-def eval [BEq α] (ifExpr: IfExpr α) (t: α): Expr α :=
+def eval [BEq α] [DecidableEq α] (ifExpr: IfExpr α) (t: α): Expr α :=
   match ifExpr with
   | IfExpr.mk cnd thn els =>
     if Pred.eval cnd t
     then thn
     else els
 
-def evals [BEq α] (ifExprs: IfExprs α) (t: α): List (Expr α) :=
+def evals [BEq α] [DecidableEq α] (ifExprs: IfExprs α) (t: α): List (Expr α) :=
   List.map (fun x => eval x t) ifExprs

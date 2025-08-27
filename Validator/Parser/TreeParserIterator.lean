@@ -1,7 +1,7 @@
 import Init.Data.Iterators
 
 import Validator.Parser.Hint
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.TreeParser
 
 namespace TreeParserIterator
@@ -193,7 +193,7 @@ private def TreeParserIterator.finitenessRelation [Pure m] :
       simp [Std.Iterators.IterStep.successor] at h
       rw [h] at h'
       obtain ⟨ hneof, h' ⟩ := h'
-      exact TreeParser.next_decreases_stack_size hneof h'
+      exact TreeParser.next_decreases_size_of_parserstate hneof h'
 
 instance [Pure m] : Std.Iterators.Finite (TreeParserIterator α) m :=
   Std.Iterators.Finite.of_finitenessRelation TreeParserIterator.finitenessRelation

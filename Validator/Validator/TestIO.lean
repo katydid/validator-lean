@@ -1,4 +1,4 @@
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.TokenTree
 
 import Validator.Validator.Validate

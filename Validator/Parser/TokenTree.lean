@@ -1,4 +1,4 @@
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.Token
 
 abbrev TokenTree := ParseTree Token

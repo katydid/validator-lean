@@ -1,7 +1,7 @@
 -- This extends the algorithm in https://github.com/katydid/regex-deriv-lean/blob/main/RegexDeriv/Group/Capture/CaptureRegexCapture.lean
 -- It extends the algorithm to implement capturing on ParseTrees.
 
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.Token
 import Validator.Parser.TokenTree
 

@@ -1,5 +1,5 @@
 import Validator.Parser.Hint
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.TreeParser
 
 namespace TreeParserForIn
@@ -20,7 +20,7 @@ def forIn {α: Type} {β: Type v} {m: Type v -> Type v'} [Monad m]
         | ForInStep.yield loopState' => loop loopState' parserState'
     termination_by parserState
     decreasing_by
-      apply @TreeParser.next_decreases_stack_size _ hint parserState parserState'
+      apply @TreeParser.next_decreases_size_of_parserstate _ hint parserState parserState'
       · assumption
       · exact (Eq.symm _hnext)
   loop initLoop initParser
@@ -35,7 +35,7 @@ open TokenTree (node)
 
 def exampleLoop: IO Unit := do
   let tree := TreeParser.ParserState.mk' (node "a" [node "b" [], node "c" [node "d" []]])
-  for h in tree do
-    IO.println h
+  for hint in tree do
+    IO.println hint
 
 #eval exampleLoop

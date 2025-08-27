@@ -10,7 +10,7 @@ import Validator.Expr.IfExpr
 import Validator.Derive.Enter
 import Validator.Derive.Leave
 
-import Validator.Parser.ParseTree
+import Validator.Std.ParseTree
 import Validator.Parser.TokenTree
 import Validator.Parser.Parser
 import Validator.Parser.Hint
