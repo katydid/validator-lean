@@ -13,14 +13,18 @@ import Validator.Expr.Expr
 namespace Original
 
 -- foldLoop is a more readable version of List.foldl for imperative programmers:
--- TODO: explain to ignore Id
+-- Imperative programmers can imagine that `Id (Expr α)` = `Expr α`, because it does.
+-- The Id wrapper just adds a monad wrapper to enable the do notation, so that we can use the for loop in Lean.
 private def foldLoop (deriv: Expr α -> ParseTree α -> Expr α) (start: Expr α) (forest: ParseForest α): Id (Expr α) := do
   let mut res := start
   for tree in forest do
     res := deriv res tree
   return res
 
--- TODO: explain to ignore partial or try to rewrite this to be easier for termination checker to see this is terminating.
+-- derive is the derivative function for the expression, given a tree.
+-- It returns the expression that is left to match after matching the tree.
+-- Note we need to use `partial`, since Lean cannot automatically figure out that the derive function terminates.
+-- In OriginalTotal we show how to remove this, by manually proving that it in fact does terminate.
 partial def derive [DecidableEq α] (x: Expr α) (tree: ParseTree α): Expr α :=
   match x with
   | Expr.emptyset => Expr.emptyset

@@ -37,12 +37,10 @@ digraph {
     // children ≠ [ParseTree.mk v []]
     // ParserState.opened ((ParseTree.mk f children)::nexts) > ParserState.opened nexts + ParserState.field f children
     opened_other [label = "ParserState.opened ((ParseTree.mk f children)::nexts)" color="blue"]
-    // TODO make plus clear
     opened_other -> opened [arrowhead = "odiamond" label="push" style="bold" color="blue"]
     opened_other -> field [arrowhead = "odiamond" label="push" style="bold" color="blue"]
     // ParserState.value _ ((ParseTree.mk f children)::nexts) > ParserState.opened nexts + ParserState.field f children
     value_other [label = "ParserState.value _ ((ParseTree.mk f children)::nexts)" color="orange"]
-    // TODO make plus clear
     value_other -> opened [arrowhead = "odiamond" label="push" style="bold" color="orange"]
     value_other -> field [arrowhead = "odiamond" label="push" style="bold" color="orange"]
 
