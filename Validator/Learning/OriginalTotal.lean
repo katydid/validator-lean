@@ -20,7 +20,7 @@ theorem decreasing_or_l (y: Expr α) (tree: ParseTree α):
     (tree, y)
     (tree, y.or z) := by
   apply Prod.Lex.right
-  simp +arith
+  simp +arith only [Expr.or.sizeOf_spec]
 
 theorem decreasing_or_r (y: Expr α) (tree: ParseTree α):
   Prod.Lex
@@ -29,8 +29,7 @@ theorem decreasing_or_r (y: Expr α) (tree: ParseTree α):
     (tree, z)
     (tree, y.or z) := by
   apply Prod.Lex.right
-  simp only [Expr.or.sizeOf_spec]
-  simp +arith only
+  simp +arith only [Expr.or.sizeOf_spec]
 
 theorem decreasing_concat_l (y: Expr α) (tree: ParseTree α):
   Prod.Lex
@@ -39,7 +38,7 @@ theorem decreasing_concat_l (y: Expr α) (tree: ParseTree α):
     (tree, y)
     (tree, y.concat z) := by
   apply Prod.Lex.right
-  simp +arith
+  simp +arith only [Expr.concat.sizeOf_spec]
 
 theorem decreasing_concat_r (y: Expr α) (tree: ParseTree α):
   Prod.Lex
@@ -48,8 +47,7 @@ theorem decreasing_concat_r (y: Expr α) (tree: ParseTree α):
     (tree, z)
     (tree, y.concat z) := by
   apply Prod.Lex.right
-  simp only [Expr.concat.sizeOf_spec]
-  simp +arith only
+  simp +arith only [Expr.concat.sizeOf_spec]
 
 theorem decreasing_star (y: Expr α) (tree: ParseTree α):
   Prod.Lex
@@ -58,7 +56,7 @@ theorem decreasing_star (y: Expr α) (tree: ParseTree α):
     (tree, y)
     (tree, y.star) := by
   apply Prod.Lex.right
-  simp +arith
+  simp +arith only [Expr.star.sizeOf_spec]
 
 theorem decreasing_tree {s: Expr α} {children: ParseForest α} (h: tree ∈ children):
   Prod.Lex
@@ -67,9 +65,9 @@ theorem decreasing_tree {s: Expr α} {children: ParseForest α} (h: tree ∈ chi
     (tree, s)
     (ParseTree.mk label children, Expr.tree labelPred childrenExpr) := by
   apply Prod.Lex.left
-  simp +arith
-  apply List.elem_lt_list
-  assumption
+  simp +arith only [ParseTree.mk.sizeOf_spec]
+  have h' := List.elem_lt_list h
+  omega
 
 def derive [DecidableEq α] (x: Expr α) (tree: ParseTree α): Expr α :=
   match x with
