@@ -38,4 +38,15 @@ def exampleLoop: IO Unit := do
   for hint in tree do
     IO.println hint
 
+/--
+info: {
+F
+{
+V
+F
+V
+}
+}
+-/
+#guard_msgs in
 #eval exampleLoop
