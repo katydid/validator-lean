@@ -13,6 +13,64 @@ import Validator.Expr.Denote
 
 namespace OriginalTotal
 
+theorem decreasing_or_l (y: Expr α) (tree: ParseTree α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (tree, y)
+    (tree, y.or z) := by
+  apply Prod.Lex.right
+  simp +arith
+
+theorem decreasing_or_r (y: Expr α) (tree: ParseTree α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (tree, z)
+    (tree, y.or z) := by
+  apply Prod.Lex.right
+  simp only [Expr.or.sizeOf_spec]
+  simp +arith only
+
+theorem decreasing_concat_l (y: Expr α) (tree: ParseTree α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (tree, y)
+    (tree, y.concat z) := by
+  apply Prod.Lex.right
+  simp +arith
+
+theorem decreasing_concat_r (y: Expr α) (tree: ParseTree α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (tree, z)
+    (tree, y.concat z) := by
+  apply Prod.Lex.right
+  simp only [Expr.concat.sizeOf_spec]
+  simp +arith only
+
+theorem decreasing_star (y: Expr α) (tree: ParseTree α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (tree, y)
+    (tree, y.star) := by
+  apply Prod.Lex.right
+  simp +arith
+
+theorem decreasing_tree {s: Expr α} {children: ParseForest α} (h: tree ∈ children):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (tree, s)
+    (ParseTree.mk label children, Expr.tree labelPred childrenExpr) := by
+  apply Prod.Lex.left
+  simp +arith
+  apply List.elem_lt_list
+  assumption
+
 def derive [DecidableEq α] (x: Expr α) (tree: ParseTree α): Expr α :=
   match x with
   | Expr.emptyset => Expr.emptyset
@@ -45,26 +103,15 @@ termination_by (tree, x)
 -- Prod.Lex.right represents the case where the tree argument does not decrease
 -- and the expression x does decrease.
 decreasing_by
-  · apply Prod.Lex.left
-    simp +arith
-    apply List.elem_lt_list
-    assumption
-  · apply Prod.Lex.left
-    simp +arith
-    apply List.elem_lt_list
-    assumption
-  · apply Prod.Lex.right
-    simp +arith
-  · apply Prod.Lex.right
-    simp +arith
-  · apply Prod.Lex.right
-    simp +arith
-  · apply Prod.Lex.right
-    simp +arith
-  · apply Prod.Lex.right
-    simp +arith
+  · apply (decreasing_tree (by assumption))
+  · apply (decreasing_tree (by assumption))
+  · apply decreasing_or_l
+  · apply decreasing_or_r
+  · apply decreasing_concat_l
+  · apply decreasing_concat_r
+  · apply decreasing_star
 
-partial def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Bool :=
+def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Bool :=
   Expr.nullable (List.foldl derive x forest)
 
 def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
