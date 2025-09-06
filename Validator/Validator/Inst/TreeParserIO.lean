@@ -76,8 +76,8 @@ instance [DecidableEq α] [Hashable α]: MemLeave.MemLeave (Impl α) α where
       set (State.mk s.parser s.enter leave)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Leave.DeriveLeave (Impl α) α where
-  deriveLeave (xs: Exprs α) (ns: List Bool): Impl α (Exprs α) := MemLeave.deriveLeave xs ns
+instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl α) α where
+  deriveLeaveM (xs: Exprs α) (ns: List Bool): Impl α (Exprs α) := MemLeave.deriveLeaveM xs ns
 
 instance [DecidableEq α] [Hashable α]: ValidateM (Impl α) α where
   -- all instances have been created, so no implementations are required here

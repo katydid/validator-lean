@@ -24,11 +24,11 @@ def deriveEnter [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) :
   let token <- Parser.token
   return IfExpr.evals enters token
 
-def deriveLeave [DecidableEq α] [ValidateM m α] (xs: Exprs α) (cs: Exprs α): m (Exprs α) :=
-  Leave.DeriveLeave.deriveLeave xs (List.map Expr.nullable cs)
+def deriveLeaveM [DecidableEq α] [ValidateM m α] (xs: Exprs α) (cs: Exprs α): m (Exprs α) :=
+  Leave.DeriveLeaveM.deriveLeaveM xs (List.map Expr.nullable cs)
 
 def deriveValue [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) := do
-  deriveEnter xs >>= deriveLeave xs
+  deriveEnter xs >>= deriveLeaveM xs
 
 -- TODO: Is it possible to have a Parser type that can be proved to be of the correct shape, and have not expection throwing
 -- for example: can you prove that your Parser will never return an Hint.leave after returning a Hint.field.
@@ -44,7 +44,7 @@ partial def derive [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α
       | Hint.value => deriveValue childxs -- derive child value
       | Hint.enter => derive childxs -- derive children, until return from a Hint.leave
       | hint => throw s!"unexpected {hint}"
-    let xsLeave <- deriveLeave xs dchildxs -- derive leave field
+    let xsLeave <- deriveLeaveM xs dchildxs -- derive leave field
     derive xsLeave -- deriv next
   | Hint.value => deriveValue xs >>= derive -- derive value and then derive next
   | Hint.enter => derive xs >>= derive -- derive children, until return from a Hint.leave and then derive next

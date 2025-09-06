@@ -82,8 +82,8 @@ instance [DecidableEq α] [Hashable α]: MemLeave.MemLeave (Impl α) α where
       set (State.mk s.parser s.enter leave s.logs)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Leave.DeriveLeave (Impl α) α where
-  deriveLeave (xs: Exprs α) (ns: List Bool): Impl α (Exprs α) := do
+instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl α) α where
+  deriveLeaveM (xs: Exprs α) (ns: List Bool): Impl α (Exprs α) := do
     let memoized <- MemLeave.MemLeave.getLeave
     match memoized.get? (xs, ns) with
     | Option.none =>

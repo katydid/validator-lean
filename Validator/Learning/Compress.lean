@@ -32,7 +32,7 @@ def derive [DecidableEq α] (xs: Exprs α) (t: ParseTree α): Except String (Exp
       let cdchildxs <- List.foldlM derive cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs <- Compress.expand indices cdchildxs
-      Leave.deriveLeave xs (List.map Expr.nullable dchildxs)
+      Leave.deriveLeaveM xs (List.map Expr.nullable dchildxs)
 
 def derivs [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String (Expr α) := do
   let dxs <- List.foldlM derive [x] forest

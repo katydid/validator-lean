@@ -22,8 +22,8 @@ instance
 instance : Enter.DeriveEnter (Impl α) α where
   deriveEnter xs := return Enter.deriveEnter xs
 
-instance : Leave.DeriveLeave (Impl α) α where
-  deriveLeave xs ns := Leave.deriveLeave xs ns
+instance : Leave.DeriveLeaveM (Impl α) α where
+  deriveLeaveM xs ns := Leave.deriveLeaveM xs ns
 
 instance [DecidableEq α]: ValidateM (Impl α) α where
   -- all instances have been created, so no implementations are required here

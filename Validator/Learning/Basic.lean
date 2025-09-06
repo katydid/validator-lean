@@ -10,15 +10,16 @@ import Validator.Parser.TokenTree
 import Validator.Expr.Compress
 import Validator.Expr.Expr
 import Validator.Expr.IfExpr
+import Validator.Expr.Language
 
 import Validator.Derive.Enter
 import Validator.Derive.Leave
 
 namespace Basic
 
-def derive [DecidableEq α] (xs: Exprs α) (t: ParseTree α): Except String (Exprs α) := do
+def derive {α: Type} [DecidableEq α] (xs: Exprs α) (t: ParseTree α): Except String (Exprs α) := do
   if List.all xs Expr.unescapable
-  then return xs
+  then Except.ok xs
   else
     match t with
     | ParseTree.mk label children =>
@@ -29,19 +30,19 @@ def derive [DecidableEq α] (xs: Exprs α) (t: ParseTree α): Except String (Exp
       -- dchildxs = derivatives of children.
       let dchildxs <- List.foldlM derive childxs children
       -- leaves is the other one of our two new memoizable functions.
-      Leave.deriveLeave xs (List.map Expr.nullable dchildxs)
+      Leave.deriveLeaveM xs (List.map Expr.nullable dchildxs)
 
-def derivs [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String (Expr α) := do
+def derivs {α: Type} [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String (Expr α) := do
   let dxs <- List.foldlM derive [x] forest
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
 
-def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String Bool := do
+def validate {α: Type} [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String Bool := do
   let dx <- derivs x forest
   return Expr.nullable dx
 
-def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
+def run {α: Type} [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
   validate x [t]
 
 -- Tests
@@ -101,3 +102,12 @@ open TokenTree (node)
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
+
+def denote {α: Type} [BEq α] (r: Expr α): Language.Lang α :=
+  match r with
+  | Expr.emptyset => Language.emptyset
+  | Expr.epsilon => Language.emptystr
+  | Expr.tree p c => Language.tree (Pred.eval p) (denote c)
+  | Expr.or x y => Language.or (denote x) (denote y)
+  | Expr.concat x y => Language.concat (denote x) (denote y)
+  | Expr.star x => Language.star (denote x)

@@ -25,11 +25,11 @@ def deriveEnter [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) :
   let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals enters token
 
-def deriveLeave [ValidateM m α] (xs: Exprs α) (cs: Exprs α): m (Exprs α) :=
-  Leave.DeriveLeave.deriveLeave xs (List.map Expr.nullable cs)
+def deriveLeaveM [ValidateM m α] (xs: Exprs α) (cs: Exprs α): m (Exprs α) :=
+  Leave.DeriveLeaveM.deriveLeaveM xs (List.map Expr.nullable cs)
 
 def deriveValue [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) := do
-  deriveLeave xs (<- deriveEnter xs)
+  deriveLeaveM xs (<- deriveEnter xs)
 
 partial def derive [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α) := do
   if List.all xs Expr.unescapable then
@@ -45,7 +45,7 @@ partial def derive [DecidableEq α] [ValidateM m α] (xs: Exprs α): m (Exprs α
         let cdchildxs <- derive cchildxs -- derive children, until return from a Hint.leave
         Compress.expandM indices cdchildxs -- NEW: expand
       | hint => throw s!"unexpected {hint}"
-    let xsLeave <- deriveLeave xs dchildxs -- derive leave field
+    let xsLeave <- deriveLeaveM xs dchildxs -- derive leave field
     derive xsLeave -- deriv next
   | Hint.value => deriveValue xs >>= derive -- derive value and then derive next
   | Hint.enter =>

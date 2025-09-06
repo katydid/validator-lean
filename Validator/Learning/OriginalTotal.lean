@@ -101,8 +101,8 @@ termination_by (tree, x)
 -- Prod.Lex.right represents the case where the tree argument does not decrease
 -- and the expression x does decrease.
 decreasing_by
-  · apply (decreasing_tree (by assumption))
-  · apply (decreasing_tree (by assumption))
+  · apply decreasing_tree (by assumption)
+  · apply decreasing_tree (by assumption)
   · apply decreasing_or_l
   · apply decreasing_or_r
   · apply decreasing_concat_l

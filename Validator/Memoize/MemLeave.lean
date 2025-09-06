@@ -16,7 +16,7 @@ class MemLeave (m: Type -> Type u) (α: outParam Type) [DecidableEq α] [Hashabl
   getLeave : m (LeaveMap α)
   setLeave : LeaveMap α → m Unit
 
-def deriveLeave
+def deriveLeaveM
   [DecidableEq α] [Hashable α]
   [Monad m] [Debug m] [MonadExcept String m] [MemLeave m α]
   (xs: Exprs α) (ns: List Bool): m (Exprs α) := do
@@ -24,12 +24,12 @@ def deriveLeave
   match memoized.get? (xs, ns) with
   | Option.none =>
     Debug.debug "cache miss"
-    let newvalue <- Leave.deriveLeave xs ns
+    let newvalue <- Leave.deriveLeaveM xs ns
     MemLeave.setLeave (memoized.insert (xs, ns) newvalue)
     return newvalue
   | Option.some value =>
     Debug.debug "cache hit"
     return value
 
-instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m α] : Leave.DeriveLeave m α where
-  deriveLeave (xs: Exprs α) (ns: List Bool): m (Exprs α) := deriveLeave xs ns
+instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m α] : Leave.DeriveLeaveM m α where
+  deriveLeaveM (xs: Exprs α) (ns: List Bool): m (Exprs α) := deriveLeaveM xs ns
