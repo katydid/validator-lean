@@ -173,25 +173,18 @@ open TokenTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
-theorem a [Decidable p]:
-  decide p = true <-> p := by
-  simp only [decide_eq_true_eq]
-
 theorem derive_commutes {α: Type} [DecidableEq α] (x: Expr α) (a: ParseTree α):
   Denote.denote (derive x a) = Language.derive (Denote.denote x) a := by
-  induction x generalizing a with
-  | emptyset =>
-    simp only [Denote.denote, derive]
+  fun_induction derive x a with
+  | case1 => -- emptyset
+    simp only [Denote.denote]
     rw [Language.derive_emptyset]
-  | epsilon =>
-    simp only [Denote.denote, derive]
+  | case2 => -- epsilon
+    simp only [Denote.denote]
     rw [Language.derive_emptystr]
-  | tree p childexpr ih =>
-    cases a with
-    | mk label children =>
+  | case3 p childexpr label children ih =>
     simp only [Denote.denote]
     rw [Language.derive_tree]
-    simp only [derive]
     rw [Denote.denote_onlyif]
     simp only [Denote.denote]
     apply (congrArg fun x => Language.onlyif x Language.emptystr)
@@ -206,28 +199,33 @@ theorem derive_commutes {α: Type} [DecidableEq α] (x: Expr α) (a: ParseTree �
     | cons c cs ih' =>
       simp only [List.foldl]
       rw [ih']
-      · rw [ih]
+      · cases c
+        rw [ih]
         simp
-      · intro a
-        have h' : (derive (derive childexpr c) a) = List.foldl derive childexpr [c, a] := by sorry
-        rw [h']
-        sorry
-  | or p q ihp ihq =>
-    simp only [Denote.denote, derive]
+        rw [List.mem_cons]
+        simp
+      · intro x
+        intro child
+        intro hchild
+        apply ih
+        rw [List.mem_cons]
+        apply Or.inr hchild
+  | case4 a p q ihp ihq => -- or
+    simp only [Denote.denote]
     rw [Language.derive_or]
     unfold Language.or
     rw [ihp]
     rw [ihq]
-  | concat p q ihp ihq =>
-    simp only [Denote.denote, derive]
+  | case5 a p q ihp ihq => -- concat
+    simp only [Denote.denote]
     rw [Language.derive_concat]
     rw [<- ihp]
     rw [<- ihq]
     rw [Denote.denote_onlyif]
-    congrm (Language.or (Language.concat (Denote.denote (derive p a)) (Denote.denote q)) ?_)
+    congrm (Language.or (Language.concat (Denote.denote (derive p _)) (Denote.denote q)) ?_)
     rw [Denote.null_commutes]
-  | star r ih =>
-    simp only [Denote.denote, derive]
+  | case6 a r ih => -- star
+    simp only [Denote.denote]
     rw [Language.derive_star]
     -- guard_target =
     --   Language.concat (Denote.denote (derive x a)) (Language.star (Denote.denote x))
