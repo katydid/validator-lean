@@ -195,15 +195,16 @@ theorem derive_commutes {α: Type} [DecidableEq α] (x: Expr α) (a: ParseTree �
     unfold Language.null
     induction children generalizing childexpr with
     | nil =>
-      simp
+      simp only [List.foldl_nil]
     | cons c cs ih' =>
       simp only [List.foldl]
       rw [ih']
       · cases c
         rw [ih]
-        simp
+        simp only [Language.derive, Language.derives, List.cons_append, List.nil_append]
         rw [List.mem_cons]
-        simp
+        apply Or.inl
+        rfl
       · intro x
         intro child
         intro hchild
