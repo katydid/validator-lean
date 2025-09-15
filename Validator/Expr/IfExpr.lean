@@ -3,29 +3,29 @@ import Validator.Std.Linter.DetectClassical
 import Validator.Expr.Pred
 import Validator.Expr.Expr
 
-inductive IfExpr α where
-  | mk (cnd: Pred α) (thn: Expr α) (els: Expr α)
+inductive IfExpr μ α where
+  | mk (cnd: Pred α) (thn: Fin μ)
 
-abbrev IfExprs α := List (IfExpr α)
+abbrev IfExprs μ α := List (IfExpr μ α)
 
 namespace IfExpr
 
-def eval {α: Type} [DecidableEq α] (ifExpr: IfExpr α) (t: α): Expr α :=
+def eval {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (ifExpr: IfExpr μ α) (t: α): Expr μ α :=
   match ifExpr with
-  | IfExpr.mk cnd thn els =>
+  | IfExpr.mk cnd thn =>
     if Pred.eval cnd t
-    then thn
-    else els
+    then g.lookup thn
+    else Expr.emptyset
 
-def evals {α: Type} [DecidableEq α] (ifExprs: IfExprs α) (t: α): List (Expr α) :=
-  List.map (fun x => eval x t) ifExprs
+def evals {α: Type} {μ: Nat} [DecidableEq α] (g: Expr.Grammar μ α) (ifExprs: IfExprs μ α) (t: α): List (Expr μ α) :=
+  List.map (fun x => eval g x t) ifExprs
 
-theorem evals_nil_is_nil {α: Type} [DecidableEq α] (a: α):
-  evals [] a = [] := by
+theorem evals_nil_is_nil {α: Type} {μ: Nat} [DecidableEq α] (g: Expr.Grammar μ α) (a: α):
+  evals g (μ := μ) [] a = [] := by
   unfold evals
   simp
 
-theorem evals_concat_is_concat {α: Type} [DecidableEq α] (xs ys: IfExprs α) (a: α):
-  evals (xs ++ ys) a = evals xs a ++ evals ys a := by
+theorem evals_concat_is_concat {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (xs ys: IfExprs μ α) (a: α):
+  evals g (xs ++ ys) a = evals g xs a ++ evals g ys a := by
   unfold evals
   simp

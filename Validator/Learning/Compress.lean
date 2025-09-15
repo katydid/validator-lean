@@ -18,87 +18,94 @@ import Validator.Derive.Leave
 namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
-def derive [DecidableEq α] (xs: Exprs α) (t: ParseTree α): Except String (Exprs α) := do
+def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: ParseTree α): Except String (Exprs μ α) := do
   if List.all xs Expr.unescapable
   then return xs
   else
     match t with
     | ParseTree.mk label children =>
-      let ifexprs: IfExprs α := Enter.deriveEnter xs
-      let childxs: Exprs α := IfExpr.evals ifexprs label
+      let ifexprs: IfExprs μ α := Enter.deriveEnter xs
+      let childxs: Exprs μ α := IfExpr.evals g ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
       let (cchildxs, indices) <- Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.
-      let cdchildxs <- List.foldlM derive cchildxs children
+      let cdchildxs <- List.foldlM (derive g) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs <- Compress.expand indices cdchildxs
       Leave.deriveLeaveM xs (List.map Expr.nullable dchildxs)
 
-def derivs [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String (Expr α) := do
-  let dxs <- List.foldlM derive [x] forest
+def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String (Expr μ α) := do
+  let dxs <- List.foldlM (derive g) [x] forest
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
 
-def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Except String Bool := do
-  let dx <- derivs x forest
+def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String Bool := do
+  let dx <- derivs g x forest
   return Expr.nullable dx
 
-def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
-  validate x [t]
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+  validate g g.lookup0 [t]
 
 open TokenTree (node)
 
 #guard run
-  Expr.emptyset
+  (Expr.Grammar.singleton Expr.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" []) =
   Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.tree (Pred.eq (Token.string "b"))
-      Expr.epsilon
-    )
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.tree (Pred.eq (Token.string "b")) 2)
+      , Expr.epsilon
+    ]
   )
-  (node "a" [node "b" []]) =
-  Except.ok true
+  (node "a" [node "b" []])
+  = Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 2)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        Expr.epsilon
-      )
-    )
+      , Expr.epsilon
+    ]
   )
   (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 4)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 3)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.epsilon
-        )
-      )
-    )
+      , Expr.epsilon
+      , (Expr.tree (Pred.eq (Token.string "d")) 2)
+    ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true

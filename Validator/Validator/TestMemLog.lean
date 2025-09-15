@@ -8,23 +8,23 @@ import Validator.Validator.Inst.TreeParserMemTestM
 
 namespace TestMemLog
 
-def validate {m} [DecidableEq α] [ValidateM m α] (x: Expr α): m Bool :=
-  Validate.validate x
+def validate {m} [DecidableEq α] [ValidateM m μ α] (g: Expr.Grammar μ α) (x: Expr μ α): m Bool :=
+  Validate.validate g x
 
 def run
   [DecidableEq α] [Hashable α]
-  (x: Expr α) (t: ParseTree α): (List String × Except String Bool) :=
-  TreeParserMemLogM.run' (validate x) t
+  (g: Expr.Grammar μ α) (t: ParseTree α): (List String × Except String Bool) :=
+  TreeParserMemLogM.run' (μ := μ) (validate g g.lookup0) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
-  (x: Expr α) (t: ParseTree α): (List String × Except String Bool) :=
-  match TreeParserMemLogM.run (validate x) t with
+  (g: Expr.Grammar μ α) (t: ParseTree α): (List String × Except String Bool) :=
+  match TreeParserMemLogM.run (μ := μ) (validate g g.lookup0) t with
   | EStateM.Result.error err state1 => (state1.logs, Except.error err)
   | EStateM.Result.ok res1 state1 =>
-    match TreeParserMemLogM.runPopulatedMem (validate x) t state1.enter state1.leave with
+    match TreeParserMemLogM.runPopulatedMem (μ := μ) (validate g g.lookup0) t state1.enter state1.leave with
     | EStateM.Result.error err state2 => (state1.logs ++ state2.logs, Except.error err)
     | EStateM.Result.ok res2 state2 =>
       if res1 ≠ res2
@@ -35,13 +35,13 @@ def testCacheIsHitOnSecondRun
 -- This tests that given an empty cache the test does actually fail.
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
-  (x: Expr α) (t: ParseTree α): Except String Bool :=
-  TreeParserMemTestM.run' (validate x) t
+  (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+  TreeParserMemTestM.run' (μ := μ) (validate g g.lookup0) t
 
 open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
-  Expr.emptyset
+  (Expr.Grammar.singleton Expr.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   (
     [
@@ -53,7 +53,10 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" []) =
   (
     [
@@ -77,12 +80,18 @@ open TokenTree (node)
   )
 
 #guard testThatTestCacheBreaksWithEmptyCache
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" []) =
   Except.error "test cache miss"
 
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" [node "b" []]) =
   (
     [
@@ -114,10 +123,12 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.tree (Pred.eq (Token.string "b"))
-      Expr.epsilon
-    )
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.tree (Pred.eq (Token.string "b")) 2)
+      , Expr.epsilon
+    ]
   )
   (node "a" [node "b" []]) =
   (
@@ -150,15 +161,15 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 2)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        Expr.epsilon
-      )
-    )
+      , Expr.epsilon
+    ]
   )
   (node "a" [node "b" [], node "c" []]) =
   (
@@ -203,17 +214,16 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 4)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 3)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.epsilon
-        )
-      )
-    )
+      , Expr.epsilon
+      , (Expr.tree (Pred.eq (Token.string "d")) 2)
+    ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   (
@@ -267,8 +277,9 @@ open TokenTree (node)
 
 -- try to engage skip using emptyset, since it is unescapable
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    Expr.emptyset
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.emptyset]
   )
   (node "a" [node "b" []]) =
   (
@@ -301,105 +312,114 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
+  (Expr.Grammar.mk (μ := 5)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 4)
+        (Expr.tree (Pred.eq (Token.string "c")) 3)
+      )
+      , Expr.epsilon
+      , (Expr.tree (Pred.eq (Token.string "d")) 2)
+      , Expr.emptyset
+    ]
+  )
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
+  (
+    [
+      "next",
+      "next",
+      "token",
+      "cache miss",
+      "next",
+      "next",
+      "token",
+      "cache miss",
+      "cache miss",
+      "skip",
+      "cache miss",
+      "skip",
+      "skip",
+      "start second run",
+      "next",
+      "next",
+      "token",
+      "cache hit",
+      "next",
+      "next",
+      "token",
+      "cache hit",
+      "cache hit",
+      "skip",
+      "cache hit",
+      "skip",
+      "skip",
+    ],
+    Except.ok false
+  )
+
+#guard testCacheIsHitOnSecondRun
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b"))
+          2
+        )
         Expr.emptyset
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.epsilon
+      , Expr.epsilon
+    ]
+  )
+  (node "a" [node "b" [], node "c" [node "d" []]]) =
+  (
+    [
+      "next",
+      "next",
+      "token",
+      "cache miss",
+      "next",
+      "next",
+      "token",
+      "cache miss",
+      "cache miss",
+      "skip",
+      "cache miss",
+      "skip",
+      "skip",
+      "start second run",
+      "next",
+      "next",
+      "token",
+      "cache hit",
+      "next",
+      "next",
+      "token",
+      "cache hit",
+      "cache hit",
+      "skip",
+      "cache hit",
+      "skip",
+      "skip",
+    ],
+    Except.ok false
+  )
+
+#guard testCacheIsHitOnSecondRun
+  (Expr.Grammar.mk (μ := 4)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b"))
+          2
+        )
+        (Expr.tree (Pred.eq (Token.string "c"))
+          3
         )
       )
-    )
-  )
-  (node "a" [node "b" [], node "c" [node "d" []]]) =
-  (
-    [
-      "next",
-      "next",
-      "token",
-      "cache miss",
-      "next",
-      "next",
-      "token",
-      "cache miss",
-      "cache miss",
-      "skip",
-      "cache miss",
-      "skip",
-      "skip",
-      "start second run",
-      "next",
-      "next",
-      "token",
-      "cache hit",
-      "next",
-      "next",
-      "token",
-      "cache hit",
-      "cache hit",
-      "skip",
-      "cache hit",
-      "skip",
-      "skip",
-    ],
-    Except.ok false
-  )
-
-#guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      Expr.emptyset
-    )
-  )
-  (node "a" [node "b" [], node "c" [node "d" []]]) =
-  (
-    [
-      "next",
-      "next",
-      "token",
-      "cache miss",
-      "next",
-      "next",
-      "token",
-      "cache miss",
-      "cache miss",
-      "skip",
-      "cache miss",
-      "skip",
-      "skip",
-      "start second run",
-      "next",
-      "next",
-      "token",
-      "cache hit",
-      "next",
-      "next",
-      "token",
-      "cache hit",
-      "cache hit",
-      "skip",
-      "cache hit",
-      "skip",
-      "skip",
-    ],
-    Except.ok false
-  )
-
-#guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        Expr.emptyset
-      )
-    )
+      , Expr.epsilon
+      , Expr.emptyset
+    ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   (
@@ -452,64 +472,30 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
-      )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.emptyset
+  (Expr.Grammar.mk (μ := 5)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b"))
+          1
+        )
+        (Expr.tree (Pred.eq (Token.string "c"))
+          2
         )
       )
-    )
+      , Expr.epsilon
+      , (Expr.tree (Pred.eq (Token.string "d"))
+          3
+        )
+      , Expr.emptyset
+    ]
   )
-  (node "a" [node "b" [], node "c" [node "d" []]]) =
-  (
-    [
-      "next",
-      "next",
-      "token",
-      "cache miss",
-      "next",
-      "next",
-      "token",
-      "cache miss",
-      "cache miss",
-      "next",
-      "token",
-      "cache miss",
-      "next",
-      "token",
-      "cache miss",
-      "cache miss",
-      "cache miss",
-      "skip",
-      "cache miss",
-      "skip",
-      "skip",
-      "start second run",
-      "next",
-      "next",
-      "token",
-      "cache hit",
-      "next",
-      "next",
-      "token",
-      "cache hit",
-      "cache hit",
-      "next",
-      "token",
-      "cache hit",
-      "next",
-      "token",
-      "cache hit",
-      "cache hit",
-      "cache hit",
-      "skip",
-      "cache hit",
-      "skip",
-      "skip",
-    ],
-    Except.ok false
+  (node "a" [node "b" [], node "c" [node "d" []]])
+  = (
+    [ "next", "next", "token", "cache miss", "next", "next", "token"
+    , "cache miss", "cache miss", "skip", "cache miss", "skip", "skip"
+    , "start second run"
+    , "next", "next", "token", "cache hit", "next", "next", "token"
+    , "cache hit", "cache hit", "skip", "cache hit", "skip", "skip"],
+     Except.ok false
   )

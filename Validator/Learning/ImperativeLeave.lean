@@ -5,7 +5,7 @@ import Validator.Expr.Expr
 
 namespace ImperativeLeave
 
-def leave (x: Expr α) (ns: List Bool): Except String (Expr α × List Bool) :=
+def leave (x: Expr μ α) (ns: List Bool): Except String (Expr μ α × List Bool) :=
   match x with
   | Expr.emptyset => Except.ok (Expr.emptyset, ns)
   | Expr.epsilon => Except.ok (Expr.emptyset, ns)
@@ -49,18 +49,18 @@ def leave (x: Expr α) (ns: List Bool): Except String (Expr α × List Bool) :=
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def deriveLeave (xs: Exprs α) (ns: List Bool): Except String (Exprs α) :=
+def deriveLeave (xs: Exprs μ α) (ns: List Bool): Except String (Exprs μ α) :=
   match xs with
   | [] =>
     match ns with
     | [] => Except.ok []
     | _ => Except.error "Not all nulls were consumed, but there are no expressions to place them in."
   | (x::xs') =>
-    let lx': Except String (Expr α × List Bool) := leave x ns
+    let lx': Except String (Expr μ α × List Bool) := leave x ns
     match lx' with
     | Except.error err => Except.error err
     | Except.ok (lx, tailns) =>
-    let lxs': Except String (Exprs α) := deriveLeave xs' tailns
+    let lxs': Except String (Exprs μ α) := deriveLeave xs' tailns
     match lxs' with
     | Except.error err => Except.error err
     | Except.ok lxs =>

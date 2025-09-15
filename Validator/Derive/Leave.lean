@@ -4,7 +4,7 @@ import Validator.Expr.Expr
 
 namespace Leave
 
-def leaveM [Monad m] [MonadExcept String m] (x: Expr α) (ns: List Bool): m (Expr α × List Bool) := do
+def leaveM [Monad m] [MonadExcept String m] (x: Expr μ α) (ns: List Bool): m (Expr μ α × List Bool) := do
   match x with
   | Expr.emptyset => return (Expr.emptyset, ns)
   | Expr.epsilon => return (Expr.emptyset, ns)
@@ -38,7 +38,7 @@ def leaveM [Monad m] [MonadExcept String m] (x: Expr α) (ns: List Bool): m (Exp
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def deriveLeaveM [Monad m] [MonadExcept String m] (xs: Exprs α) (ns: List Bool): m (Exprs α) := do
+def deriveLeaveM [Monad m] [MonadExcept String m] (xs: Exprs μ α) (ns: List Bool): m (Exprs μ α) := do
   match xs with
   | [] =>
     match ns with
@@ -49,5 +49,5 @@ def deriveLeaveM [Monad m] [MonadExcept String m] (xs: Exprs α) (ns: List Bool)
     let lxs <- deriveLeaveM xs' tailns
     return (lx::lxs)
 
-class DeriveLeaveM (m: Type -> Type u) (α: outParam Type) where
-  deriveLeaveM (xs: Exprs α) (ns: List Bool): m (Exprs α)
+class DeriveLeaveM (m: Type -> Type u) (μ: Nat) (α: outParam Type) where
+  deriveLeaveM (xs: Exprs μ α) (ns: List Bool): m (Exprs μ α)

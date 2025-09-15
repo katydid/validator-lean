@@ -13,7 +13,7 @@ import Validator.Expr.Denote
 
 namespace OriginalTotal
 
-theorem decreasing_or_l (y: Expr α) (tree: ParseTree α):
+theorem decreasing_or_l (y: Expr μ α) (tree: ParseTree α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -22,7 +22,7 @@ theorem decreasing_or_l (y: Expr α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.or.sizeOf_spec]
 
-theorem decreasing_or_r (y: Expr α) (tree: ParseTree α):
+theorem decreasing_or_r (y: Expr μ α) (tree: ParseTree α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -31,7 +31,7 @@ theorem decreasing_or_r (y: Expr α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.or.sizeOf_spec]
 
-theorem decreasing_concat_l (y: Expr α) (tree: ParseTree α):
+theorem decreasing_concat_l (y: Expr μ α) (tree: ParseTree α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -40,7 +40,7 @@ theorem decreasing_concat_l (y: Expr α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.concat.sizeOf_spec]
 
-theorem decreasing_concat_r (y: Expr α) (tree: ParseTree α):
+theorem decreasing_concat_r (y: Expr μ α) (tree: ParseTree α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -49,7 +49,7 @@ theorem decreasing_concat_r (y: Expr α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.concat.sizeOf_spec]
 
-theorem decreasing_star (y: Expr α) (tree: ParseTree α):
+theorem decreasing_star (y: Expr μ α) (tree: ParseTree α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -58,7 +58,7 @@ theorem decreasing_star (y: Expr α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.star.sizeOf_spec]
 
-theorem decreasing_tree {s: Expr α} {children: ParseForest α} (h: tree ∈ children):
+theorem decreasing_tree {s: Expr μ α} {children: ParseForest α} (h: tree ∈ children):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -66,28 +66,28 @@ theorem decreasing_tree {s: Expr α} {children: ParseForest α} (h: tree ∈ chi
     (ParseTree.mk label children, Expr.tree labelPred childrenExpr) := by
   apply Prod.Lex.left
   simp +arith only [ParseTree.mk.sizeOf_spec]
-  have h' := List.elem_lt_list h
+  have h' := List.list_elem_lt h
   omega
 
-def derive [DecidableEq α] (x: Expr α) (tree: ParseTree α): Expr α :=
+def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tree: ParseTree α): Expr μ α :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
-  | Expr.tree labelPred childrenExpr =>
+  | Expr.tree labelPred childRef =>
     match tree with
     | ParseTree.mk label children =>
       Expr.onlyif
         (
           (Pred.eval labelPred label)
-          && Expr.nullable (List.foldl derive childrenExpr children)
+          && Expr.nullable (List.foldl (derive g) (g.lookup childRef) children)
         )
       Expr.epsilon
-  | Expr.or y z => Expr.or (derive y tree) (derive z tree)
+  | Expr.or y z => Expr.or (derive g y tree) (derive g z tree)
   | Expr.concat y z =>
     Expr.or
-      (Expr.concat (derive y tree) z)
-      (Expr.onlyif (Expr.nullable y) (derive z tree))
-  | Expr.star y => Expr.concat (derive y tree) (Expr.star y)
+      (Expr.concat (derive g y tree) z)
+      (Expr.onlyif (Expr.nullable y) (derive g z tree))
+  | Expr.star y => Expr.concat (derive g y tree) (Expr.star y)
 -- Lean cannot guess how the recursive function terminates,
 -- so we have to tell it how the arguments decrease in size.
 -- The arguments decrease in the tree case first
@@ -109,93 +109,103 @@ decreasing_by
   · apply decreasing_concat_r
   · apply decreasing_star
 
-def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Bool :=
-  Expr.nullable (List.foldl derive x forest)
+def validate [DecidableEq α] (g: Expr.Grammar μ α)(x: Expr μ α) (forest: ParseForest α): Bool :=
+  Expr.nullable (List.foldl (derive g) x forest)
 
-def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
-  Except.ok (validate x [t])
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+  Except.ok (validate g g.lookup0 [t])
 
 -- Tests
 
 open TokenTree (node)
 
 #guard run
-  Expr.emptyset
+  (Expr.Grammar.singleton Expr.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" []) =
   Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.tree (Pred.eq (Token.string "b"))
-      Expr.epsilon
-    )
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.tree (Pred.eq (Token.string "b")) 2)
+      , Expr.epsilon
+    ]
   )
-  (node "a" [node "b" []]) =
-  Except.ok true
+  (node "a" [node "b" []])
+  = Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 2)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        Expr.epsilon
-      )
-    )
+      , Expr.epsilon
+    ]
   )
   (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 4)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 3)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.epsilon
-        )
-      )
-    )
+      , Expr.epsilon
+      , (Expr.tree (Pred.eq (Token.string "d")) 2)
+    ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
-theorem derive_commutes {α: Type} [DecidableEq α] (x: Expr α) (a: ParseTree α):
-  Denote.denote (derive x a) = Language.derive (Denote.denote x) a := by
-  fun_induction derive x a with
+theorem derive_commutes {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (a: ParseTree α):
+  Denote.denote g (derive g x a) = Language.derive (Denote.denote g x) a := by
+  fun_induction (derive g) x a with
   | case1 => -- emptyset
-    simp only [Denote.denote]
+    rw [Denote.denote_emptyset]
     rw [Language.derive_emptyset]
   | case2 => -- epsilon
-    simp only [Denote.denote]
+    rw [Denote.denote_emptyset]
+    rw [Denote.denote_epsilon]
     rw [Language.derive_emptystr]
-  | case3 p childexpr label children ih =>
-    simp only [Denote.denote]
+  | case3 p childRef label children ih =>
+    rw [Denote.denote_tree]
     rw [Language.derive_tree]
     rw [Denote.denote_onlyif]
-    simp only [Denote.denote]
+    rw [Denote.denote_epsilon]
     apply (congrArg fun x => Language.onlyif x Language.emptystr)
     simp only [Bool.and_eq_true]
     simp only [decide_eq_true_eq]
     congr
+    generalize (g.lookup childRef) = childExpr
     rw [Denote.null_commutes]
     unfold Language.null
-    induction children generalizing childexpr with
+    induction children generalizing childExpr with
     | nil =>
       simp only [List.foldl_nil]
+      rfl
     | cons c cs ih' =>
       simp only [List.foldl]
       rw [ih']
@@ -212,25 +222,25 @@ theorem derive_commutes {α: Type} [DecidableEq α] (x: Expr α) (a: ParseTree �
         rw [List.mem_cons]
         apply Or.inr hchild
   | case4 a p q ihp ihq => -- or
-    simp only [Denote.denote]
-    rw [Language.derive_or]
+    rw [Denote.denote_or]
+    rw [Denote.denote_or]
     unfold Language.or
     rw [ihp]
     rw [ihq]
+    rfl
   | case5 a p q ihp ihq => -- concat
-    simp only [Denote.denote]
+    rw [Denote.denote_concat]
+    rw [Denote.denote_or]
+    rw [Denote.denote_concat]
+    rw [Denote.denote_onlyif]
     rw [Language.derive_concat]
     rw [<- ihp]
     rw [<- ihq]
-    rw [Denote.denote_onlyif]
-    congrm (Language.or (Language.concat (Denote.denote (derive p _)) (Denote.denote q)) ?_)
+    congrm (Language.or (Language.concat (Denote.denote g (derive g p a)) (Denote.denote g q)) ?_)
     rw [Denote.null_commutes]
   | case6 a r ih => -- star
-    simp only [Denote.denote]
+    rw [Denote.denote_star]
+    rw [Denote.denote_concat]
+    rw [Denote.denote_star]
     rw [Language.derive_star]
-    -- guard_target =
-    --   Language.concat (Denote.denote (derive x a)) (Language.star (Denote.denote x))
-    --   = Language.concat (Language.derive (Denote.denote x) a) (Language.star (Denote.denote x))
-    congrm ((Language.concat ?_ (Language.star (Denote.denote _))))
-    -- guard_target = denote (Denote.derive x a) = Language.derive (Denote.denote x) a
-    apply ih
+    rw [ih]

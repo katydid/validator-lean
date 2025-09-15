@@ -15,7 +15,7 @@ namespace Original
 -- foldLoop is a more readable version of List.foldl for imperative programmers:
 -- Imperative programmers can imagine that `Id (Expr α)` = `Expr α`, because it does.
 -- The Id wrapper just adds a monad wrapper to enable the do notation, so that we can use the for loop in Lean.
-private def foldLoop (deriv: Expr α -> ParseTree α -> Expr α) (start: Expr α) (forest: ParseForest α): Id (Expr α) := do
+private def foldLoop (deriv: Expr μ α -> ParseTree α -> Expr μ α) (start: Expr μ α) (forest: ParseForest α): Id (Expr μ α) := do
   let mut res := start
   for tree in forest do
     res := deriv res tree
@@ -25,31 +25,31 @@ private def foldLoop (deriv: Expr α -> ParseTree α -> Expr α) (start: Expr α
 -- It returns the expression that is left to match after matching the tree.
 -- Note we need to use `partial`, since Lean cannot automatically figure out that the derive function terminates.
 -- In OriginalTotal we show how to remove this, by manually proving that it in fact does terminate.
-partial def derive [DecidableEq α] (x: Expr α) (tree: ParseTree α): Expr α :=
+partial def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tree: ParseTree α): Expr μ α :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
-  | Expr.tree labelPred childrenExpr =>
+  | Expr.tree labelPred childRef =>
     -- This is the only rule that differs from regular expressions.
     -- Although if we view this as a complicated predicate, then actually there is no difference.
     if Pred.eval labelPred (ParseTree.getLabel tree)
     -- This is exactly the same as: validate childrenExpr (ParseTree.getChildren tree)
-    && Expr.nullable (List.foldl derive childrenExpr (ParseTree.getChildren tree))
+    && Expr.nullable (List.foldl (derive g) (g.lookup childRef) (ParseTree.getChildren tree))
     -- Just like with char, if the predicate matches we return epsilon and if it doesn't we return emptyset
     then Expr.epsilon
     else Expr.emptyset
-  | Expr.or y z => Expr.or (derive y tree) (derive z tree)
+  | Expr.or y z => Expr.or (derive g y tree) (derive g z tree)
   | Expr.concat y z =>
     if Expr.nullable y
-    then Expr.or (Expr.concat (derive y tree) z) (derive z tree)
-    else Expr.concat (derive y tree) z
-  | Expr.star y => Expr.concat (derive y tree) (Expr.star y)
+    then Expr.or (Expr.concat (derive g y tree) z) (derive g z tree)
+    else Expr.concat (derive g y tree) z
+  | Expr.star y => Expr.concat (derive g y tree) (Expr.star y)
 
-partial def validate [DecidableEq α] (x: Expr α) (forest: ParseForest α): Bool :=
-  Expr.nullable (List.foldl derive x forest)
+partial def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Bool :=
+  Expr.nullable (List.foldl (derive g) x forest)
 
-def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
-  Except.ok (validate x [t])
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+  Except.ok (validate g g.lookup0 [t])
 
 -- Tests
 -- Lean can use #guard to run these tests at compile time.
@@ -57,55 +57,62 @@ def run [DecidableEq α] (x: Expr α) (t: ParseTree α): Except String Bool :=
 open TokenTree (node)
 
 #guard run
-  Expr.emptyset
+  (Expr.Grammar.singleton Expr.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" []) =
   Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a")) Expr.epsilon)
+  (Expr.Grammar.mk (μ := 2)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[Expr.epsilon]
+  )
   (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.tree (Pred.eq (Token.string "b"))
-      Expr.epsilon
-    )
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.tree (Pred.eq (Token.string "b")) 2)
+      , Expr.epsilon
+    ]
   )
-  (node "a" [node "b" []]) =
-  Except.ok true
+  (node "a" [node "b" []])
+  = Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 3)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 2)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        Expr.epsilon
-      )
-    )
+      , Expr.epsilon
+    ]
   )
   (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard run
-  (Expr.tree (Pred.eq (Token.string "a"))
-    (Expr.concat
-      (Expr.tree (Pred.eq (Token.string "b"))
-        Expr.epsilon
+  (Expr.Grammar.mk (μ := 4)
+    (Expr.tree (Pred.eq (Token.string "a")) 1)
+    #v[
+      (Expr.concat
+        (Expr.tree (Pred.eq (Token.string "b")) 2)
+        (Expr.tree (Pred.eq (Token.string "c")) 3)
       )
-      (Expr.tree (Pred.eq (Token.string "c"))
-        (Expr.tree (Pred.eq (Token.string "d"))
-          Expr.epsilon
-        )
-      )
-    )
+      , Expr.epsilon
+      , (Expr.tree (Pred.eq (Token.string "d")) 2)
+    ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
