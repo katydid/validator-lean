@@ -7,14 +7,14 @@ import Validator.Expr.IfExpr
 
 import Validator.Derive.Leave
 
-namespace MemLeave
-
-abbrev LeaveMap μ α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Exprs μ α × List Bool) (Exprs μ α)
-def LeaveMap.mk [DecidableEq α] [Hashable α]: LeaveMap μ α := Std.ExtHashMap.emptyWithCapacity
+abbrev MemLeave.LeaveMap μ α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Exprs μ α × List Bool) (Exprs μ α)
+def MemLeave.LeaveMap.mk [DecidableEq α] [Hashable α]: LeaveMap μ α := Std.ExtHashMap.emptyWithCapacity
 
 class MemLeave (m: Type -> Type u) (μ: outParam Nat) (α: outParam Type) [DecidableEq α] [Hashable α] where
-  getLeave : m (LeaveMap μ α)
-  setLeave : LeaveMap μ α → m Unit
+  getLeave : m (MemLeave.LeaveMap μ α)
+  setLeave : MemLeave.LeaveMap μ α → m Unit
+
+namespace MemLeave
 
 def deriveLeaveM
   [DecidableEq α] [Hashable α]

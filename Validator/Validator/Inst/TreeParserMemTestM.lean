@@ -52,7 +52,7 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance [DecidableEq α] [Hashable α]: MemEnter.MemEnter (Impl μ α) μ α where
+instance [DecidableEq α] [Hashable α]: MemEnter (Impl μ α) μ α where
   getEnter : Impl μ α (MemEnter.EnterMap μ α) := do
     let s <- EStateM.get
     return s.enter
@@ -64,7 +64,7 @@ instance [DecidableEq α] [Hashable α]: MemEnter.MemEnter (Impl μ α) μ α wh
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α where
   deriveEnter (xs: Exprs μ α): Impl μ α (IfExprs μ α) := do
-    let memoized <- MemEnter.MemEnter.getEnter
+    let memoized <- MemEnter.getEnter
     match memoized.get? xs with
     | Option.none =>
       throw "test cache miss"
@@ -72,7 +72,7 @@ instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α wh
       Debug.debug "test cache hit"
       return value
 
-instance [DecidableEq α] [Hashable α]: MemLeave.MemLeave (Impl μ α) μ α where
+instance [DecidableEq α] [Hashable α]: MemLeave (Impl μ α) μ α where
   getLeave : Impl μ α (MemLeave.LeaveMap μ α) := do
     let s <- EStateM.get
     return s.leave
@@ -84,7 +84,7 @@ instance [DecidableEq α] [Hashable α]: MemLeave.MemLeave (Impl μ α) μ α wh
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl μ α) μ α where
   deriveLeaveM (xs: Exprs μ α) (ns: List Bool): Impl μ α (Exprs μ α) := do
-    let memoized <- MemLeave.MemLeave.getLeave
+    let memoized <- MemLeave.getLeave
     match memoized.get? (xs, ns) with
     | Option.none =>
       throw "test cache miss"

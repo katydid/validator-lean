@@ -1,6 +1,5 @@
 import Mathlib.Tactic.Linarith -- split_ands
 
-import Validator.Std.Linter.DetectClassical
 import Validator.Std.ParseTree
 
 namespace Language

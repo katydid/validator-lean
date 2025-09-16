@@ -1,5 +1,3 @@
-import Validator.Std.Linter.DetectClassical
-
 import Mathlib.Tactic.RewriteSearch
 
 import Validator.Expr.Pred
@@ -103,7 +101,7 @@ def Grammar.emptyset: Grammar 1 α :=
 def Grammar.epsilon: Grammar 1 α :=
   Grammar.mk Expr.epsilon #v[]
 
-def Expr.setMaxRef (μ1: Nat) (h: μ1 >= μ0) (x: Expr μ0 α): Expr μ1 α :=
+def setMaxRef (μ1: Nat) (h: μ1 >= μ0) (x: Expr μ0 α): Expr μ1 α :=
   match x with
   | emptyset => Expr.emptyset
   | epsilon => Expr.epsilon
@@ -119,7 +117,7 @@ def maxref (μold μnew μ: Nat): Nat :=
   else
     (max μ (μnew + 1)) -- otherwise upgrade to mnew
 
-def Expr.rewriteRef (μold μnew: Nat) (x: Expr μ α): Expr (maxref μold μnew μ) α :=
+def rewriteRef (μold μnew: Nat) (x: Expr μ α): Expr (maxref μold μnew μ) α :=
   match x with
   | emptyset => Expr.emptyset
   | epsilon => Expr.epsilon
@@ -178,7 +176,7 @@ example :
   ((Expr.tree (Pred.eq 'a') (Fin.mk 2 (by omega))): Expr 5 Char) := by
   simp only [Expr.rewriteRef, ↓reduceDIte, ↓Char.isValue]
 
-def Expr.rewriteIncRef (μold μnew: Nat) (x: Expr μ α): Expr (max μ (μnew + 1)) α :=
+def rewriteIncRef (μold μnew: Nat) (x: Expr μ α): Expr (max μ (μnew + 1)) α :=
   match x with
   | emptyset => Expr.emptyset
   | epsilon => Expr.epsilon
@@ -190,7 +188,7 @@ def Expr.rewriteIncRef (μold μnew: Nat) (x: Expr μ α): Expr (max μ (μnew +
   | concat y z => Expr.concat (Expr.rewriteIncRef μold μnew y) (Expr.rewriteIncRef μold μnew z)
   | star y => Expr.star (Expr.rewriteIncRef μold μnew y)
 
-def Expr.incRefs (x: Expr μ α): Expr (μ + 1) α :=
+def incRefs (x: Expr μ α): Expr (μ + 1) α :=
   match x with
   | emptyset => Expr.emptyset
   | epsilon => Expr.epsilon
@@ -211,7 +209,7 @@ theorem lt_ge {x y: Nat}:
 theorem not_lt_ge {x y: Nat}:
   ¬ x < y -> x >= y := by omega
 
-private def example_grammar: Grammar 2 Char :=
+def example_grammar: Grammar 2 Char :=
   Grammar.mk
     (Expr.or Expr.epsilon (Expr.tree (Pred.eq 'a') 1))
     #v[Expr.epsilon]

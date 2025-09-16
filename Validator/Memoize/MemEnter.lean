@@ -7,14 +7,14 @@ import Validator.Expr.IfExpr
 
 import Validator.Derive.Enter
 
-namespace MemEnter
-
-abbrev EnterMap (μ: Nat) α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Exprs μ α) (IfExprs μ α)
-def EnterMap.mk [DecidableEq α] [Hashable α] : EnterMap μ α := Std.ExtHashMap.emptyWithCapacity
+abbrev MemEnter.EnterMap (μ: Nat) α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Exprs μ α) (IfExprs μ α)
+def MemEnter.EnterMap.mk [DecidableEq α] [Hashable α] : EnterMap μ α := Std.ExtHashMap.emptyWithCapacity
 
 class MemEnter (m: Type -> Type u) (μ: outParam Nat) (α: outParam Type) [DecidableEq α] [Hashable α] where
-  getEnter : m (EnterMap μ α)
-  setEnter : (EnterMap μ α) → m Unit
+  getEnter : m (MemEnter.EnterMap μ α)
+  setEnter : (MemEnter.EnterMap μ α) → m Unit
+
+namespace MemEnter
 
 def deriveEnter
   [DecidableEq α] [Hashable α]

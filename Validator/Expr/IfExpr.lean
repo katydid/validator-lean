@@ -1,5 +1,3 @@
-import Validator.Std.Linter.DetectClassical
-
 import Validator.Expr.Pred
 import Validator.Expr.Expr
 

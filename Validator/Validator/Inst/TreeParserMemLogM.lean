@@ -54,7 +54,7 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance [DecidableEq α] [Hashable α]: MemEnter.MemEnter (Impl μ α) μ α where
+instance [DecidableEq α] [Hashable α]: MemEnter (Impl μ α) μ α where
   getEnter : Impl μ α (MemEnter.EnterMap μ α) := do
     let s <- EStateM.get
     return s.enter
@@ -67,7 +67,7 @@ instance [DecidableEq α] [Hashable α]: MemEnter.MemEnter (Impl μ α) μ α wh
 instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α where
   deriveEnter (xs: Exprs μ α): Impl μ α (IfExprs μ α) := MemEnter.deriveEnter xs
 
-instance [DecidableEq α] [Hashable α]: MemLeave.MemLeave (Impl μ α) μ α where
+instance [DecidableEq α] [Hashable α]: MemLeave (Impl μ α) μ α where
   getLeave : Impl μ α (MemLeave.LeaveMap μ α) := do
     let s <- EStateM.get
     return s.leave
