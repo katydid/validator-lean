@@ -39,6 +39,9 @@ def char {α: Type} (x : α): Langs α :=
 def pred {α: Type} (p : α -> Prop): Langs α :=
   fun xs => ∃ x, xs = [x] /\ p x
 
+def symbol {α: Type} (denote_symbol: σ -> List α -> Prop) (x: σ): Langs α :=
+  fun xs => denote_symbol x xs
+
 def any {α: Type}: Langs α :=
   fun xs => ∃ x, xs = [x]
 
@@ -56,6 +59,11 @@ def and {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
 def concat {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
   fun (xs : List α) =>
     ∃ (xs1 : List α) (xs2 : List α), P xs1 /\ Q xs2 /\ xs = (xs1 ++ xs2)
+
+-- alternative definition of concat
+def concat_n {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
+  fun (xs : List α) =>
+    ∃ (n: Nat), P (List.take n xs) /\ Q (List.drop n xs)
 
 inductive star {α: Type} (R: Langs α): Langs α where
   | zero: star R []
@@ -600,6 +608,35 @@ example (r s: Langs α) (H: s = r):
   concat emptystr r = s := by
   ac_nf
   rw [H]
+
+theorem concat_is_concat_n:
+  concat_n P Q xs <-> concat P Q xs := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    cases h with
+    | intro n h =>
+    cases h with
+    | intro hx hy =>
+    exists (List.take n xs)
+    exists (List.drop n xs)
+    apply And.intro hx
+    apply And.intro hy
+    simp
+  case mpr =>
+    intro h
+    cases h with
+    | intro xs h =>
+    cases h with
+    | intro ys h =>
+    cases h with
+    | intro hx h =>
+    cases h with
+    | intro hy hxsys =>
+    rw [hxsys]
+    exists List.length xs
+    simp
+    apply And.intro hx hy
 
 theorem simp_or_emptyset_l_is_r (r: Langs α):
   or emptyset r = r := by

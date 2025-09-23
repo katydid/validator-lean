@@ -86,8 +86,8 @@ def Grammar.lookup (g: Grammar μ α) (ref: Fin μ): Expr μ α :=
   match ref with
   | Fin.mk 0 _ =>
     g.main
-  | Fin.mk (m + 1) _ =>
-    Vector.get g.refs (Fin.mk m (by omega))
+  | Fin.mk (μ + 1) _ =>
+    Vector.get g.refs (Fin.mk μ (by omega))
 
 def Grammar.singleton (x: Expr 1 α): Grammar 1 α :=
   Grammar.mk x #v[]

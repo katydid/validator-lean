@@ -1,111 +1,12 @@
+import Validator.Std.Lex
 import Validator.Std.List
+import Validator.Std.ParseTree
 
 import Validator.Expr.Expr
 import Validator.Expr.Pred
 import Validator.Expr.Language
 
 namespace Denote
-
-local elab "simp_sizeOf" : tactic => do
-  Lean.Elab.Tactic.evalTactic (<- `(tactic|
-    simp only [ParseTree.mk.sizeOf_spec, List.cons.sizeOf_spec, List.nil.sizeOf_spec])
-  )
-
-theorem sizeOf_lex [SizeOf α] [SizeOf β]
-  (x1 x2: α)
-  (y1 y2: β)
-  (hx: x1 = x2 \/ sizeOf x1 < sizeOf x2)
-  (hy: sizeOf y1 < sizeOf y2)
-  :Prod.Lex
-    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (x1, y1)
-    (x2, y2) := by
-  rw [Prod.lex_def]
-  simp only
-  cases hx
-  · apply Or.inr
-    apply And.intro
-    assumption
-    assumption
-  · apply Or.inl
-    assumption
-
-theorem sizeOf_list_append [SizeOf α] (xs ys: List α):
-  sizeOf xs <= sizeOf (ys ++ xs) := by
-  induction ys with
-  | nil =>
-    simp only [List.nil_append, le_refl]
-  | cons y ys ih =>
-    simp +arith only [List.cons_append, List.cons.sizeOf_spec]
-    omega
-
-theorem lt_plus (x y z: Nat):
-  y < z -> x + y < x + z := by
-  simp
-
-theorem sizeOf_list_cons [SizeOf α] (xs ys: List α):
-  sizeOf xs < sizeOf (y::ys ++ xs) := by
-  induction ys with
-  | nil =>
-    simp +arith only [List.cons_append, List.cons.sizeOf_spec]
-    simp only [List.nil_append, le_add_iff_nonneg_left, zero_le]
-  | cons y ys ih =>
-    simp only [List.cons_append] at *
-    simp only [List.cons.sizeOf_spec] at *
-    omega
-
-theorem split_zero_right: (List.splitAt 0 xs).2 = xs := by
-  simp
-
-theorem exists_drop (n: Nat) (xs: List α): ∃ ys, xs = ys ++ (List.drop n xs) := by
-  induction n with
-  | zero =>
-    exists []
-  | succ n ih =>
-    cases ih with
-    | intro ys ih =>
-      cases xs with
-      | nil =>
-        simp at *
-      | cons x xs =>
-        simp only [List.drop_succ_cons]
-        exists (x::List.take n xs)
-        simp
-
-theorem sizeOf_take (xs: ParseForest α):
-  List.take n xs = xs \/ sizeOf (List.take n xs) < sizeOf xs := by
-  simp
-  by_cases (List.length xs > n)
-  case pos h =>
-    apply Or.inr
-    induction n generalizing xs with
-    | zero =>
-      simp only [List.take]
-      simp_sizeOf
-      cases xs with
-      | nil =>
-        simp at h
-      | cons x xs =>
-        simp_sizeOf
-        cases x
-        simp_sizeOf
-        omega
-    | succ n' ih =>
-      cases xs with
-      | nil =>
-        simp at h
-      | cons x xs =>
-        simp only [List.take]
-        simp_sizeOf
-        simp at h
-        apply lt_plus
-        apply ih
-        exact h
-  case neg h =>
-    simp at h
-    apply Or.inl
-    assumption
 
 def denote {α: Type} [BEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (as: ParseForest α): Prop :=
   match x with
@@ -133,11 +34,11 @@ def denote {α: Type} [BEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (as: Pars
     simp +arith only [Expr.or.sizeOf_spec]
   · apply Prod.Lex.right
     simp +arith only [Expr.or.sizeOf_spec]
-  · apply sizeOf_lex
-    · apply sizeOf_take
+  · apply Lex.lex_sizeOf
+    · apply ParseTree.ParseForest.sizeOf_take
     · simp [Expr.concat.sizeOf_spec]
       omega
-  · have h := exists_drop (xs := as) (n := n)
+  · have h := List.list_drop_exists (xs := as) (n := n)
     cases h with
     | intro ys h =>
     nth_rewrite 2 [h]
@@ -147,18 +48,18 @@ def denote {α: Type} [BEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (as: Pars
       simp +arith only [Expr.concat.sizeOf_spec]
     | cons y ys =>
       apply Prod.Lex.left
-      apply sizeOf_list_cons
+      apply List.list_sizeOf_cons
   · nth_rw 1 [Prod.lex_def]
     simp only [List.cons.sizeOf_spec, add_lt_add_iff_left, List.cons.injEq,
       true_and, Expr.star.sizeOf_spec, lt_add_iff_pos_left, zero_lt_one, and_true]
     apply Or.symm
-    apply sizeOf_take
+    apply ParseTree.ParseForest.sizeOf_take
   · apply Prod.Lex.left
-    have h := exists_drop (xs := as) (n := n)
+    have h := List.list_drop_exists (xs := as) (n := n)
     cases h with
     | intro ys h =>
     nth_rewrite 2 [h]
-    apply sizeOf_list_cons
+    apply List.list_sizeOf_cons
 
 theorem denote_emptyset {α: Type} [BEq α] {g: Expr.Grammar μ α}:
   denote g Expr.emptyset = Language.emptyset := by
@@ -281,17 +182,17 @@ theorem denote_star' {α: Type} [BEq α] {g: Expr.Grammar μ α} (y: Expr μ α)
         exact h2
   termination_by as
   decreasing_by
-    · have h' := exists_drop n tail
+    · have h' := List.list_drop_exists n tail
       cases h' with
       | intro ys h' =>
       nth_rewrite 2 [h']
-      simp_sizeOf
-      have h'' := sizeOf_list_append (List.drop n tail) ys
+      simp only [List.cons.sizeOf_spec, gt_iff_lt]
+      have h'' := List.list_sizeOf_prepend (List.drop n tail) ys
       omega
     · rename_i j1 j2 j3 j4 j5 j6 j7 j8 j9 _j10
       cases j4
       rw [<- j6]
-      apply sizeOf_list_cons
+      apply List.list_sizeOf_cons
 
 theorem denote_star {α: Type} [BEq α] {g: Expr.Grammar μ α} (y: Expr μ α):
   denote g (Expr.star y) = Language.star (denote g y) := by

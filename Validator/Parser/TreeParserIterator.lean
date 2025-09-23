@@ -4,10 +4,10 @@ import Validator.Parser.Hint
 import Validator.Std.ParseTree
 import Validator.Parser.TreeParser
 
-namespace TreeParserIterator
-
 structure TreeParserIterator (α : Type) where
   state : TreeParser.ParserState α
+
+namespace TreeParserIterator
 
 def ParseForest.iterM {α : Type} (forest : ParseForest α) (m : Type → Type w') [Pure m] :
   Std.Iterators.IterM (α := TreeParserIterator α) m α :=
@@ -174,7 +174,7 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
         refine (pure ⟨ Std.Iterators.IterStep.done, ?_ ⟩ )
         simp
 
-private def TreeParserIterator.finitenessRelation [Pure m] :
+private def finitenessRelation [Pure m] :
     Std.Iterators.FinitenessRelation (TreeParserIterator α) m where
   rel := InvImage WellFoundedRelation.rel (TreeParserIterator.state ∘ Std.Iterators.IterM.internalState)
   wf := InvImage.wf _ WellFoundedRelation.wf

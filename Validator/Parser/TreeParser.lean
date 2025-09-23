@@ -207,7 +207,9 @@ instance [Monad m] [Debug m] [MonadExcept String m] [MonadState (CurrentState α
 instance : Debug (StateT (ParserState α) (Except String)) where
   debug (_: String) := return ()
 
+set_option linter.dupNamespace false
 abbrev TreeParser α β := StateT (ParserState α) (Except String) β
+set_option linter.dupNamespace true
 
 def getStack [Monad m] [MonadStateOf (ParserState α) m] : m (ParseStack α) := do
   let t: ParserState α <- MonadStateOf.get
