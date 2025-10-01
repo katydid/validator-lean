@@ -63,7 +63,7 @@ def concat {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
 -- alternative definition of concat
 def concat_n {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
   fun (xs : List α) =>
-    ∃ (n: Nat), P (List.take n xs) /\ Q (List.drop n xs)
+    ∃ (n: Fin (xs.length + 1)), P (List.take n xs) /\ Q (List.drop n xs)
 
 inductive star {α: Type} (R: Langs α): Langs α where
   | zero: star R []
@@ -622,7 +622,7 @@ theorem concat_is_concat_n:
     exists (List.drop n xs)
     apply And.intro hx
     apply And.intro hy
-    simp
+    simp only [List.take_append_drop]
   case mpr =>
     intro h
     cases h with
@@ -634,8 +634,12 @@ theorem concat_is_concat_n:
     cases h with
     | intro hy hxsys =>
     rw [hxsys]
-    exists List.length xs
-    simp
+    unfold concat_n
+    exists (Fin.mk (List.length xs) (by
+      simp only [List.length_append]
+      omega
+    ))
+    simp only [List.take_left', List.drop_left']
     apply And.intro hx hy
 
 theorem simp_or_emptyset_l_is_r (r: Langs α):

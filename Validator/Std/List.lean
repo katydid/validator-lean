@@ -165,3 +165,7 @@ theorem list_sizeOf_take_drop_le [SizeOf α] (xs: List α):
       simp
       have ih' := @ih t d
       omega
+
+theorem list_take_n_nil {n: Nat} {α: Type}:
+  @List.take α n [] = [] := by
+  simp
