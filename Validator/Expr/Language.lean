@@ -63,7 +63,7 @@ def concat {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
 -- alternative definition of concat
 def concat_n {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
   fun (xs : List α) =>
-    ∃ (n: Fin (xs.length + 1)), P (List.take n xs) /\ Q (List.drop n xs)
+    ∃ n: Fin (xs.length + 1), P (List.take n xs) /\ Q (List.drop n xs)
 
 inductive star {α: Type} (R: Langs α): Langs α where
   | zero: star R []
@@ -72,6 +72,20 @@ inductive star {α: Type} (R: Langs α): Langs α where
     -> R (x::xs1)
     -> star R xs2
     -> star R xs
+
+-- alternative definition of star
+def star_n {α: Type} (R: Langs α) (xs: List α): Prop :=
+  match xs with
+  | [] => True
+  | (x'::xs') =>
+    ∃ (n: Fin xs.length),
+      R (List.take (n + 1) (x'::xs')) /\
+      (star_n R (List.drop (n + 1) (x'::xs')))
+  termination_by xs.length
+  decreasing_by
+    obtain ⟨n, hn⟩ := n
+    simp
+    omega
 
 def not {α: Type} (R: Langs α): Langs α :=
   fun xs => (Not (R xs))
@@ -641,6 +655,46 @@ theorem concat_is_concat_n:
     ))
     simp only [List.take_left', List.drop_left']
     apply And.intro hx hy
+
+theorem star_is_star_n:
+  star_n P xs <-> star P xs := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    unfold star_n at h
+    cases xs with
+    | nil =>
+      apply star.zero
+    | cons x xs =>
+      simp at h
+      obtain ⟨⟨n, hn⟩, ⟨hp, hq⟩⟩ := h
+      simp at hp hq
+      apply star.more x (List.take n xs) (List.drop n xs)
+      · rw [cons_append]
+        simp
+      · assumption
+      · apply star_is_star_n.mp hq
+  case mpr =>
+    intro h
+    cases xs with
+    | nil =>
+      unfold star_n
+      simp
+    | cons x xs =>
+      unfold star_n
+      cases h with
+      | more x xs1 xs2 _ hxs hp hq =>
+        simp at hxs
+        obtain ⟨hx, hxs⟩ := hxs
+        subst_vars
+        exists (Fin.mk xs1.length (by
+          simp
+          omega
+        ))
+        simp
+        apply And.intro hp
+        apply star_is_star_n.mpr hq
+  termination_by xs.length
 
 theorem simp_or_emptyset_l_is_r (r: Langs α):
   or emptyset r = r := by

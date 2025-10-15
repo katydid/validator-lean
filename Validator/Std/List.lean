@@ -101,6 +101,11 @@ theorem list_length_neq_drop {n: Nat} {xs: List α}:
       simp
       omega
 
+theorem list_length_drop_lt_cons {n: Nat} {xs: List α}:
+  (List.drop n xs).length < (x :: xs).length := by
+  simp only [length_drop, length_cons]
+  omega
+
 theorem list_sizeOf_slice [SizeOf α] (xs ys zs: List α):
   sizeOf ys <= sizeOf (xs ++ (ys ++ zs)) := by
   induction xs with
@@ -112,19 +117,21 @@ theorem list_sizeOf_slice [SizeOf α] (xs ys zs: List α):
     omega
 
 theorem list_drop_exists (n: Nat) (xs: List α): ∃ ys, xs = ys ++ (List.drop n xs) := by
-  induction n with
+  cases n with
   | zero =>
+    rw [drop_zero]
     exists []
-  | succ n ih =>
-    cases ih with
-    | intro ys ih =>
-      cases xs with
-      | nil =>
-        simp at *
-      | cons x xs =>
-        simp only [List.drop_succ_cons]
-        exists (x::List.take n xs)
-        simp
+  | succ n' =>
+    cases xs with
+    | nil =>
+      rewrite [drop_nil]
+      exists []
+    | cons x xs =>
+      simp only [List.drop_succ_cons]
+      exists (x::List.take n' xs)
+      simp only [cons_append]
+      congr
+      simp only [take_append_drop]
 
 theorem list_self_neq_cons_append:
   xs ≠ y :: (ys ++ xs) := by
@@ -169,3 +176,61 @@ theorem list_sizeOf_take_drop_le [SizeOf α] (xs: List α):
 theorem list_take_n_nil {n: Nat} {α: Type}:
   @List.take α n [] = [] := by
   simp
+
+theorem list_infix_take_is_infix:
+  List.IsInfix xs (List.take n ys) ->
+  List.IsInfix xs ys := by
+  intro h
+  have hys := List.infix_append [] (List.take n ys) (List.drop n ys)
+  simp at hys
+  apply List.IsInfix.trans h hys
+
+theorem list_infix_drop_is_infix:
+  List.IsInfix xs (List.drop n ys) ->
+  List.IsInfix xs ys := by
+  intro h
+  have hys := List.infix_append (List.take n ys) (List.drop n ys) []
+  simp at hys
+  apply List.IsInfix.trans h hys
+
+theorem list_infix_def {xs ys: List α}:
+  List.IsInfix xs ys ->
+  ∃ xs1 xs2, xs1 ++ xs ++ xs2 = ys := by
+  intro h
+  obtain ⟨xs1, h⟩ := h
+  obtain ⟨xs2, h⟩ := h
+  exists xs1
+  exists xs2
+
+abbrev InfixOf {α: Type} (xs: List α) := { ys: List α // List.IsInfix ys xs }
+
+def InfixOf.mk {α: Type} {xs: List α} (ys: List α) (property : List.IsInfix ys xs) : InfixOf xs :=
+  (Subtype.mk ys property)
+
+def InfixOf.self (xs: List α): InfixOf xs :=
+  Subtype.mk xs (by simp only [List.infix_rfl])
+
+theorem list_infixof_take_is_infix {xs: List α} (ys: InfixOf (List.take n xs)):
+  List.IsInfix ys.val xs := by
+  obtain ⟨ys, hys⟩ := ys
+  simp
+  have h1 := list_infix_take_is_infix hys
+  assumption
+
+theorem list_infixof_drop_is_infix {xs: List α} (ys: InfixOf (List.drop n xs)):
+  List.IsInfix ys.val xs := by
+  obtain ⟨ys, hys⟩ := ys
+  simp
+  have h1 := list_infix_drop_is_infix hys
+  assumption
+
+theorem list_infix_is_leq_sizeOf {α: Type} [SizeOf α] {xs ys: List α}:
+  List.IsInfix xs ys ->
+  sizeOf xs <= sizeOf ys := by
+  intro h
+  have h' := List.list_infix_def h
+  obtain ⟨xs1, xs2, h'⟩ := h'
+  rw [<- h']
+  have hh2 := List.list_sizeOf_append (xs1 ++ xs) xs2
+  have hh1 := List.list_sizeOf_prepend xs xs1
+  apply Nat.le_trans hh1 hh2

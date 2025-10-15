@@ -3,7 +3,6 @@ import Lean.Elab.Tactic
 import Mathlib.Tactic.NthRewrite
 
 import Validator.Std.List
-import Validator.Std.Slice
 
 -- ParseTree is a Labelled Tree.
 inductive ParseTree (α: Type) where
@@ -87,7 +86,7 @@ private theorem lt_plus (x y z: Nat):
   simp
 
 theorem take_eq_self_iff (x : List α) {n : Nat} : x.take n = x ↔ x.length ≤ n :=
-  ⟨fun h ↦ by rw [← h]; simp, List.take_of_length_le⟩
+  ⟨fun h ↦ by rw [← h]; simp; omega, List.take_of_length_le⟩
 
 theorem ParseForest.sizeOf_take (n: Nat) (xs: ParseForest α):
   List.take n xs = xs \/ sizeOf (List.take n xs) < sizeOf xs := by
@@ -148,5 +147,6 @@ theorem le (a b: Nat):
     cases h with
     | inl h =>
       rw [h]
+      omega
     | inr h =>
       omega
