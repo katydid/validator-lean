@@ -19,7 +19,7 @@ structure Grammar (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
   start: Rule μ α Φ
   prods: Vector (Rule μ α Φ) μ
 
-def Grammar.lookup (g: Grammar μ α Pred) (ref: Fin μ): Rule μ α Pred :=
+def Grammar.lookup (g: Grammar μ α Φ) (ref: Fin μ): Rule μ α Φ :=
   Vector.get g.prods ref
 
 def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: ParseForest α): Prop :=
@@ -39,6 +39,9 @@ def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred)
     simp only [List.cons.sizeOf_spec, List.nil.sizeOf_spec, ParseTree.mk.sizeOf_spec] at h
     simp +arith only at h
     omega
+
+def Grammar.denote {α: Type} [BEq α] (g: Grammar μ α Pred) (xs: ParseForest α): Prop :=
+  denote_rule g g.start xs
 
 theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: ParseForest α):
   (Regex.denote_infix r xs (fun (pred, ref) xs' =>
@@ -91,14 +94,14 @@ theorem simp_denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ
     obtain ⟨label, children, hxs, h⟩ := h
     exists ParseTree.mk label children
 
-theorem denote_rule_emptyset {α: Type} [BEq α] {g: Grammar μ α Pred}:
+theorem Grammar.denote_rule_emptyset {α: Type} [BEq α] {g: Grammar μ α Pred}:
   denote_rule g Regex.emptyset = Language.emptyset := by
   unfold Language.emptyset
   funext xs
   unfold denote_rule
   simp [Regex.denote_infix_emptyset]
 
-theorem denote_rule_emptystr {α: Type} [BEq α] {g: Grammar μ α Pred}:
+theorem Grammar.denote_rule_emptystr {α: Type} [BEq α] {g: Grammar μ α Pred}:
   denote_rule g Regex.emptystr = Language.emptystr := by
   unfold Language.emptystr
   funext xs
@@ -152,14 +155,14 @@ theorem denote_rule_symbol' {μ: Nat} {α: Type} [BEq α]
         rw [<- denote_rule] at hg
         apply And.intro hp hg
 
-theorem denote_rule_symbol {μ: Nat} {α: Type} [BEq α]
+theorem Grammar.denote_rule_symbol {μ: Nat} {α: Type} [BEq α]
   {g: Grammar μ α Pred} {pred: Pred α} {ref: Ref μ}:
   denote_rule g (Regex.symbol (pred, ref))
   = Language.tree (Pred.eval pred) (denote_rule g (g.lookup ref)) := by
   funext xs
   rw [denote_rule_symbol']
 
-theorem denote_rule_or {μ: Nat} {α: Type} [BEq α]
+theorem Grammar.denote_rule_or {μ: Nat} {α: Type} [BEq α]
   {g: Grammar μ α Pred} {p q: Rule μ α Pred}:
   denote_rule g (Regex.or p q)
   = Language.or (denote_rule g p) (denote_rule g q) := by
@@ -168,7 +171,7 @@ theorem denote_rule_or {μ: Nat} {α: Type} [BEq α]
   unfold denote_rule
   simp [Regex.denote_infix_or]
 
-theorem denote_rule_concat_n {μ: Nat} {α: Type} [BEq α]
+theorem Grammar.denote_rule_concat_n {μ: Nat} {α: Type} [BEq α]
   {g: Grammar μ α Pred} {p q: Rule μ α Pred}:
   denote_rule g (Regex.concat p q)
   = Language.concat_n (denote_rule g p) (denote_rule g q) := by
@@ -275,7 +278,7 @@ theorem denote_rule_star_n' {μ: Nat} {α: Type} [BEq α]
     obtain ⟨n, hn⟩ := n
     apply List.list_length_drop_lt_cons
 
-theorem denote_rule_star_n {μ: Nat} {α: Type} [BEq α]
+theorem Grammar.denote_rule_star_n {μ: Nat} {α: Type} [BEq α]
   {g: Grammar μ α Pred} {r: Rule μ α Pred}:
   denote_rule g (Regex.star r)
   =

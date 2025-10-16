@@ -1,7 +1,7 @@
 import Validator.Expr.Denote
 import Validator.Expr.Expr
 import Validator.Expr.Compress
-import Validator.Expr.Hedge
+import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
 import Validator.Expr.Language
 import Validator.Expr.Pred
