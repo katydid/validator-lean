@@ -1,6 +1,6 @@
 import Mathlib.Tactic.Linarith -- split_ands
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 
 namespace Language
 
@@ -22,7 +22,7 @@ open List (
 
 def Langs (α: Type): Type := List α -> Prop
 
-def Lang (α: Type): Type := Langs (ParseTree α)
+def Lang (α: Type): Type := Langs (Hedge.Node α)
 
 def emptyset : Langs α :=
   fun _ => False
@@ -91,7 +91,7 @@ def not {α: Type} (R: Langs α): Langs α :=
   fun xs => (Not (R xs))
 
 def tree {α: Type} (P: α -> Prop) (R: Lang α): Lang α :=
-  fun xs => ∃ label children, xs = [ParseTree.mk label children] /\ P label /\ R children
+  fun xs => ∃ label children, xs = [Hedge.Node.mk label children] /\ P label /\ R children
 
 -- attribute [simp] allows these definitions to be unfolded when using the simp tactic.
 attribute [simp] universal emptyset emptystr char onlyif or and concat
@@ -361,15 +361,15 @@ theorem derive_pred {α: Type} {p: α -> Prop} [DecidablePred p] {x: α}:
   funext
   rw [derive_iff_pred]
 
-theorem derive_iff_tree {α: Type} {p: α -> Prop} {childlang: Lang α} {label: α} {children: ParseForest α} {xs: ParseForest α}:
-  (derive (tree p childlang) (ParseTree.mk label children)) xs <->
+theorem derive_iff_tree {α: Type} {p: α -> Prop} {childlang: Lang α} {label: α} {children: Hedge α} {xs: Hedge α}:
+  (derive (tree p childlang) (Hedge.Node.mk label children)) xs <->
   (onlyif (p label /\ childlang children) emptystr) xs := by
   simp only [derive, derives, singleton_append]
   simp only [onlyif, emptystr]
   refine Iff.intro ?toFun ?invFun
   case toFun =>
     unfold tree
-    simp only [cons.injEq, ParseTree.mk.injEq]
+    simp only [cons.injEq, Hedge.Node.mk.injEq]
     intro ⟨ label', children', ⟨ ⟨ hlabel', hchildren' ⟩, hxs ⟩ , hif ⟩
     subst_vars
     simp only [and_true]
@@ -384,8 +384,8 @@ theorem derive_iff_tree {α: Type} {p: α -> Prop} {childlang: Lang α} {label: 
     exact hif
 
 -- Language.derive (Language.tree p.eval (Denote.denote children)) a
-theorem derive_tree {α: Type} {p: α -> Prop} [DecidablePred p] {childlang: Lang α} {label: α} {children: ParseForest α}:
-  (derive (tree p childlang) (ParseTree.mk label children)) =
+theorem derive_tree {α: Type} {p: α -> Prop} [DecidablePred p] {childlang: Lang α} {label: α} {children: Hedge α}:
+  (derive (tree p childlang) (Hedge.Node.mk label children)) =
   (onlyif (p label /\ childlang children) emptystr) := by
   funext
   rw [derive_iff_tree]

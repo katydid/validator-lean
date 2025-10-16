@@ -5,7 +5,7 @@ import Validator.Std.Except
 import Validator.Parser.Token
 import Validator.Parser.TokenTree
 import Validator.Parser.Stack
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.Parser
 
 local elab "simp_monads" : tactic => do
@@ -31,66 +31,66 @@ namespace TreeParser
 
 open Nat
 
-abbrev ParseStack α := Stack (ParseForest α)
+abbrev ParseStack α := Stack (Hedge α)
 
 inductive CurrentState (α: Type) where
-  | unknown (children: ParseForest α)
-  | opened (nexts: ParseForest α)
-  | value (v: α) (nexts: ParseForest α)
-  | pair (f v: α) (nexts: ParseForest α)
-  | field (f: α) (children: ParseForest α)
+  | unknown (children: Hedge α)
+  | opened (nexts: Hedge α)
+  | value (v: α) (nexts: Hedge α)
+  | pair (f v: α) (nexts: Hedge α)
+  | field (f: α) (children: Hedge α)
   | eof
 
 structure ParserState α where
   current: CurrentState α
   stack: ParseStack α
 
-def ParserState.mk' (tree: ParseTree α): ParserState α :=
+def ParserState.mk' (tree: Hedge.Node α): ParserState α :=
   ParserState.mk (CurrentState.unknown [tree]) []
 
-def ParserState.mks (forest: ParseForest α): ParserState α :=
+def ParserState.mks (forest: Hedge α): ParserState α :=
   ParserState.mk (CurrentState.unknown forest) []
 
 mutual
 @[simp]
-noncomputable def ParseTree.size (x: ParseTree α): Nat :=
+noncomputable def Hedge.Node.size (x: Hedge.Node α): Nat :=
   match x with
-  | ParseTree.mk _ children =>
-    1 + ParseForest.size children
+  | Hedge.Node.mk _ children =>
+    1 + Hedge.size children
 @[simp]
-noncomputable def ParseForest.size (xs: ParseForest α): Nat :=
+noncomputable def Hedge.size (xs: Hedge α): Nat :=
   match xs with
   | [] => 1
-  | (x::xs') => 1 + ParseTree.size x + ParseForest.size xs'
+  | (x::xs') => 1 + Hedge.Node.size x + Hedge.size xs'
 end
 
 @[simp]
 noncomputable def ParseStack.size (s: ParseStack α): Nat :=
   match s with
   | [] => 0
-  | (x::xs) => ParseForest.size x + ParseStack.size xs
+  | (x::xs) => Hedge.size x + ParseStack.size xs
 
 @[simp]
 noncomputable def CurrentState.size (s: CurrentState α): Nat :=
   match s with
   -- unknown needs to be the larger than opened, since it is the next state.
-  | CurrentState.unknown forest => 4 + ParseForest.size forest
+  | CurrentState.unknown forest => 4 + Hedge.size forest
   -- field needs to be larger than opened, since opened follows from field.
-  | CurrentState.field _ forest => 3 + ParseForest.size forest
+  | CurrentState.field _ forest => 3 + Hedge.size forest
   -- pair can only be one smaller than opened
-  | CurrentState.pair _ _ forest => 3 + ParseForest.size forest
+  | CurrentState.pair _ _ forest => 3 + Hedge.size forest
   -- opened is always the second state, but also follows from field, so it needs to be smaller than unknown and field.
-  | CurrentState.opened forest => 2 + ParseForest.size forest
+  | CurrentState.opened forest => 2 + Hedge.size forest
   -- value needs to smaller than pair and smaller or equal to opened
-  | CurrentState.value _ forest => 2 + ParseForest.size forest
+  | CurrentState.value _ forest => 2 + Hedge.size forest
   -- eof
   | CurrentState.eof => 0
 
 -- When calling next, none of the states grow the stack, except for:
 -- ParserState.opened (t::nexts) and ParserState.value _ (t::nexts)
---   where t = ParseTree.mk f children
+--   where t = Hedge.Node.mk f children
 --         children ≠ []
---         children ≠ [ParseTree.mk v []]
+--         children ≠ [Hedge.Node.mk v []]
 -- These result in two states:
 --   Stack.setCurrentM (ParserState.opened nexts)
 --   Stack.pushM (ParserState.field f children)
@@ -103,10 +103,10 @@ noncomputable def CurrentState.size (s: CurrentState α): Nat :=
 --   theorem sizeOf_opened_gt_popped_opened: x + ParserState.opened [] > x
 -- Otherwise we also need to make sure the following equations hold:
 --   theorem sizeOf_unknown_gt_opened: ParserState.unknown forest > ParserState.opened forest
---   theorem sizeOf_value_value_gt_value:  ParserState.value _ ((ParseTree.mk v [])::nexts) > ParserState.value v nexts
---   theorem sizeOf_opened_value_gt_value: ParserState.opened ((ParseTree.mk v [])::nexts) > ParserState.value v nexts
---   theorem sizeOf_value_pair_gt_pair:  ParserState.value _ ((ParseTree.mk f [ParseTree.mk v []])::nexts) > ParserState.pair f v nexts
---   theorem sizeOf_opened_pair_gt_pair: ParserState.opened ((ParseTree.mk f [ParseTree.mk v []])::nexts) > ParserState.pair f v nexts
+--   theorem sizeOf_value_value_gt_value:  ParserState.value _ ((Hedge.Node.mk v [])::nexts) > ParserState.value v nexts
+--   theorem sizeOf_opened_value_gt_value: ParserState.opened ((Hedge.Node.mk v [])::nexts) > ParserState.value v nexts
+--   theorem sizeOf_value_pair_gt_pair:  ParserState.value _ ((Hedge.Node.mk f [Hedge.Node.mk v []])::nexts) > ParserState.pair f v nexts
+--   theorem sizeOf_opened_pair_gt_pair: ParserState.opened ((Hedge.Node.mk f [Hedge.Node.mk v []])::nexts) > ParserState.pair f v nexts
 --   theorem sizeOf_pair_gt_value: ParserState.pair _ v nexts > ParserState.value v nexts
 --   theorem sizeOf_field_gt_opened: ParserState.field _ children > ParserState.opened children
 @[simp]
@@ -120,7 +120,7 @@ noncomputable instance: SizeOf (ParserState α) where
 def pop
   [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf (CurrentState α) m] [MonadStateOf (ParseStack α) m]:
   m Unit := do
-  let top : Option (ParseForest α) <- Stack.popM?
+  let top : Option (Hedge α) <- Stack.popM?
   match top with
   | Option.some top' =>
     set (CurrentState.opened top')
@@ -131,15 +131,15 @@ def pop
 
 def nextNode
   [Monad m] [Debug m] [MonadExcept String m] [MonadStateOf (CurrentState α) m] [MonadStateOf (ParseStack α) m]
-  (current: ParseTree α) (nexts: ParseForest α): m Hint := do
+  (current: Hedge.Node α) (nexts: Hedge α): m Hint := do
   match current with
-  | ParseTree.mk v [] =>
+  | Hedge.Node.mk v [] =>
     set (CurrentState.value v nexts)
     return Hint.value
-  | ParseTree.mk f [ParseTree.mk v []] =>
+  | Hedge.Node.mk f [Hedge.Node.mk v []] =>
     set (CurrentState.pair f v nexts)
     return Hint.field
-  | ParseTree.mk f children =>
+  | Hedge.Node.mk f children =>
     Stack.pushM nexts
     set (CurrentState.field f children)
     return Hint.field
@@ -262,7 +262,7 @@ def run' (x: TreeParser α β) (s: ParserState α): Except String β :=
 def run (x: TreeParser α β) (s: ParserState α): Except String (β × (ParserState α)) :=
   StateT.run x s
 
-def runTree (x: TreeParser α β) (t: ParseTree α): Except String β :=
+def runTree (x: TreeParser α β) (t: Hedge.Node α): Except String β :=
   StateT.run' x (ParserState.mk' t)
 
 theorem next_unknown_gt_opened:
@@ -277,46 +277,46 @@ theorem sizeOf_unknown_gt_opened:
   simp
 
 theorem next_value_value_gt_value:
-  run next (ParserState.mk (CurrentState.value v' ((ParseTree.mk v [])::siblings)) stack) =
+  run next (ParserState.mk (CurrentState.value v' ((Hedge.Node.mk v [])::siblings)) stack) =
   Except.ok (Hint.value, ParserState.mk (CurrentState.value v siblings) stack) := by
   simp [run, next, nextNode, Debug.debug, getCurrent, setCurrent]
   simp_monads
 
 theorem sizeOf_value_value_gt_value:
-  sizeOf (ParserState.mk (CurrentState.value v' ((ParseTree.mk v [])::siblings)) stack) >
+  sizeOf (ParserState.mk (CurrentState.value v' ((Hedge.Node.mk v [])::siblings)) stack) >
   sizeOf (ParserState.mk (CurrentState.value v siblings) stack) := by
   simp
 
 theorem next_opened_value_gt_value:
-  run next (ParserState.mk (CurrentState.opened ((ParseTree.mk v [])::siblings)) stack) =
+  run next (ParserState.mk (CurrentState.opened ((Hedge.Node.mk v [])::siblings)) stack) =
   Except.ok (Hint.value, ParserState.mk (CurrentState.value v siblings) stack) := by
   simp [run, next, nextNode, Debug.debug, getCurrent, setCurrent]
   simp_monads
 
 theorem sizeOf_opened_value_gt_value:
-  sizeOf (ParserState.mk (CurrentState.opened ((ParseTree.mk v [])::siblings)) stack) >
+  sizeOf (ParserState.mk (CurrentState.opened ((Hedge.Node.mk v [])::siblings)) stack) >
   sizeOf (ParserState.mk (CurrentState.value v siblings) stack) := by
   simp
 
 theorem next_value_pair_gt_pair:
-  run next (ParserState.mk (CurrentState.value v' ((ParseTree.mk f [ParseTree.mk v []])::siblings)) stack) =
+  run next (ParserState.mk (CurrentState.value v' ((Hedge.Node.mk f [Hedge.Node.mk v []])::siblings)) stack) =
   Except.ok (Hint.field, ParserState.mk (CurrentState.pair f v siblings) stack) := by
   simp [run, next, nextNode, Debug.debug, getCurrent, setCurrent]
   simp_monads
 
 theorem sizeOf_value_pair_gt_pair:
-  sizeOf (ParserState.mk (CurrentState.value v' ((ParseTree.mk f [ParseTree.mk v []])::siblings)) stack) >
+  sizeOf (ParserState.mk (CurrentState.value v' ((Hedge.Node.mk f [Hedge.Node.mk v []])::siblings)) stack) >
   sizeOf (ParserState.mk (CurrentState.pair f v siblings) stack) := by
   simp +arith
 
 theorem next_opened_pair_gt_pair:
-  run next (ParserState.mk (CurrentState.opened ((ParseTree.mk f [ParseTree.mk v []])::siblings)) stack) =
+  run next (ParserState.mk (CurrentState.opened ((Hedge.Node.mk f [Hedge.Node.mk v []])::siblings)) stack) =
   Except.ok (Hint.field, ParserState.mk (CurrentState.pair f v siblings) stack) := by
   simp [run, next, nextNode, Debug.debug, getCurrent, setCurrent]
   simp_monads
 
 theorem sizeOf_opened_pair_gt_pair:
-  sizeOf (ParserState.mk (CurrentState.opened ((ParseTree.mk f [ParseTree.mk v []])::siblings)) stack) >
+  sizeOf (ParserState.mk (CurrentState.opened ((Hedge.Node.mk f [Hedge.Node.mk v []])::siblings)) stack) >
   sizeOf (ParserState.mk (CurrentState.pair f v siblings) stack) := by
   simp +arith
 
@@ -343,11 +343,11 @@ theorem sizeOf_field_gt_opened:
   simp
 
 theorem next_opened_gt_push
-  {fchildren: ParseForest α}
+  {fchildren: Hedge α}
   -- if not a value and not a pair
-  (hc: (∃ v vchild vchildren, fchildren = [ParseTree.mk v (vchild::vchildren)])
+  (hc: (∃ v vchild vchildren, fchildren = [Hedge.Node.mk v (vchild::vchildren)])
     \/ (∃ fchild1 fchild2 fchilds, fchildren = fchild1::fchild2::fchilds)):
-  run next (ParserState.mk ((CurrentState.opened ((ParseTree.mk f fchildren)::siblings))) stack) =
+  run next (ParserState.mk ((CurrentState.opened ((Hedge.Node.mk f fchildren)::siblings))) stack) =
   Except.ok (Hint.field, ParserState.mk (CurrentState.field f fchildren) (siblings::stack)) := by
   cases hc with
   | inl hc =>
@@ -366,18 +366,18 @@ theorem next_opened_gt_push
     simp_monads
 
 theorem sizeOf_opened_gt_push:
-  sizeOf (ParserState.mk ((CurrentState.opened ((ParseTree.mk f children)::siblings))) stack) >
+  sizeOf (ParserState.mk ((CurrentState.opened ((Hedge.Node.mk f children)::siblings))) stack) >
   sizeOf (ParserState.mk (CurrentState.field f children) (siblings::stack)) := by
   simp +arith
 
--- run next (ParserState.mk (CurrentState.value v' ((ParseTree.mk f [ParseTree.mk v []])::siblings)) stack) =
--- run next (ParserState.mk (CurrentState.value v' ((ParseTree.mk v [])::siblings)) stack) =
+-- run next (ParserState.mk (CurrentState.value v' ((Hedge.Node.mk f [Hedge.Node.mk v []])::siblings)) stack) =
+-- run next (ParserState.mk (CurrentState.value v' ((Hedge.Node.mk v [])::siblings)) stack) =
 theorem next_value_gt_push
-  {fchildren: ParseForest α}
+  {fchildren: Hedge α}
   -- if not a value and not a pair
-  (hc: (∃ v vchild vchildren, fchildren = [ParseTree.mk v (vchild::vchildren)])
+  (hc: (∃ v vchild vchildren, fchildren = [Hedge.Node.mk v (vchild::vchildren)])
     \/ (∃ fchild1 fchild2 fchilds, fchildren = fchild1::fchild2::fchilds)):
-  run next (ParserState.mk (CurrentState.value v ((ParseTree.mk f fchildren)::fsiblings)) stack) =
+  run next (ParserState.mk (CurrentState.value v ((Hedge.Node.mk f fchildren)::fsiblings)) stack) =
   Except.ok (Hint.field, ParserState.mk (CurrentState.field f fchildren) (fsiblings::stack)) := by
   cases hc with
   | inl hc =>
@@ -396,7 +396,7 @@ theorem next_value_gt_push
     simp_monads
 
 theorem sizeOf_value_gt_push:
-  sizeOf (ParserState.mk ((CurrentState.value v ((ParseTree.mk f children)::siblings))) stack) >
+  sizeOf (ParserState.mk ((CurrentState.value v ((Hedge.Node.mk f children)::siblings))) stack) >
   sizeOf (ParserState.mk (CurrentState.field f children) (siblings::stack)) := by
   simp +arith
 
@@ -463,7 +463,7 @@ open TokenTree (node)
 
 #guard run'
   next
-  (ParserState.mk (CurrentState.unknown [ParseTree.mk 0 []]) [])
+  (ParserState.mk (CurrentState.unknown [Hedge.Node.mk 0 []]) [])
   = Except.ok Hint.enter
 
 #guard runTree
@@ -604,7 +604,7 @@ theorem next_decreases_size_of_parserstate
                 rw [<- h]
                 apply sizeOf_opened_gt_push
                 right
-                exists ParseTree.mk v []
+                exists Hedge.Node.mk v []
                 exists vsibling
                 exists vsiblings
             | cons vchild vchildren =>
@@ -621,7 +621,7 @@ theorem next_decreases_size_of_parserstate
                 exists vchildren
               | cons vsibling vsiblings =>
                 right
-                exists ParseTree.mk v (vchild :: vchildren)
+                exists Hedge.Node.mk v (vchild :: vchildren)
                 exists vsibling
                 exists vsiblings
   | value x xs =>
@@ -668,7 +668,7 @@ theorem next_decreases_size_of_parserstate
                 rw [<- h]
                 apply sizeOf_opened_gt_push
                 right
-                exists ParseTree.mk v []
+                exists Hedge.Node.mk v []
                 exists vsibling
                 exists vsiblings
             | cons vchild vchildren =>
@@ -685,7 +685,7 @@ theorem next_decreases_size_of_parserstate
                 exists vchildren
               | cons vsibling vsiblings =>
                 right
-                exists ParseTree.mk v (vchild :: vchildren)
+                exists Hedge.Node.mk v (vchild :: vchildren)
                 exists vsibling
                 exists vsiblings
   | pair f v xs =>

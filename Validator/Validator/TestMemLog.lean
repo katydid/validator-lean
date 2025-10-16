@@ -1,4 +1,4 @@
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Validator.Validate
@@ -13,14 +13,14 @@ def validate {m} [DecidableEq α] [ValidateM m μ α] (g: Expr.Grammar μ α) (x
 
 def run
   [DecidableEq α] [Hashable α]
-  (g: Expr.Grammar μ α) (t: ParseTree α): (List String × Except String Bool) :=
+  (g: Expr.Grammar μ α) (t: Hedge.Node α): (List String × Except String Bool) :=
   TreeParserMemLogM.run' (μ := μ) (validate g g.lookup0) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
-  (g: Expr.Grammar μ α) (t: ParseTree α): (List String × Except String Bool) :=
+  (g: Expr.Grammar μ α) (t: Hedge.Node α): (List String × Except String Bool) :=
   match TreeParserMemLogM.run (μ := μ) (validate g g.lookup0) t with
   | EStateM.Result.error err state1 => (state1.logs, Except.error err)
   | EStateM.Result.ok res1 state1 =>
@@ -35,7 +35,7 @@ def testCacheIsHitOnSecondRun
 -- This tests that given an empty cache the test does actually fail.
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
-  (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+  (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   TreeParserMemTestM.run' (μ := μ) (validate g g.lookup0) t
 
 open TokenTree (node)

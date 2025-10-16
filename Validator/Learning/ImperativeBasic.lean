@@ -3,7 +3,7 @@
 
 import Validator.Std.Except
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Expr
@@ -15,7 +15,7 @@ import Validator.Learning.ImperativeLeave
 namespace ImperativeBasic
 
 -- foldLoop is a more readable version of List.foldlM for imperative programmers:
-private def foldLoop (deriv: Exprs μ α -> ParseTree α -> Except String (Exprs μ α)) (start: Exprs μ α) (forest: ParseForest α): Except String (Exprs μ α) := do
+private def foldLoop (deriv: Exprs μ α -> Hedge.Node α -> Except String (Exprs μ α)) (start: Exprs μ α) (forest: Hedge α): Except String (Exprs μ α) := do
   let mut res := start
   for tree in forest do
     match deriv res tree with
@@ -23,7 +23,7 @@ private def foldLoop (deriv: Exprs μ α -> ParseTree α -> Except String (Exprs
     | Except.ok r => res := r
   return res
 
-def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (tree: ParseTree α): Except String (Exprs μ α) :=
+def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (tree: Hedge.Node α): Except String (Exprs μ α) :=
   -- If all expressions are unescapable, then simply return without look at the input tree.
   -- An example of an unescapable expression is emptyset, since its derivative is always emptyset, no matter the input.
   if List.all xs Expr.unescapable
@@ -31,7 +31,7 @@ def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (tree: Par
   else
     -- Desconstruct the tree to retrieve its label and children
     match tree with
-    | ParseTree.mk label children =>
+    | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
       let ifexprs: IfExprs μ α := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
@@ -49,7 +49,7 @@ def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (tree: Par
       | Except.error err => Except.error err
       | Except.ok dxs => Except.ok dxs
 
-def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String (Expr μ α) :=
+def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String (Expr μ α) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM (derive g) [x] forest
   match dxs with
@@ -57,12 +57,12 @@ def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Par
   | Except.ok [dx] => Except.ok dx
   | Except.ok _ => Except.error "expected one expression"
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String Bool :=
+def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String Bool :=
   match derivs g x forest with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Expr.nullable x')
 
-def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   validate g g.lookup0 [t]
 
 -- Tests

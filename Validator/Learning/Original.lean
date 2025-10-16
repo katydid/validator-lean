@@ -4,7 +4,7 @@
 
 import Validator.Std.Except
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Pred
@@ -15,7 +15,7 @@ namespace Original
 -- foldLoop is a more readable version of List.foldl for imperative programmers:
 -- Imperative programmers can imagine that `Id (Expr α)` = `Expr α`, because it does.
 -- The Id wrapper just adds a monad wrapper to enable the do notation, so that we can use the for loop in Lean.
-private def foldLoop (deriv: Expr μ α -> ParseTree α -> Expr μ α) (start: Expr μ α) (forest: ParseForest α): Id (Expr μ α) := do
+private def foldLoop (deriv: Expr μ α -> Hedge.Node α -> Expr μ α) (start: Expr μ α) (forest: Hedge α): Id (Expr μ α) := do
   let mut res := start
   for tree in forest do
     res := deriv res tree
@@ -25,16 +25,16 @@ private def foldLoop (deriv: Expr μ α -> ParseTree α -> Expr μ α) (start: E
 -- It returns the expression that is left to match after matching the tree.
 -- Note we need to use `partial`, since Lean cannot automatically figure out that the derive function terminates.
 -- In OriginalTotal we show how to remove this, by manually proving that it in fact does terminate.
-partial def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tree: ParseTree α): Expr μ α :=
+partial def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tree: Hedge.Node α): Expr μ α :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childRef =>
     -- This is the only rule that differs from regular expressions.
     -- Although if we view this as a complicated predicate, then actually there is no difference.
-    if Pred.eval labelPred (ParseTree.getLabel tree)
-    -- This is exactly the same as: validate childrenExpr (ParseTree.getChildren tree)
-    && Expr.nullable (List.foldl (derive g) (g.lookup childRef) (ParseTree.getChildren tree))
+    if Pred.eval labelPred (Hedge.Node.getLabel tree)
+    -- This is exactly the same as: validate childrenExpr (Hedge.Node.getChildren tree)
+    && Expr.nullable (List.foldl (derive g) (g.lookup childRef) (Hedge.Node.getChildren tree))
     -- Just like with char, if the predicate matches we return epsilon and if it doesn't we return emptyset
     then Expr.epsilon
     else Expr.emptyset
@@ -45,10 +45,10 @@ partial def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tre
     else Expr.concat (derive g y tree) z
   | Expr.star y => Expr.concat (derive g y tree) (Expr.star y)
 
-partial def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Bool :=
+partial def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Bool :=
   Expr.nullable (List.foldl (derive g) x forest)
 
-def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate g g.lookup0 [t])
 
 -- Tests

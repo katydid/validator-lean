@@ -1,6 +1,6 @@
 import Validator.Std.Debug
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TreeParser
 
 import Validator.Memoize.MemEnter
@@ -47,7 +47,7 @@ instance
   [Monad (Impl μ α)] -- EStateM is monad
   [Debug (Impl μ α)] -- Debug instance is declared above
   [MonadExcept String (Impl μ α)] -- EStateM String is MonadExcept String
-  [MonadStateOf (TreeParser.ParserState α) (Impl μ α)] -- MonadStateOf ParseTree.TreeParser is declared above
+  [MonadStateOf (TreeParser.ParserState α) (Impl μ α)] -- MonadStateOf Hedge.Node.TreeParser is declared above
   : Parser (Impl μ α) α where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
@@ -82,5 +82,5 @@ instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl μ α) μ α w
 instance [DecidableEq α] [Hashable α]: ValidateM (Impl μ α) μ α where
   -- all instances have been created, so no implementations are required here
 
-def run' [DecidableEq α] [Hashable α] (f: Impl μ α β) (t: ParseTree α): EIO String β :=
+def run' [DecidableEq α] [Hashable α] (f: Impl μ α β) (t: Hedge.Node α): EIO String β :=
   StateT.run' f (Impl.mk (TreeParser.ParserState.mk' t))

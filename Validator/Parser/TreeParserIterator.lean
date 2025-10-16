@@ -1,7 +1,7 @@
 import Init.Data.Iterators
 
 import Validator.Parser.Hint
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TreeParser
 
 structure TreeParserIterator (α : Type) where
@@ -9,7 +9,7 @@ structure TreeParserIterator (α : Type) where
 
 namespace TreeParserIterator
 
-def ParseForest.iterM {α : Type} (forest : ParseForest α) (m : Type → Type w') [Pure m] :
+def Hedge.iterM {α : Type} (forest : Hedge α) (m : Type → Type w') [Pure m] :
   Std.Iterators.IterM (α := TreeParserIterator α) m α :=
     Std.Iterators.toIterM { state := TreeParser.ParserState.mks forest } m α
 
@@ -94,7 +94,7 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
                     rw [TreeParser.next_opened_pair_gt_pair]
                 | cons vchild vchildren =>
                   refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
-                  · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f [ParseTree.mk v (vchild::vchildren)]) (siblings::stack))
+                  · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f [Hedge.Node.mk v (vchild::vchildren)]) (siblings::stack))
                   · exact Hint.field
                   · simp
                     rw [TreeParser.next_opened_gt_push]
@@ -152,7 +152,7 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
                     rw [TreeParser.next_value_pair_gt_pair]
                 | cons vchild vchildren =>
                   refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
-                  · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f [ParseTree.mk v (vchild::vchildren)]) (siblings::stack))
+                  · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f [Hedge.Node.mk v (vchild::vchildren)]) (siblings::stack))
                   · exact Hint.field
                   · simp
                     rw [TreeParser.next_value_gt_push]

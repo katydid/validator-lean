@@ -46,7 +46,7 @@ instance
   [Monad (Impl μ α)] -- EStateM is monad
   [Debug (Impl μ α)] -- Debug instance is declared above
   [MonadExcept String (Impl μ α)] -- EStateM String is MonadExcept String
-  [MonadStateOf (TreeParser.ParserState α) (Impl μ α)] -- MonadStateOf ParseTree.TreeParser is declared above
+  [MonadStateOf (TreeParser.ParserState α) (Impl μ α)] -- MonadStateOf Hedge.Node.TreeParser is declared above
   : Parser (Impl μ α) α where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
@@ -97,12 +97,12 @@ instance [DecidableEq α] [Hashable α]: ValidateM (Impl μ α) μ α  where
 
 def runPopulatedMem
   [DecidableEq α] [Hashable α]
-  (f: Impl μ α β) (t: ParseTree α) (e: MemEnter.EnterMap μ α) (l: MemLeave.LeaveMap μ α): EStateM.Result String (State μ α) β :=
+  (f: Impl μ α β) (t: Hedge.Node α) (e: MemEnter.EnterMap μ α) (l: MemLeave.LeaveMap μ α): EStateM.Result String (State μ α) β :=
   EStateM.run f (State.mk (TreeParser.ParserState.mk' t) e l [])
 
 def run'
   [DecidableEq α] [Hashable α]
-  (f: Impl μ α β) (t: ParseTree α): Except String β :=
+  (f: Impl μ α β) (t: Hedge.Node α): Except String β :=
   match EStateM.run f (Impl.mk (TreeParser.ParserState.mk' t)) with
   | EStateM.Result.ok k _ => Except.ok k
   | EStateM.Result.error err _ => Except.error err

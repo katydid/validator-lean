@@ -1,4 +1,4 @@
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 
 import Validator.Expr.Pred
 import Validator.Expr.Regex
@@ -22,7 +22,7 @@ structure Grammar (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
 def Grammar.lookup (g: Grammar μ α Φ) (ref: Fin μ): Rule μ α Φ :=
   Vector.get g.prods ref
 
-def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: ParseForest α): Prop :=
+def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
     | Subtype.mk [x] _hx =>
@@ -34,16 +34,16 @@ def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred)
   decreasing_by
     cases x with
     | mk label children =>
-    simp only [ParseTree.getChildren]
+    simp only [Hedge.Node.getChildren]
     have h := List.list_infix_is_leq_sizeOf _hx
-    simp only [List.cons.sizeOf_spec, List.nil.sizeOf_spec, ParseTree.mk.sizeOf_spec] at h
+    simp only [List.cons.sizeOf_spec, List.nil.sizeOf_spec, Hedge.Node.mk.sizeOf_spec] at h
     simp +arith only at h
     omega
 
-def Grammar.denote {α: Type} [BEq α] (g: Grammar μ α Pred) (xs: ParseForest α): Prop :=
+def Grammar.denote {α: Type} [BEq α] (g: Grammar μ α Pred) (xs: Hedge α): Prop :=
   denote_rule g g.start xs
 
-theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: ParseForest α):
+theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α):
   (Regex.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
     | Subtype.mk [x] _hx =>
@@ -52,7 +52,7 @@ theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule �
     | _ => False
   )) =
   (Regex.denote_infix r xs (fun (pred, ref) xs' =>
-    ∃ x: ParseTree α, xs'.val = [x] /\ Pred.eval pred x.getLabel /\ denote_rule g (g.lookup ref) x.getChildren
+    ∃ x: Hedge.Node α, xs'.val = [x] /\ Pred.eval pred x.getLabel /\ denote_rule g (g.lookup ref) x.getChildren
   )) := by
   congr
   ext s xs'
@@ -71,10 +71,10 @@ theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule �
     | nil =>
       simp
 
-theorem simp_denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: ParseForest α):
+theorem simp_denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α):
   denote_rule g r xs =
   Regex.denote_infix r xs (fun (pred, ref) xs' =>
-    ∃ label children, xs'.val = [ParseTree.mk label children] /\ Pred.eval pred label /\ denote_rule g (g.lookup ref) children
+    ∃ label children, xs'.val = [Hedge.Node.mk label children] /\ Pred.eval pred label /\ denote_rule g (g.lookup ref) children
   ) := by
   nth_rewrite 1 [denote_rule]
   rw [simp_denote_rule']
@@ -92,7 +92,7 @@ theorem simp_denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ
   case mpr =>
     intro h
     obtain ⟨label, children, hxs, h⟩ := h
-    exists ParseTree.mk label children
+    exists Hedge.Node.mk label children
 
 theorem Grammar.denote_rule_emptyset {α: Type} [BEq α] {g: Grammar μ α Pred}:
   denote_rule g Regex.emptyset = Language.emptyset := by
@@ -109,7 +109,7 @@ theorem Grammar.denote_rule_emptystr {α: Type} [BEq α] {g: Grammar μ α Pred}
   simp [Regex.denote_infix_emptystr]
 
 theorem denote_rule_symbol' {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {pred: Pred α} {ref: Ref μ} {xs: ParseForest α}:
+  {g: Grammar μ α Pred} {pred: Pred α} {ref: Ref μ} {xs: Hedge α}:
   denote_rule g (Regex.symbol (pred, ref)) xs
   <-> Language.tree (Pred.eval pred) (denote_rule g (g.lookup ref)) xs := by
   cases xs with
@@ -137,8 +137,8 @@ theorem denote_rule_symbol' {μ: Nat} {α: Type} [BEq α]
         | mk label children =>
         exists label, children
         apply And.intro (by rfl)
-        simp [ParseTree.getLabel] at hp
-        simp [ParseTree.getChildren] at hg
+        simp [Hedge.Node.getLabel] at hp
+        simp [Hedge.Node.getChildren] at hg
         apply And.intro hp
         rw [<- denote_rule]
         exact hg
@@ -151,7 +151,7 @@ theorem denote_rule_symbol' {μ: Nat} {α: Type} [BEq α]
         obtain ⟨hl, hc⟩ := hx
         rw [hl, hc] at *
         clear hl hc label' children'
-        simp [ParseTree.getChildren, ParseTree.getLabel]
+        simp [Hedge.Node.getChildren, Hedge.Node.getLabel]
         rw [<- denote_rule] at hg
         apply And.intro hp hg
 
@@ -217,7 +217,7 @@ theorem Grammar.denote_rule_concat_n {μ: Nat} {α: Type} [BEq α]
         simp
 
 theorem denote_rule_star_n' {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {r: Rule μ α Pred} (xs: ParseForest α):
+  {g: Grammar μ α Pred} {r: Rule μ α Pred} (xs: Hedge α):
   denote_rule g (Regex.star r) xs
   <->
   Language.star_n (denote_rule g r) xs := by

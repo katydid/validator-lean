@@ -1,5 +1,5 @@
 import Validator.Parser.Hint
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TreeParser
 
 namespace TreeParserForIn

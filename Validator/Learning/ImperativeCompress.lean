@@ -5,7 +5,7 @@
 
 import Validator.Std.Except
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
@@ -18,12 +18,12 @@ import Validator.Learning.ImperativeLeave
 namespace ImperativeCompress
 
 -- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
-def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: ParseTree α): Except String (Exprs μ α) :=
+def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: Hedge.Node α): Except String (Exprs μ α) :=
   if List.all xs Expr.unescapable
   then Except.ok xs
   else
     match t with
-    | ParseTree.mk label children =>
+    | Hedge.Node.mk label children =>
       let ifexprs: IfExprs μ α := Enter.deriveEnter xs
       let childxs: Exprs μ α := IfExpr.evals g ifexprs label
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
@@ -48,7 +48,7 @@ def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: ParseT
       | Except.error err => Except.error err
       | Except.ok dxs => Except.ok dxs
 
-def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String (Expr μ α) :=
+def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String (Expr μ α) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM (derive g) [x] forest
   match dxs with
@@ -56,12 +56,12 @@ def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Par
   | Except.ok [dx] => Except.ok dx
   | Except.ok _ => Except.error "expected one expression"
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String Bool :=
+def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String Bool :=
   match derivs g x forest with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Expr.nullable x')
 
-def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   validate g g.lookup0 [t]
 
 open TokenTree (node)

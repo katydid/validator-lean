@@ -1,6 +1,6 @@
 import Validator.Std.Lex
 import Validator.Std.List
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 
 import Validator.Expr.Expr
 import Validator.Expr.Pred
@@ -8,13 +8,13 @@ import Validator.Expr.Language
 
 namespace Denote
 
-def denote {α: Type} [BEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (as: ParseForest α): Prop :=
+def denote {α: Type} [BEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (as: Hedge α): Prop :=
   match x with
   | Expr.emptyset => False
   | Expr.epsilon => as = []
   | Expr.tree p childref => -- (tree (Pred.eval p) (denote g (g.lookup childref))) xs
     match as with
-    | [ParseTree.mk label children] => Pred.eval p label /\ (denote g (g.lookup childref) children)
+    | [Hedge.Node.mk label children] => Pred.eval p label /\ (denote g (g.lookup childref) children)
     | _ => False
   | Expr.or y z => (denote g y as) \/ (denote g z as)
   | Expr.concat y z => ∃ n,
@@ -28,14 +28,14 @@ def denote {α: Type} [BEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (as: Pars
   termination_by (as, x)
   decreasing_by
   · apply Prod.Lex.left
-    simp +arith only [List.cons.sizeOf_spec, ParseTree.mk.sizeOf_spec, sizeOf_default, add_zero,
+    simp +arith only [List.cons.sizeOf_spec, Hedge.Node.mk.sizeOf_spec, sizeOf_default, add_zero,
       List.nil.sizeOf_spec]
   · apply Prod.Lex.right
     simp +arith only [Expr.or.sizeOf_spec]
   · apply Prod.Lex.right
     simp +arith only [Expr.or.sizeOf_spec]
   · apply Lex.lex_sizeOf
-    · apply ParseTree.ParseForest.sizeOf_take
+    · apply Hedge.sizeOf_take
     · simp [Expr.concat.sizeOf_spec]
       omega
   · have h := List.list_drop_exists (xs := as) (n := n)
@@ -53,7 +53,7 @@ def denote {α: Type} [BEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (as: Pars
     simp only [List.cons.sizeOf_spec, add_lt_add_iff_left, List.cons.injEq,
       true_and, Expr.star.sizeOf_spec, lt_add_iff_pos_left, zero_lt_one, and_true]
     apply Or.symm
-    apply ParseTree.ParseForest.sizeOf_take
+    apply Hedge.sizeOf_take
   · apply Prod.Lex.left
     have h := List.list_drop_exists (xs := as) (n := n)
     cases h with
@@ -146,7 +146,7 @@ theorem denote_concat {α: Type} [BEq α] {g: Expr.Grammar μ α} (x y: Expr μ 
     simp
     apply And.intro hx hy
 
-theorem denote_star' {α: Type} [BEq α] {g: Expr.Grammar μ α} (y: Expr μ α) (as: ParseForest α):
+theorem denote_star' {α: Type} [BEq α] {g: Expr.Grammar μ α} (y: Expr μ α) (as: Hedge α):
   denote g (Expr.star y) as <-> Language.star (denote g y) as := by
   apply Iff.intro
   case mp =>

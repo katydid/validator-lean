@@ -4,7 +4,7 @@
 import Validator.Std.Except
 import Validator.Std.List
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Pred
@@ -13,7 +13,7 @@ import Validator.Expr.Denote
 
 namespace OriginalTotal
 
-theorem decreasing_or_l (y: Expr μ α) (tree: ParseTree α):
+theorem decreasing_or_l (y: Expr μ α) (tree: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -22,7 +22,7 @@ theorem decreasing_or_l (y: Expr μ α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.or.sizeOf_spec]
 
-theorem decreasing_or_r (y: Expr μ α) (tree: ParseTree α):
+theorem decreasing_or_r (y: Expr μ α) (tree: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -31,7 +31,7 @@ theorem decreasing_or_r (y: Expr μ α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.or.sizeOf_spec]
 
-theorem decreasing_concat_l (y: Expr μ α) (tree: ParseTree α):
+theorem decreasing_concat_l (y: Expr μ α) (tree: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -40,7 +40,7 @@ theorem decreasing_concat_l (y: Expr μ α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.concat.sizeOf_spec]
 
-theorem decreasing_concat_r (y: Expr μ α) (tree: ParseTree α):
+theorem decreasing_concat_r (y: Expr μ α) (tree: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -49,7 +49,7 @@ theorem decreasing_concat_r (y: Expr μ α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.concat.sizeOf_spec]
 
-theorem decreasing_star (y: Expr μ α) (tree: ParseTree α):
+theorem decreasing_star (y: Expr μ α) (tree: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
@@ -58,24 +58,24 @@ theorem decreasing_star (y: Expr μ α) (tree: ParseTree α):
   apply Prod.Lex.right
   simp +arith only [Expr.star.sizeOf_spec]
 
-theorem decreasing_tree {s: Expr μ α} {children: ParseForest α} (h: tree ∈ children):
+theorem decreasing_tree {s: Expr μ α} {children: Hedge α} (h: tree ∈ children):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (tree, s)
-    (ParseTree.mk label children, Expr.tree labelPred childrenExpr) := by
+    (Hedge.Node.mk label children, Expr.tree labelPred childrenExpr) := by
   apply Prod.Lex.left
-  simp +arith only [ParseTree.mk.sizeOf_spec]
+  simp +arith only [Hedge.Node.mk.sizeOf_spec]
   have h' := List.list_elem_lt h
   omega
 
-def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tree: ParseTree α): Expr μ α :=
+def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tree: Hedge.Node α): Expr μ α :=
   match x with
   | Expr.emptyset => Expr.emptyset
   | Expr.epsilon => Expr.emptyset
   | Expr.tree labelPred childRef =>
     match tree with
-    | ParseTree.mk label children =>
+    | Hedge.Node.mk label children =>
       Expr.onlyif
         (
           (Pred.eval labelPred label)
@@ -109,10 +109,10 @@ decreasing_by
   · apply decreasing_concat_r
   · apply decreasing_star
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α)(x: Expr μ α) (forest: ParseForest α): Bool :=
+def validate [DecidableEq α] (g: Expr.Grammar μ α)(x: Expr μ α) (forest: Hedge α): Bool :=
   Expr.nullable (List.foldl (derive g) x forest)
 
-def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate g g.lookup0 [t])
 
 -- Tests
@@ -180,7 +180,7 @@ open TokenTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
-theorem derive_commutes {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (a: ParseTree α):
+theorem derive_commutes {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (a: Hedge.Node α):
   Denote.denote g (derive g x a) = Language.derive (Denote.denote g x) a := by
   fun_induction (derive g) x a with
   | case1 => -- emptyset

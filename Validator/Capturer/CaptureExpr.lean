@@ -1,7 +1,7 @@
 import Validator.Expr.Pred
 
 import Validator.Parser.Token
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 
 -- CaptureExpr includes capturing groups
 inductive CaptureExpr α where

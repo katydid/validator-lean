@@ -4,13 +4,13 @@ namespace CaptureExtract
 
 -- extract extracts a single forest for the whole expression.
 -- This based on extractGroups, but only returns one captured forest.
-def extract (x: CaptureExpr α): ParseForest α :=
+def extract (x: CaptureExpr α): Hedge α :=
   match x with
   | CaptureExpr.emptyset => []
   | CaptureExpr.epsilon => []
   | CaptureExpr.tree _ _ => []
   -- matched returns the matched token and extracts the matched children from the child expression.
-  | CaptureExpr.matched tok childExpr => [ParseTree.mk tok (extract childExpr)]
+  | CaptureExpr.matched tok childExpr => [Hedge.Node.mk tok (extract childExpr)]
   | CaptureExpr.or y z =>
     -- Under POSIX semantics, we prefer matching the left alternative.
     if y.nullable
@@ -25,7 +25,7 @@ def extract (x: CaptureExpr α): ParseForest α :=
   | CaptureExpr.group _ y => extract y
 
 -- extractGroups returns the captured forest for each group.
-def extractGroups (includePath: Bool) (x: CaptureExpr α): List (Nat × ParseForest α) :=
+def extractGroups (includePath: Bool) (x: CaptureExpr α): List (Nat × Hedge α) :=
   match x with
   | CaptureExpr.emptyset => []
   | CaptureExpr.epsilon => []
@@ -33,7 +33,7 @@ def extractGroups (includePath: Bool) (x: CaptureExpr α): List (Nat × ParseFor
   -- There may be groups in the childExpr that needs to be extracted.
   | CaptureExpr.matched tok childExpr =>
     if includePath
-    then List.map (fun (id, children) => (id, [ParseTree.mk tok children])) (extractGroups includePath childExpr)
+    then List.map (fun (id, children) => (id, [Hedge.Node.mk tok children])) (extractGroups includePath childExpr)
     else extractGroups includePath childExpr
   | CaptureExpr.or y z =>
     if y.nullable

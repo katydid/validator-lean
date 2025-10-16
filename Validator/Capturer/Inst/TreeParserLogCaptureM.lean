@@ -1,6 +1,6 @@
 import Validator.Std.Debug
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TreeParser
 
 import Validator.Capturer.CaptureM
@@ -41,7 +41,7 @@ instance
   [Monad (Impl α)] -- EStateM is monad
   [Debug (Impl α)] -- Debug instance is declared above
   [MonadExcept String (Impl α)] -- EStateM String is MonadExcept String
-  [MonadStateOf (TreeParser.ParserState α) (Impl α)] -- MonadStateOf ParseTree.TreeParser is declared above
+  [MonadStateOf (TreeParser.ParserState α) (Impl α)] -- MonadStateOf Hedge.Node.TreeParser is declared above
   : Parser (Impl α) α where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
@@ -50,10 +50,10 @@ instance
 instance : CaptureM (Impl α) α where
   -- all instances have been created, so no implementations are required here
 
-def run (f: Impl α β) (forest: ParseForest α): EStateM.Result String (State α) β :=
+def run (f: Impl α β) (forest: Hedge α): EStateM.Result String (State α) β :=
   EStateM.run f (Impl.mk (TreeParser.ParserState.mks forest))
 
-def run' (f: Impl α β) (forest: ParseForest α): (List String × (Except String β)) :=
+def run' (f: Impl α β) (forest: Hedge α): (List String × (Except String β)) :=
   match EStateM.run f (Impl.mk (TreeParser.ParserState.mks forest)) with
   | EStateM.Result.ok res s => (s.logs, Except.ok res)
   | EStateM.Result.error err s => (s.logs, Except.error err)

@@ -5,7 +5,7 @@
 
 import Validator.Std.Except
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
@@ -18,12 +18,12 @@ import Validator.Derive.Leave
 namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
-def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: ParseTree α): Except String (Exprs μ α) := do
+def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: Hedge.Node α): Except String (Exprs μ α) := do
   if List.all xs Expr.unescapable
   then return xs
   else
     match t with
-    | ParseTree.mk label children =>
+    | Hedge.Node.mk label children =>
       let ifexprs: IfExprs μ α := Enter.deriveEnter xs
       let childxs: Exprs μ α := IfExpr.evals g ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
@@ -34,17 +34,17 @@ def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: ParseT
       let dchildxs <- Compress.expand indices cdchildxs
       Leave.deriveLeaveM xs (List.map Expr.nullable dchildxs)
 
-def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String (Expr μ α) := do
+def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String (Expr μ α) := do
   let dxs <- List.foldlM (derive g) [x] forest
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String Bool := do
+def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String Bool := do
   let dx <- derivs g x forest
   return Expr.nullable dx
 
-def run [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   validate g g.lookup0 [t]
 
 open TokenTree (node)

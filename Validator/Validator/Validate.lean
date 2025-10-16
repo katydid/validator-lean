@@ -1,5 +1,5 @@
 -- ParserConciseCompress is a memoizable version of the validation algorithm.
--- This version of the algorithm uses a Parser instead of a ParseTree.
+-- This version of the algorithm uses a Parser instead of a Hedge.Node.
 -- It is intended to be used for explanation purposes. This means that it gives up speed for readability. Thus it has no memoization implemented.
 -- It does add compression for a small optimization, see lines marked with NEW
 
@@ -10,7 +10,7 @@ import Validator.Expr.IfExpr
 import Validator.Derive.Enter
 import Validator.Derive.Leave
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 import Validator.Parser.Parser
 import Validator.Parser.Hint
@@ -62,7 +62,7 @@ def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α] (g: E
   | [dx] => return Expr.nullable dx
   | _ => throw "expected one expression"
 
-def run {μ: Nat} {α: Type} [DecidableEq α] [Hashable α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+def run {μ: Nat} {α: Type} [DecidableEq α] [Hashable α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   TreeParserMemM.run' (μ := μ) (validate g g.lookup0) t
 
 -- Tests

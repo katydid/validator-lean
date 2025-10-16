@@ -4,46 +4,47 @@ import Mathlib.Tactic.NthRewrite
 
 import Validator.Std.List
 
--- ParseTree is a Labelled Tree.
-inductive ParseTree (α: Type) where
-  | mk (label: α) (children: List (ParseTree α))
+inductive Hedge.Node (α: Type) where
+  | mk (label: α) (children: List (Node α))
   deriving BEq, Ord, Repr, Hashable
 
-abbrev ParseForest α := List (ParseTree α)
+abbrev Hedge α := List (Hedge.Node α)
 
-namespace ParseTree
+namespace Hedge
 
-instance [Ord α]: LE (ParseTree α) where
+-- Node is a Labelled Tree.
+
+instance [Ord α]: LE (Node α) where
   le x y := (Ord.compare x y).isLE
 
-instance [Ord α]: LT (ParseTree α) where
+instance [Ord α]: LT (Node α) where
   lt x y := (Ord.compare x y).isLT
 
-def getLabel (t: ParseTree α): α :=
+def Node.getLabel (t: Node α): α :=
   match t with
-  | ParseTree.mk l _ => l
+  | Node.mk l _ => l
 
-def getChildren (t: ParseTree α): ParseForest α :=
+def Node.getChildren (t: Node α): Hedge α :=
   match t with
-  | ParseTree.mk _ c => c
+  | Node.mk _ c => c
 
-def getAttachedChildren (t: ParseTree α): List {x // x ∈ t.getChildren} :=
+def getAttachedChildren (t: Hedge.Node α): List {x // x ∈ t.getChildren} :=
   match t with
-  | ParseTree.mk _ c => c.attach
+  | Node.mk _ c => c.attach
 
 mutual
-def hasDecEq [DecidableEq α]: (a b : ParseTree α) → Decidable (Eq a b)
-  | ParseTree.mk la as, ParseTree.mk lb bs =>
+def Node.hasDecEq [DecidableEq α]: (a b : Node α) → Decidable (Eq a b)
+  | Node.mk la as, Node.mk lb bs =>
     match decEq la lb with
     | isFalse nlab => isFalse (by
-        simp only [ParseTree.mk.injEq, not_and]
+        simp only [Node.mk.injEq, not_and]
         intro h
         contradiction
       )
     | isTrue hlab =>
-      match ParseTree.hasDecEqs as bs with
+      match Node.hasDecEqs as bs with
       | isFalse nabs => isFalse (by
-          simp only [ParseTree.mk.injEq, not_and]
+          simp only [Node.mk.injEq, not_and]
           intro _ hab
           contradiction
         )
@@ -51,7 +52,7 @@ def hasDecEq [DecidableEq α]: (a b : ParseTree α) → Decidable (Eq a b)
           rw [hlab]
           rw [habs]
         )
-def hasDecEqs [DecidableEq α]: (as bs : ParseForest α) → Decidable (Eq as bs)
+def Node.hasDecEqs [DecidableEq α]: (as bs : Hedge α) → Decidable (Eq as bs)
   | [], [] => isTrue rfl
   | (a::as), [] => isFalse (by
       intro h
@@ -62,23 +63,23 @@ def hasDecEqs [DecidableEq α]: (as bs : ParseForest α) → Decidable (Eq as bs
       contradiction
     )
   | (a::as), (b::bs) =>
-    match ParseTree.hasDecEq a b with
+    match Node.hasDecEq a b with
     | isFalse nab => isFalse (by
         simp only [List.cons.injEq, not_and]
         intro _ hab
         contradiction
       )
     | isTrue hab =>
-      match ParseTree.hasDecEqs as bs with
+      match Node.hasDecEqs as bs with
       | isFalse nabs => isFalse (fun h => List.noConfusion h (fun _ habs => absurd habs nabs))
       | isTrue habs => isTrue (hab ▸ habs ▸ rfl)
 end
 
-instance[DecidableEq α] : DecidableEq (ParseTree α) := hasDecEq
+instance[DecidableEq α] : DecidableEq (Node α) := Node.hasDecEq
 
 local elab "simp_sizeOf" : tactic => do
   Lean.Elab.Tactic.evalTactic (<- `(tactic|
-    simp only [ParseTree.mk.sizeOf_spec, List.cons.sizeOf_spec, List.nil.sizeOf_spec, Subtype.mk.sizeOf_spec])
+    simp only [Node.mk.sizeOf_spec, List.cons.sizeOf_spec, List.nil.sizeOf_spec, Subtype.mk.sizeOf_spec])
   )
 
 private theorem lt_plus (x y z: Nat):
@@ -88,7 +89,7 @@ private theorem lt_plus (x y z: Nat):
 theorem take_eq_self_iff (x : List α) {n : Nat} : x.take n = x ↔ x.length ≤ n :=
   ⟨fun h ↦ by rw [← h]; simp; omega, List.take_of_length_le⟩
 
-theorem ParseForest.sizeOf_take (n: Nat) (xs: ParseForest α):
+theorem sizeOf_take (n: Nat) (xs: Hedge α):
   List.take n xs = xs \/ sizeOf (List.take n xs) < sizeOf xs := by
   rw [take_eq_self_iff]
   by_cases (List.length xs > n)
@@ -122,7 +123,7 @@ theorem ParseForest.sizeOf_take (n: Nat) (xs: ParseForest α):
     apply Or.inl
     assumption
 
-theorem ParseForest.sizeOf_drop (n: Nat) (xs: ParseForest α):
+theorem sizeOf_drop (n: Nat) (xs: Hedge α):
   List.drop n xs = xs \/ sizeOf (List.drop n xs) < sizeOf xs := by
   have h := List.list_drop_exists (xs := xs) (n := n)
   cases h with

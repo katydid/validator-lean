@@ -1,4 +1,4 @@
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 
 import Validator.Expr.Pred
 import Validator.Expr.Language

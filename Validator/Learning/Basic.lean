@@ -4,7 +4,7 @@
 
 import Validator.Std.Except
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
@@ -17,12 +17,12 @@ import Validator.Derive.Leave
 
 namespace Basic
 
-def derive {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: ParseTree α): Except String (Exprs μ α) := do
+def derive {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: Hedge.Node α): Except String (Exprs μ α) := do
   if List.all xs Expr.unescapable
   then Except.ok xs
   else
     match t with
-    | ParseTree.mk label children =>
+    | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
       let ifExprs: IfExprs μ α := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
@@ -32,17 +32,17 @@ def derive {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α)
       -- leaves is the other one of our two new memoizable functions.
       Leave.deriveLeaveM xs (List.map Expr.nullable dchildxs)
 
-def derivs {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String (Expr μ α) := do
+def derivs {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String (Expr μ α) := do
   let dxs <- List.foldlM (derive g) [x] forest
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
 
-def validate {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: ParseForest α): Except String Bool := do
+def validate {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String Bool := do
   let dx <- derivs g x forest
   return Expr.nullable dx
 
-def run {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (t: ParseTree α): Except String Bool :=
+def run {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   validate g g.lookup0 [t]
 
 -- Tests

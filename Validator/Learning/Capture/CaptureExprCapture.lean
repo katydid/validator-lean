@@ -1,7 +1,7 @@
 -- This extends the algorithm in https://github.com/katydid/regex-deriv-lean/blob/main/RegexDeriv/Group/Capture/CaptureRegexCapture.lean
--- It extends the algorithm to implement capturing on ParseTrees.
+-- It extends the algorithm to implement capturing on Hedge.Nodes.
 
-import Validator.Std.ParseTree
+import Validator.Std.Hedge
 import Validator.Parser.Token
 import Validator.Parser.TokenTree
 
@@ -13,7 +13,7 @@ import Validator.Capturer.CaptureExtract
 
 namespace CaptureExprCapture
 
-partial def derive [DecidableEq α] (x: CaptureExpr α) (tree: ParseTree α): CaptureExpr α :=
+partial def derive [DecidableEq α] (x: CaptureExpr α) (tree: Hedge.Node α): CaptureExpr α :=
   match x with
   | CaptureExpr.emptyset => CaptureExpr.emptyset
   | CaptureExpr.epsilon => CaptureExpr.emptyset
@@ -21,7 +21,7 @@ partial def derive [DecidableEq α] (x: CaptureExpr α) (tree: ParseTree α): Ca
   | CaptureExpr.matched _ _ => CaptureExpr.emptyset
   | CaptureExpr.tree pred childExpr =>
     match tree with
-    | ParseTree.mk tok children =>
+    | Hedge.Node.mk tok children =>
       if Pred.eval pred tok
       then
         let dchild := List.foldl derive childExpr children
@@ -45,7 +45,7 @@ partial def derive [DecidableEq α] (x: CaptureExpr α) (tree: ParseTree α): Ca
     CaptureExpr.smartGroup n (derive y tree)
 
 -- captures returns all captured forests for all groups.
-def captures [DecidableEq α] (includePath: Bool) (x: CaptureExpr α) (forest: ParseForest α): Option (List (Nat × ParseForest α)) :=
+def captures [DecidableEq α] (includePath: Bool) (x: CaptureExpr α) (forest: Hedge α): Option (List (Nat × Hedge α)) :=
   let dx := List.foldl derive x forest
   if dx.nullable
   then Option.some (CaptureExtract.extractGroups includePath dx)
@@ -54,7 +54,7 @@ def captures [DecidableEq α] (includePath: Bool) (x: CaptureExpr α) (forest: P
 -- capture only returns the longest capture for a specific group.
 def capture
   [DecidableEq α] [Ord α]
-  (id: Nat) (x: CaptureExpr α) (forest: ParseForest α) (includePath: Bool := false): Option (ParseForest α) :=
+  (id: Nat) (x: CaptureExpr α) (forest: Hedge α) (includePath: Bool := false): Option (Hedge α) :=
   match captures includePath x forest with
   | Option.none => Option.none
   | Option.some cs =>
@@ -69,7 +69,7 @@ def capture
 -- capturePath includes the path of the captured tree.
 def capturePath
   [DecidableEq α] [Ord α]
-  (id: Nat) (x: CaptureExpr α) (forest: ParseForest α): Option (ParseForest α) :=
+  (id: Nat) (x: CaptureExpr α) (forest: Hedge α): Option (Hedge α) :=
   capture id x forest (includePath := true)
 
 def CaptureExpr.char (c: Char): CaptureExpr Token :=
@@ -128,16 +128,16 @@ def treeString (s: String): TokenForest :=
     (CaptureExpr.star (CaptureExpr.char 'a'))
   )
   [
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "b") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") []
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "b") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") []
   ] =
   Option.some [
-    ParseTree.mk (Token.string "b") []
+    Hedge.Node.mk (Token.string "b") []
   ]
 
 #guard capture 1
@@ -145,13 +145,13 @@ def treeString (s: String): TokenForest :=
       (CaptureExpr.tree (TokenPred.eqStr "c") CaptureExpr.epsilon))
     )
   [
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "c") [],
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "c") [],
     ],
   ] =
   Option.some [
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "c") []
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "c") []
     ]
   ]
 
@@ -160,11 +160,11 @@ def treeString (s: String): TokenForest :=
       (CaptureExpr.group 1 (CaptureExpr.tree (TokenPred.eqStr "c") CaptureExpr.epsilon))
     )
   [
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "c") [],
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "c") [],
     ],
   ] = Option.some [
-    ParseTree.mk (Token.string "c") []
+    Hedge.Node.mk (Token.string "c") []
   ]
 
 #guard capturePath 1
@@ -172,12 +172,12 @@ def treeString (s: String): TokenForest :=
       (CaptureExpr.group 1 (CaptureExpr.tree (TokenPred.eqStr "c") CaptureExpr.epsilon))
     )
   [
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "c") [],
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "c") [],
     ],
   ] = Option.some [
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "c") []
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "c") []
     ]
   ]
 
@@ -193,24 +193,24 @@ def treeString (s: String): TokenForest :=
     (CaptureExpr.star (CaptureExpr.char 'a'))
   )
   [
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "c") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "c") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
     ],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") []
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") []
   ] =
   Option.some [
-    ParseTree.mk (Token.string "c") []
+    Hedge.Node.mk (Token.string "c") []
   ]
 
 #guard capturePath 1 (CaptureExpr.concat (CaptureExpr.concat
@@ -225,23 +225,23 @@ def treeString (s: String): TokenForest :=
     (CaptureExpr.star (CaptureExpr.char 'a'))
   )
   [
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "c") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
-      ParseTree.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "c") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
+      Hedge.Node.mk (Token.string "a") [],
     ],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") [],
-    ParseTree.mk (Token.string "a") []
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") [],
+    Hedge.Node.mk (Token.string "a") []
   ] = Option.some [
-    ParseTree.mk (Token.string "b") [
-      ParseTree.mk (Token.string "c") []
+    Hedge.Node.mk (Token.string "b") [
+      Hedge.Node.mk (Token.string "c") []
     ]
   ]

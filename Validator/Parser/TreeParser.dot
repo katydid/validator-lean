@@ -4,17 +4,17 @@ digraph {
     rankdir = "LR"
     nodesep=0.6;
 
-    // ParserState.opened ((ParseTree.mk v [])::nexts) > ParserState.value v nexts
-    opened_value [label = "ParserState.opened ((ParseTree.mk v [])::nexts)" color="blue"]
+    // ParserState.opened ((Hedge.Node.mk v [])::nexts) > ParserState.value v nexts
+    opened_value [label = "ParserState.opened ((Hedge.Node.mk v [])::nexts)" color="blue"]
     opened_value -> value [color="blue"]
 
-    // ParserState.value _ ((ParseTree.mk f [ParseTree.mk v []])::nexts) > ParserState.pair f v nexts
-    value_pair [label = "ParserState.value _ ((ParseTree.mk f [ParseTree.mk v []])::nexts)" color="orange"]
+    // ParserState.value _ ((Hedge.Node.mk f [Hedge.Node.mk v []])::nexts) > ParserState.pair f v nexts
+    value_pair [label = "ParserState.value _ ((Hedge.Node.mk f [Hedge.Node.mk v []])::nexts)" color="orange"]
     pair [label = "ParserState.pair f v nexts" color="purple"]
     value_pair -> pair [color="orange"]
 
-    // ParserState.opened ((ParseTree.mk f [ParseTree.mk v []])::nexts) > ParserState.pair f v nexts
-    opened_pair [label = "ParserState.opened ((ParseTree.mk f [ParseTree.mk v []])::nexts)" color="blue"]
+    // ParserState.opened ((Hedge.Node.mk f [Hedge.Node.mk v []])::nexts) > ParserState.pair f v nexts
+    opened_pair [label = "ParserState.opened ((Hedge.Node.mk f [Hedge.Node.mk v []])::nexts)" color="blue"]
     opened_pair -> pair [color="blue"]
 
     // ParserState.pair _ v nexts > ParserState.value v nexts
@@ -34,13 +34,13 @@ digraph {
     opened_empty -> zero [label = "pop" color="blue"]
 
     // children ≠ []
-    // children ≠ [ParseTree.mk v []]
-    // ParserState.opened ((ParseTree.mk f children)::nexts) > ParserState.opened nexts + ParserState.field f children
-    opened_other [label = "ParserState.opened ((ParseTree.mk f children)::nexts)" color="blue"]
+    // children ≠ [Hedge.Node.mk v []]
+    // ParserState.opened ((Hedge.Node.mk f children)::nexts) > ParserState.opened nexts + ParserState.field f children
+    opened_other [label = "ParserState.opened ((Hedge.Node.mk f children)::nexts)" color="blue"]
     opened_other -> opened [arrowhead = "odiamond" label="push" style="bold" color="blue"]
     opened_other -> field [arrowhead = "odiamond" label="push" style="bold" color="blue"]
-    // ParserState.value _ ((ParseTree.mk f children)::nexts) > ParserState.opened nexts + ParserState.field f children
-    value_other [label = "ParserState.value _ ((ParseTree.mk f children)::nexts)" color="orange"]
+    // ParserState.value _ ((Hedge.Node.mk f children)::nexts) > ParserState.opened nexts + ParserState.field f children
+    value_other [label = "ParserState.value _ ((Hedge.Node.mk f children)::nexts)" color="orange"]
     value_other -> opened [arrowhead = "odiamond" label="push" style="bold" color="orange"]
     value_other -> field [arrowhead = "odiamond" label="push" style="bold" color="orange"]
 
@@ -77,8 +77,8 @@ digraph {
     opened [label = "ParserState.opened forest" color="blue"]
     unknown -> opened [color="red"]
 
-    // ParserState.value _ ((ParseTree.mk v [])::nexts) > ParserState.value v nexts
-    value_value [label = "ParserState.value _ ((ParseTree.mk v [])::nexts)" color="orange"]
+    // ParserState.value _ ((Hedge.Node.mk v [])::nexts) > ParserState.value v nexts
+    value_value [label = "ParserState.value _ ((Hedge.Node.mk v [])::nexts)" color="orange"]
     value [label = "ParserState.value v nexts" color="orange"]
     value_value -> value [color="orange"]
 }
