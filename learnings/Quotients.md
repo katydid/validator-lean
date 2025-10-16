@@ -1,24 +1,45 @@
-import Validator.Std.List
-import Validator.Std.Nat
+# Quotients
 
-import Mathlib.Tactic.NthRewrite
-import Mathlib.Tactic.RewriteSearch
+> Set-theoretically, Quotient `s` can seen as the set of equivalence classes of `α` modulo the Setoid instance's relation `s`.
 
+We will explain Quotients with the example of slices.
+
+## Slice
+
+A Slice is a list with an offset and length.
+
+```lean
 structure Slice (α: Type) where
   data: List α
   off: Nat
   len: Nat
+```
 
+A LawfulSlice is a Slice where the offset plus the length does not go out of the bounds of the list.
+
+```lean
 def LawfulSlice (α: Type) := { s: Slice α // s.off + s.len <= s.data.length }
+```
 
+We can can create a LawfulSlice given all 4 parameters:
+
+```lean
 def LawfulSlice.mk (data: List α) (off: Nat) (len: Nat) (p: off + len <= data.length): LawfulSlice α :=
   Subtype.mk (Slice.mk data off len) p
+```
 
+We can also create a LawfulSlice from a whole list:
+
+```lean
 def LawfulSlice.fromList (xs: List α): LawfulSlice α :=
   Subtype.mk (Slice.mk xs 0 xs.length) (by
     simp only [zero_add, le_refl]
   )
+```
 
+Other helper methods include:
+
+```lean
 def LawfulSlice.isEmpty (s: LawfulSlice α): Bool :=
   s.val.len = 0
 
@@ -44,7 +65,14 @@ def LawfulSlice.nonEmpty {α: Type} (s: LawfulSlice α): Option {s': LawfulSlice
     simp only [length, gt_iff_lt]
     omega
   ))
+```
 
+The `LawfulSlice.nonEmpty` helper method, either returns `none` or a `LawfulSlice` that has a length greater than 0.
+This allows us to check wether the list is empty or not and have the property that the list is non empty, which is useful for termination proofs.
+
+The `LawfulSlice` includes functions that allows us to slice the input the list:
+
+```lean
 def LawfulSlice.take (n: Nat) (s: LawfulSlice α): LawfulSlice α :=
   LawfulSlice.mk s.data s.offset (min n s.length) (by
     rw [show min n s.length = if n ≤ s.length then n else s.length from rfl]
@@ -70,7 +98,11 @@ def LawfulSlice.drop (n: Nat) (s: LawfulSlice α): LawfulSlice α :=
     case neg h =>
       omega
   )
+```
 
+We prove that these functions work the same as `List.take` and `List.drop` respectively:
+
+```lean
 theorem LawfulSlice.take_is_List.take {xs: List α}:
   (LawfulSlice.take n (LawfulSlice.fromList xs)).toList = List.take n xs := by
   simp only [toList, LawfulSlice.take, mk, data, fromList, offset, length, List.drop_zero,
@@ -87,37 +119,42 @@ theorem LawfulSlice.drop_is_List.drop {xs: List α}:
   case neg h =>
     simp only [List.drop_length, List.take_nil, List.nil_eq, List.drop_eq_nil_iff]
     omega
+```
 
-theorem LawfulSlice.take_zero_is_empty {xs: List α}:
-  (LawfulSlice.take 0 (LawfulSlice.fromList xs)).nonEmpty = Option.none := by
-  simp only [LawfulSlice, length, nonEmpty, fromList, take, data, offset, mk, Nat.succ_eq_add_one,
-    zero_le, inf_of_le_left]
-  split
-  · rfl
-  · omega
+Now that we can create and manipulate a `LawfulSlice` we can create an equivalence class.
 
-theorem LawfulSlice.take_nil_is_empty {α: Type}:
-  (LawfulSlice.take n (@LawfulSlice.fromList α [])).nonEmpty = Option.none := by
-  simp only [LawfulSlice, length, nonEmpty, fromList, List.length_nil, take, data, offset, mk,
-    Nat.succ_eq_add_one, zero_le, inf_of_le_right]
-  split
-  · rfl
-  · omega
+## Equivalence Class
 
--- Quotient
+An equivalence class is a set of items that are equivalent.
 
+> Let α be any type, and let r be an equivalence relation on α. It is mathematically common to form the "quotient" α / r, that is, the type of elements of α "modulo" r. Set theoretically, one can view α / r as the set of equivalence classes of α modulo r. 
+
+In our example α is (x: LawfulSlice α) and r is:
+
+```lean
 abbrev eqv {α: Type} (s1 s2 : LawfulSlice α) : Prop :=
   s1.toList = s2.toList
 
 infix:50 " ~ " => eqv
+```
 
+, which means that α / r is `x.toList`, which is also expressed as ⟦x⟧ when we implement the Quotient type later.
+
+Different slices can be equivalent, even though underlying the structures are not equal.
+For example
+
+```lean
 example:
   LawfulSlice.fromList [1,2,3] ~ (LawfulSlice.fromList [1,2,3,4]).take 3 := by
   unfold eqv
   rw [LawfulSlice.take_is_List.take]
   simp only [LawfulSlice.toList, LawfulSlice.fromList, List.length_cons, List.length_nil, zero_add,
     Nat.reduceAdd, List.drop_zero, List.take_succ_cons, List.take_nil, List.take_zero]
+```
 
+We can implement Equivalence for our relation:
+
+```lean
 private lemma eqv.refl {α: Type} (s : LawfulSlice α) : s ~ s := rfl
 
 private lemma eqv.symm {α: Type} : ∀ {s1 s2 : LawfulSlice α},
@@ -133,14 +170,31 @@ private lemma eqv.trans {α: Type} : ∀ {s1 s2 s3 : LawfulSlice α}, s1 ~ s2 �
 
 instance IsEquivalence_LawfulSlice {α: Type} : Equivalence (@eqv α) :=
   { refl := eqv.refl, symm := eqv.symm, trans := eqv.trans }
+```
 
+## Setoid
+
+> Quotient types are built on setoids. A setoid is a type paired with a distinguished equivalence relation. Unlike a quotient type, the abstraction barrier is not enforced, and proof automation designed around equality cannot be used with the setoid's equivalence relation. Setoids are useful on their own, in addition to being a building block for quotient types.
+
+We can implement a Setoid for our relation:
+
+```lean
 instance IsSetoid_LawfulSlice (α: Type): Setoid (LawfulSlice α) where
    r     := eqv
    iseqv := IsEquivalence_LawfulSlice
+```
 
+HasEquiv is the typeclass which supports the notation `x ≈ y`.
+All Setoids are automatically also instances of HasEquiv:
+
+```lean
 instance {α : Sort u} [Setoid α] : HasEquiv α :=
    ⟨Setoid.r⟩
+```
 
+This means we can use the syntax `x ≈ y` for our relation:
+
+```lean
 theorem LawfulSlice.refl {α: Type} (a : LawfulSlice α) : a ≈ a :=
   IsEquivalence_LawfulSlice.refl a
 
@@ -149,19 +203,78 @@ theorem LawfulSlice.symm {α: Type} {a b : LawfulSlice α} (hab : a ≈ b) : b �
 
 theorem LawfulSlice.trans {α: Type} {a b c : LawfulSlice α} (hab : a ≈ b) (hbc : b ≈ c) : a ≈ c :=
   IsEquivalence_LawfulSlice.trans hab hbc
+```
 
+## Quotient
+
+We define a Quotient Type for our LawfulSlice:
+
+```lean
 def LawfulSliceQ (α: Type): Type :=
   Quotient (IsSetoid_LawfulSlice α)
+```
 
+## Quotient.mk
+
+We can now define our quotient constructor using our Setoid implementation:
+
+```lean
 def LawfulSliceQ.fromLawfulSlice' {α: Type} (x: LawfulSlice α): LawfulSliceQ α  :=
   Quot.mk Setoid.r x
+```
 
+We can also use the specialized version of `Quot`, called `Quotient` to do define the equivalent function:
+
+```lean
 def LawfulSliceQ.fromLawfulSlice {α: Type} (x: LawfulSlice α): LawfulSliceQ α :=
   Quotient.mk' x
+```
 
+We can also create other constructors, like:
+
+```lean
 def LawfulSliceQ.fromList {α: Type} (data: List α): LawfulSliceQ α :=
   Quotient.mk' (LawfulSlice.fromList data)
+```
 
+Here the specific Setoid is infered.
+
+This `Quotient.mk' x` also introduces notation `⟦x⟧`.
+
+```lean
+⟦x⟧ = Quotient.mk' x = Quot.mk Setoid.r x = LawfulSliceQ.fromLawfulSlice x
+```
+
+## Quotient.lift
+
+> If f : α → β is any function that respects the equivalence relation in the sense that for every x y : α, r x y implies f x = f y, then f "lifts" to a function f' : α / r → β defined on each equivalence class ⟦x⟧ by f' ⟦x⟧ = f x. Lean's standard library extends the Calculus of Constructions with additional constants that perform exactly these constructions, and installs this last equation as a definitional reduction rule.
+
+```lean
+axiom Quot.lift :
+    {α : Sort u} → {r : α → α → Prop} → {β : Sort u} → (f : α → β)
+    → (∀ a b, r a b → f a = f b) → Quot r → β
+
+protected abbrev lift
+    {α : Sort u} {β : Sort v} {s : Setoid α} (f : α → β) :
+    ((a b : α) → a ≈ b → f a = f b) → Quotient s → β :=
+  Quot.lift f
+```
+
+If we substitute our LawfulSlice we get:
+
+```lean
+axiom Quot.lift :
+    {α : Type} → {eqv : LawfulSlice α → LawfulSlice α → Prop} → {β : Sort u} → (f : LawfulSlice α → β)
+    → (∀ a b: LawfulSlice α, r a b → f a = f b) → LawfulSliceQ α → β
+```
+
+We have to decide what a useful β will be, but we can't move out of our equivalence relation, otherwise `(∀ a b: LawfulSlice α, r a b → f a = f b)` would not be True.
+For example β cannot be LawfulSlice α, since then we lose denote and that would be outside of the equivalence relation.
+
+We can however make β, Bool and lift isEmpty.
+In this example `f = (fun x => LawfulSlice.isEmpty x))`:
+
+```lean
 theorem LawfulSlice.isEmpty_respects_eqv {α: Type}:
   ∀ (x y: LawfulSlice α), x ~ y ->
     (LawfulSlice.isEmpty x) = (LawfulSlice.isEmpty y) := by
@@ -193,7 +306,11 @@ theorem LawfulSlice.isEmpty_respects_eqv {α: Type}:
 
 def LawfulSliceQ.isEmpty {α: Type} (s: LawfulSliceQ α): Bool :=
   Quotient.lift LawfulSlice.isEmpty LawfulSlice.isEmpty_respects_eqv s
+```
 
+We can also choose β to be Nat, for length:
+
+```lean
 theorem List.eq_slice_eq_length
   {xo xl: Nat} {xd: List α} (hx : xo + xl ≤ xd.length)
   {yo yl: Nat} {yd: List α} (hy : yo + yl ≤ yd.length)
@@ -223,20 +340,17 @@ theorem LawfulSlice.length_respects_eqv {α: Type}:
 
 def LawfulSliceQ.length {α: Type} (s: LawfulSliceQ α): Nat :=
   Quotient.lift LawfulSlice.length LawfulSlice.length_respects_eqv s
+```
 
-theorem LawfulSlice.toList_respects_eqv {α: Type}:
-  ∀ (x y: LawfulSlice α), x ~ y ->
-    (LawfulSlice.toList x) = (LawfulSlice.toList y) := by
-  intro x y h
-  unfold eqv at h
-  unfold LawfulSlice.toList
-  simp only [toList] at h
-  exact h
+We can also choose β to be `LawfulSliceQ α`, so we can define the main operations of a slice:
+```lean
+def LawfulSliceQ.take {α: Type} (n: Nat) (s: LawfulSliceQ α): LawfulSliceQ α
+def LawfulSliceQ.drop {α: Type} (n: Nat) (s: LawfulSliceQ α): LawfulSliceQ α
+```
 
-def LawfulSliceQ.toList {α: Type} (s: LawfulSliceQ α): List α :=
-  Quotient.lift LawfulSlice.toList LawfulSlice.toList_respects_eqv s
+The `take` and `drop` functions for LawfulSliceQ, is defined using the following helper proofs:
 
-
+```lean
 theorem List.take_min_eq_take_take:
   List.take (min a b) xs = List.take a (List.take b xs) := by
   rw [Nat.min_def]
@@ -361,6 +475,35 @@ theorem LawfulSliceQ.take_fromList_eq_fromList_take {α: Type} {n: Nat} {xs: Lis
   rw [List.take_take]
   rw [Nat.min_right_comm n xs.length n]
   rw [Nat.min_self n]
+```
+
+We can also choose β to be RegexQ α.
+In this example `f = RegexQ.mkStar`:
+
+```lean
+theorem starq_respects_eqv:
+  ∀ (x y: Regex α), x ~ y ->
+    RegexQ.mkStar x = RegexQ.mkStar y := by
+  intro x y
+  intro H
+  apply Quot.sound
+  apply star_respects_eqv
+  apply H
+
+def RegexQ.star: (RegexQ α -> RegexQ α) :=
+  Quotient.lift RegexQ.mkStar starq_respects_eqv
+```
+
+Finally we can try a tougher example of `nonEmpty`
+
+```lean
+def LawfulSliceQ.nonEmpty {α: Type} (s: LawfulSliceQ α):
+  Option {ys: LawfulSliceQ α // ys.length > 0}
+```
+
+This is defined using the following helper functions and theorems:
+
+```lean
 
 theorem LawfulSliceQ.length_respects_eqv {α: Type}:
    ∀ (xs: LawfulSlice α),
@@ -415,3 +558,11 @@ theorem LawfulSliceQ.nonEmpty_respects_eqv {α: Type}:
 def LawfulSliceQ.nonEmpty {α: Type} (s: LawfulSliceQ α):
   Option {ys: LawfulSliceQ α // ys.length > 0} :=
   (Quotient.lift (fun xs => (Quotient.fromOptionSubtype (LawfulSlice.nonEmpty xs)))) LawfulSliceQ.nonEmpty_respects_eqv s
+```
+
+## References
+
+* [The Lean Language Reference - Quotients](https://lean-lang.org/doc/reference/latest/The-Type-System/Quotients/)
+* [Theorem Proving in Lean4 - Axioms and Computation](https://lean-lang.org/theorem_proving_in_lean4/axioms_and_computation.html)
+* [Beginner problem: 'Lift' a proposition to a Quotient type](https://leanprover.zulipchat.com/#narrow/channel/113489-new-members/topic/.E2.9C.94.20Beginner.20problem.3A.20'Lift'.20a.20proposition.20to.20a.20Quotient.20type/near/516853703)
+* [How to lift a binary function to a quotient?](https://proofassistants.stackexchange.com/questions/2663/how-to-lift-a-binary-function-to-a-quotient)
