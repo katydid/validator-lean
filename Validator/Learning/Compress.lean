@@ -34,14 +34,14 @@ def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: Hedge.
       let dchildxs <- Compress.expand indices cdchildxs
       Leave.deriveLeaveM xs (List.map Expr.nullable dchildxs)
 
-def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String (Expr μ α) := do
-  let dxs <- List.foldlM (derive g) [x] forest
+def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (hedge: Hedge α): Except String (Expr μ α) := do
+  let dxs <- List.foldlM (derive g) [x] hedge
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String Bool := do
-  let dx <- derivs g x forest
+def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (hedge: Hedge α): Except String Bool := do
+  let dx <- derivs g x hedge
   return Expr.nullable dx
 
 def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=

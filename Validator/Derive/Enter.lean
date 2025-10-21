@@ -18,12 +18,12 @@ def enter (x: Expr μ α) (res: IfExprs μ α := []): IfExprs μ α :=
 def deriveEnter (xs: Exprs μ α): IfExprs μ α :=
   List.flatten (List.map Enter.enter xs)
 
-theorem deriveEnter_nil_is_nil {α: Type u} {μ: Nat}:
+theorem deriveEnter_nil_is_nil {α: Type} {μ: Nat}:
   @deriveEnter μ α [] = [] := by
   unfold deriveEnter
   simp
 
-theorem deriveEnter_cons_is_concat {α: Type u} (x: Expr μ α) (xs: Exprs μ α):
+theorem deriveEnter_cons_is_concat {α: Type} (x: Expr μ α) (xs: Exprs μ α):
   deriveEnter (x::xs) = (deriveEnter [x]) ++ (deriveEnter xs) := by
   unfold deriveEnter
   simp

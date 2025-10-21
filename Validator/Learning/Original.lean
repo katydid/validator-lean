@@ -15,9 +15,9 @@ namespace Original
 -- foldLoop is a more readable version of List.foldl for imperative programmers:
 -- Imperative programmers can imagine that `Id (Expr α)` = `Expr α`, because it does.
 -- The Id wrapper just adds a monad wrapper to enable the do notation, so that we can use the for loop in Lean.
-private def foldLoop (deriv: Expr μ α -> Hedge.Node α -> Expr μ α) (start: Expr μ α) (forest: Hedge α): Id (Expr μ α) := do
+private def foldLoop (deriv: Expr μ α -> Hedge.Node α -> Expr μ α) (start: Expr μ α) (hedge: Hedge α): Id (Expr μ α) := do
   let mut res := start
-  for tree in forest do
+  for tree in hedge do
     res := deriv res tree
   return res
 
@@ -45,8 +45,8 @@ partial def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tre
     else Expr.concat (derive g y tree) z
   | Expr.star y => Expr.concat (derive g y tree) (Expr.star y)
 
-partial def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Bool :=
-  Expr.nullable (List.foldl (derive g) x forest)
+partial def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (hedge: Hedge α): Bool :=
+  Expr.nullable (List.foldl (derive g) x hedge)
 
 def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate g g.lookup0 [t])

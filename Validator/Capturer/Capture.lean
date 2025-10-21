@@ -56,7 +56,7 @@ partial def derive  [DecidableEq α] [CaptureM m α] (xs: CaptureExprs α): m (C
   | Hint.leave => return xs
   | Hint.eof => return xs
 
--- captures returns all captured forests for all groups.
+-- captures returns all captured hedges for all groups.
 def captures  [DecidableEq α] [CaptureM m α] (includePath: Bool) (x: CaptureExpr α): m (List (Nat × Hedge α)) := do
   let dxs <- derive [x]
   match dxs with
@@ -68,29 +68,29 @@ def captures  [DecidableEq α] [CaptureM m α] (includePath: Bool) (x: CaptureEx
     throw "wtf"
 
 -- capture only returns the longest capture for a specific group.
-def capture [DecidableEq α] [Ord α] (name: Nat) (x: CaptureExpr α) (forest: Hedge α) (includePath: Bool := false): Except String (Hedge α) := do
-  let (_logs, dx) := TreeParserLogCaptureM.run' (captures includePath x) forest
+def capture [DecidableEq α] [Ord α] (name: Nat) (x: CaptureExpr α) (hedge: Hedge α) (includePath: Bool := false): Except String (Hedge α) := do
+  let (_logs, dx) := TreeParserLogCaptureM.run' (captures includePath x) hedge
   match dx with
   | Except.error err => Except.error err
   | Except.ok cs =>
-    let forests := List.filterMap
-      (fun (name', forest) =>
+    let hedges := List.filterMap
+      (fun (name', hedge) =>
         if name = name'
-        then Option.some forest
+        then Option.some hedge
         else Option.none
       ) cs
-    match List.head? (List.reverse (List.mergeSort forests (le := fun x y => (Ord.compare x y).isLE))) with
+    match List.head? (List.reverse (List.mergeSort hedges (le := fun x y => (Ord.compare x y).isLE))) with
     | Option.some k => return k
     | Option.none => throw "unknown group"
 
 -- capturePath includes the path of the captured tree.
-def capturePath  [DecidableEq α] [Ord α] (name: Nat) (x: CaptureExpr α) (forest: Hedge α): Except String (Hedge α) :=
-  capture name x forest (includePath := true)
+def capturePath  [DecidableEq α] [Ord α] (name: Nat) (x: CaptureExpr α) (hedge: Hedge α): Except String (Hedge α) :=
+  capture name x hedge (includePath := true)
 
 def CaptureExpr.char (c: Char): CaptureExpr Token :=
   (CaptureExpr.tree (TokenPred.eqStr (String.mk [c])) CaptureExpr.epsilon)
 
-def treeString (s: String): TokenForest :=
+def treeString (s: String): TokenHedge :=
   match s with
   | String.mk cs =>
     List.map (fun c => Hedge.Node.mk (Token.string (String.mk [c])) []) cs

@@ -9,9 +9,9 @@ structure TreeParserIterator (α : Type) where
 
 namespace TreeParserIterator
 
-def Hedge.iterM {α : Type} (forest : Hedge α) (m : Type → Type w') [Pure m] :
+def Hedge.iterM {α : Type} (hedge : Hedge α) (m : Type → Type w') [Pure m] :
   Std.Iterators.IterM (α := TreeParserIterator α) m α :=
-    Std.Iterators.toIterM { state := TreeParser.ParserState.mks forest } m α
+    Std.Iterators.toIterM { state := TreeParser.ParserState.mks hedge } m α
 
 def PlausibleIterStep (IsPlausibleStep : Std.Iterators.IterStep α β → Prop) := Subtype IsPlausibleStep
 class Iterator (α : Type w) (m : Type w → Type w') (β : outParam (Type w)) where

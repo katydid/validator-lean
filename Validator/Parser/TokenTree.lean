@@ -3,14 +3,14 @@ import Validator.Parser.Token
 
 abbrev TokenTree := Hedge.Node Token
 
-abbrev TokenForest := Hedge Token
+abbrev TokenHedge := Hedge Token
 
-def TokenTree.mk (t: Token) (children: TokenForest): TokenTree :=
+def TokenTree.mk (t: Token) (children: TokenHedge): TokenTree :=
   Hedge.Node.mk t children
 
 namespace TokenTree
 
-def node (s: String) (children: TokenForest): TokenTree :=
+def node (s: String) (children: TokenHedge): TokenTree :=
   Hedge.Node.mk (Token.string s) children
 
 def str (s: String): TokenTree :=

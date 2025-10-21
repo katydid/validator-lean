@@ -40,6 +40,8 @@
 * ∃ (exists)
 * ∀ (forall)
 * × (product type)
+* , (product value)
+* ⊕ (sum type)
 * ⟦ ⟧ (denote)
 * ∅ (emptyset for regular expression or regular hedge grammar)
 * ⊢ (entails)
@@ -50,4 +52,7 @@
 * ⊥ (bottom)
 * ⊤ (top)
 * |=, ⊨ (relation, entailment)
+* · (Regex.concat)
+* | (Regex.or)
+* (r)* (regular expression star constructor)
 

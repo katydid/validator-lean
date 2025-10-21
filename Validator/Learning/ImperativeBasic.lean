@@ -15,9 +15,9 @@ import Validator.Learning.ImperativeLeave
 namespace ImperativeBasic
 
 -- foldLoop is a more readable version of List.foldlM for imperative programmers:
-private def foldLoop (deriv: Exprs μ α -> Hedge.Node α -> Except String (Exprs μ α)) (start: Exprs μ α) (forest: Hedge α): Except String (Exprs μ α) := do
+private def foldLoop (deriv: Exprs μ α -> Hedge.Node α -> Except String (Exprs μ α)) (start: Exprs μ α) (hedge: Hedge α): Except String (Exprs μ α) := do
   let mut res := start
-  for tree in forest do
+  for tree in hedge do
     match deriv res tree with
     | Except.error err => throw err
     | Except.ok r => res := r
@@ -49,16 +49,16 @@ def derive [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (tree: Hed
       | Except.error err => Except.error err
       | Except.ok dxs => Except.ok dxs
 
-def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String (Expr μ α) :=
+def derivs [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (hedge: Hedge α): Except String (Expr μ α) :=
   -- see foldLoop for an explanation of what List.foldM does.
-  let dxs := List.foldlM (derive g) [x] forest
+  let dxs := List.foldlM (derive g) [x] hedge
   match dxs with
   | Except.error err => Except.error err
   | Except.ok [dx] => Except.ok dx
   | Except.ok _ => Except.error "expected one expression"
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (forest: Hedge α): Except String Bool :=
-  match derivs g x forest with
+def validate [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (hedge: Hedge α): Except String Bool :=
+  match derivs g x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Expr.nullable x')
 

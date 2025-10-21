@@ -11,16 +11,39 @@ import Validator.Expr.Language
 --   𝑆 the start symbol of a regular hedge grammar is a regular expression comprising pairs of nonterminals and terminals (a regular expression over N × T)
 --   𝑃 a set of production rules of a regular hedge grammar are of the form X → r such that r is a regular expression over N × T.
 
-abbrev Ref μ := Fin μ
+abbrev Ref μ := Fin μ -- non-terminal
 
-abbrev Rule (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) := Regex (Φ α × Ref μ)
+abbrev Rule (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) :=
+  Regex (Φ α × Ref μ)
 
 structure Grammar (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
   start: Rule μ α Φ
   prods: Vector (Rule μ α Φ) μ
 
-def Grammar.lookup (g: Grammar μ α Φ) (ref: Fin μ): Rule μ α Φ :=
+def Grammar.lookup {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
+  (g: Grammar μ α Φ) (ref: Fin μ): Rule μ α Φ :=
   Vector.get g.prods ref
+
+example : Grammar 5 String Pred := Grammar.mk
+  -- start := ("html", Html)
+  (start := Regex.symbol (Pred.eq "html", 0))
+  -- production rules
+  (prods := #v[
+    -- Html -> ("head", Head) · ("body", Body)
+    Regex.concat
+      (Regex.symbol (Pred.eq "head", 1))
+      (Regex.symbol (Pred.eq "body", 2))
+    -- Head -> ("title", Text) | ε
+    , Regex.or
+      (Regex.symbol (Pred.eq "title", 3))
+      Regex.emptystr
+    -- Body -> ("p", Text)*
+    , Regex.star (Regex.symbol (Pred.eq "p", 3))
+    -- Text -> (., Empty)
+    , Regex.symbol (Pred.any, 4)
+    -- Empty -> ε
+    , Regex.emptystr
+  ])
 
 def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun (pred, ref) xs' =>

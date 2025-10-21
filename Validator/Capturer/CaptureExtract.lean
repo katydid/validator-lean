@@ -2,8 +2,8 @@ import Validator.Capturer.CaptureExpr
 
 namespace CaptureExtract
 
--- extract extracts a single forest for the whole expression.
--- This based on extractGroups, but only returns one captured forest.
+-- extract extracts a single hedge for the whole expression.
+-- This based on extractGroups, but only returns one captured hedge.
 def extract (x: CaptureExpr α): Hedge α :=
   match x with
   | CaptureExpr.emptyset => []
@@ -24,7 +24,7 @@ def extract (x: CaptureExpr α): Hedge α :=
     -- Ignore group, this group will be extracted later by extractGroups.
   | CaptureExpr.group _ y => extract y
 
--- extractGroups returns the captured forest for each group.
+-- extractGroups returns the captured hedge for each group.
 def extractGroups (includePath: Bool) (x: CaptureExpr α): List (Nat × Hedge α) :=
   match x with
   | CaptureExpr.emptyset => []
@@ -42,5 +42,5 @@ def extractGroups (includePath: Bool) (x: CaptureExpr α): List (Nat × Hedge α
   | CaptureExpr.concat y z =>
     extractGroups includePath y ++ extractGroups includePath z
   | CaptureExpr.star _ => []
-    -- extract the forest for the single group id
+    -- extract the hedge for the single group id
   | CaptureExpr.group id y => (id, extract y) :: extractGroups includePath y

@@ -12,6 +12,15 @@ inductive Regex σ where
   | concat (p q: Regex σ)
   | star (p: Regex σ)
 
+def Regex.map (r: Regex σ) (f: σ -> σ'): Regex σ' :=
+  match r with
+  | emptyset => emptyset
+  | emptystr => emptystr
+  | symbol s => symbol (f s)
+  | or r1 r2 => or (r1.map f) (r2.map f)
+  | concat r1 r2 => concat (r1.map f) (r2.map f)
+  | star r1 => star (r1.map f)
+
 -- A regular expression is denoted as usual, expect that allow the user to inject the denotation of the generic symbol, dσ.
 -- This allows us to handle generic predicates or even trees, without extending the original regular expression with new operators.
 def Regex.denote {α: Type} {σ: Type} (dσ : σ -> List α -> Prop) (r: Regex σ): (xs: List α) -> Prop :=
@@ -397,3 +406,23 @@ theorem Regex.denote_infix_star_n {α: Type} {σ: Type} (xs: List α) (dσ: σ -
       simp only [Regex.denote_infix]
     | nil =>
       simp only [Regex.denote_infix]
+
+def Regex.derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+  match r with
+  | emptyset => emptyset
+  | emptystr => emptyset
+  | symbol s =>
+    if p s a
+    then emptystr
+    else emptyset
+  | or r1 r2 =>
+    or (derive p r1 a) (derive p r2 a)
+  | concat r1 r2 =>
+    if nullable r1
+    then or
+      (concat (derive p r1 a) r2)
+      (derive p r2 a)
+    else
+      (concat (derive p r1 a) r2)
+  | star r1 =>
+    concat (derive p r1 a) (star r1)

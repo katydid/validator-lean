@@ -21,7 +21,7 @@ digraph {
     pair -> value [color="purple"]
 
     // ParserState.field _ children > ParserState.opened children
-    field [label = "ParserState.field f forest" color="green"]
+    field [label = "ParserState.field f hedge" color="green"]
     field -> opened [color="green"]
 
     // x + ParserState.value _ [] > x
@@ -72,9 +72,9 @@ digraph {
         opened_other
     }
 
-    // ParserState.unknown forest > ParserState.opened forest
-    unknown [label = "ParserState.unknown forest" rank="max" color="red"]
-    opened [label = "ParserState.opened forest" color="blue"]
+    // ParserState.unknown hedge > ParserState.opened hedge
+    unknown [label = "ParserState.unknown hedge" rank="max" color="red"]
+    opened [label = "ParserState.opened hedge" color="blue"]
     unknown -> opened [color="red"]
 
     // ParserState.value _ ((Hedge.Node.mk v [])::nexts) > ParserState.value v nexts

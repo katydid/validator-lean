@@ -5,12 +5,57 @@ import Mathlib.Tactic.NthRewrite
 import Validator.Std.List
 
 inductive Hedge.Node (α: Type) where
-  | mk (label: α) (children: List (Node α))
+  | mk (label: α) (children: List (Hedge.Node α))
   deriving BEq, Ord, Repr, Hashable
 
 abbrev Hedge α := List (Hedge.Node α)
 
 namespace Hedge
+
+def node {α: Type} (label: α) (children: Hedge α): Hedge.Node α :=
+  Hedge.Node.mk label children
+
+example: Hedge String := [
+  node "html" [
+    node "head" [
+      node "title" [node "My Title" []]
+    ],
+    node "body" [
+      node "p" [node "First Paragraph" []],
+      node "p" [node "Second Paragraph" []]
+    ]
+  ]
+]
+
+example: Hedge String := [
+  node "html" [
+    node "head" [],
+    node "body" []
+  ]
+]
+
+def Node.text (s: String) (children: Hedge (Option String)):
+  Hedge.Node (Option String) :=
+  node (Option.some s) children
+def Node.elem (children: Hedge (Option String)):
+  Hedge.Node (Option String) :=
+  node Option.none children
+
+example: Hedge (Option String) := [
+  Node.text "Subject" [Node.text "hello" []],
+  Node.text "From"    [Node.text "me@mail.org" []],
+  Node.text "To"      [Node.elem [Node.text "you@mail.com" []]],
+  Node.text "Attachments" [
+    Node.elem [
+      Node.text "Filename" [Node.text "first.md" []],
+      Node.text "Contents" [Node.text "remember" []],
+    ],
+    Node.elem [
+      Node.text "Filename" [Node.text "next.txt" []],
+      Node.text "Contents" [Node.text "to reply" []],
+    ]
+  ]
+]
 
 -- Node is a Labelled Tree.
 

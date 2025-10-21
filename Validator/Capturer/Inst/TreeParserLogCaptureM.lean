@@ -50,10 +50,10 @@ instance
 instance : CaptureM (Impl α) α where
   -- all instances have been created, so no implementations are required here
 
-def run (f: Impl α β) (forest: Hedge α): EStateM.Result String (State α) β :=
-  EStateM.run f (Impl.mk (TreeParser.ParserState.mks forest))
+def run (f: Impl α β) (hedge: Hedge α): EStateM.Result String (State α) β :=
+  EStateM.run f (Impl.mk (TreeParser.ParserState.mks hedge))
 
-def run' (f: Impl α β) (forest: Hedge α): (List String × (Except String β)) :=
-  match EStateM.run f (Impl.mk (TreeParser.ParserState.mks forest)) with
+def run' (f: Impl α β) (hedge: Hedge α): (List String × (Except String β)) :=
+  match EStateM.run f (Impl.mk (TreeParser.ParserState.mks hedge)) with
   | EStateM.Result.ok res s => (s.logs, Except.ok res)
   | EStateM.Result.error err s => (s.logs, Except.error err)

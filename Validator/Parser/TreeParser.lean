@@ -48,8 +48,8 @@ structure ParserState α where
 def ParserState.mk' (tree: Hedge.Node α): ParserState α :=
   ParserState.mk (CurrentState.unknown [tree]) []
 
-def ParserState.mks (forest: Hedge α): ParserState α :=
-  ParserState.mk (CurrentState.unknown forest) []
+def ParserState.mks (hedge: Hedge α): ParserState α :=
+  ParserState.mk (CurrentState.unknown hedge) []
 
 mutual
 @[simp]
@@ -74,15 +74,15 @@ noncomputable def ParseStack.size (s: ParseStack α): Nat :=
 noncomputable def CurrentState.size (s: CurrentState α): Nat :=
   match s with
   -- unknown needs to be the larger than opened, since it is the next state.
-  | CurrentState.unknown forest => 4 + Hedge.size forest
+  | CurrentState.unknown hedge => 4 + Hedge.size hedge
   -- field needs to be larger than opened, since opened follows from field.
-  | CurrentState.field _ forest => 3 + Hedge.size forest
+  | CurrentState.field _ hedge => 3 + Hedge.size hedge
   -- pair can only be one smaller than opened
-  | CurrentState.pair _ _ forest => 3 + Hedge.size forest
+  | CurrentState.pair _ _ hedge => 3 + Hedge.size hedge
   -- opened is always the second state, but also follows from field, so it needs to be smaller than unknown and field.
-  | CurrentState.opened forest => 2 + Hedge.size forest
+  | CurrentState.opened hedge => 2 + Hedge.size hedge
   -- value needs to smaller than pair and smaller or equal to opened
-  | CurrentState.value _ forest => 2 + Hedge.size forest
+  | CurrentState.value _ hedge => 2 + Hedge.size hedge
   -- eof
   | CurrentState.eof => 0
 
@@ -102,7 +102,7 @@ noncomputable def CurrentState.size (s: CurrentState α): Nat :=
 --   theorem sizeOf_value_gt_popped_value: x + ParserState.value _ [] > x
 --   theorem sizeOf_opened_gt_popped_opened: x + ParserState.opened [] > x
 -- Otherwise we also need to make sure the following equations hold:
---   theorem sizeOf_unknown_gt_opened: ParserState.unknown forest > ParserState.opened forest
+--   theorem sizeOf_unknown_gt_opened: ParserState.unknown hedge > ParserState.opened hedge
 --   theorem sizeOf_value_value_gt_value:  ParserState.value _ ((Hedge.Node.mk v [])::nexts) > ParserState.value v nexts
 --   theorem sizeOf_opened_value_gt_value: ParserState.opened ((Hedge.Node.mk v [])::nexts) > ParserState.value v nexts
 --   theorem sizeOf_value_pair_gt_pair:  ParserState.value _ ((Hedge.Node.mk f [Hedge.Node.mk v []])::nexts) > ParserState.pair f v nexts

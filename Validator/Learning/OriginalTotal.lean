@@ -109,8 +109,8 @@ decreasing_by
   · apply decreasing_concat_r
   · apply decreasing_star
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α)(x: Expr μ α) (forest: Hedge α): Bool :=
-  Expr.nullable (List.foldl (derive g) x forest)
+def validate [DecidableEq α] (g: Expr.Grammar μ α)(x: Expr μ α) (hedge: Hedge α): Bool :=
+  Expr.nullable (List.foldl (derive g) x hedge)
 
 def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate g g.lookup0 [t])
