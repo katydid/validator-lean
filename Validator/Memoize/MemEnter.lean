@@ -2,12 +2,13 @@ import Std
 
 import Validator.Std.Debug
 
-import Validator.Expr.Expr
+import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
+import Validator.Expr.Regex
 
 import Validator.Derive.Enter
 
-abbrev MemEnter.EnterMap (μ: Nat) α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Exprs μ α) (IfExprs μ α)
+abbrev MemEnter.EnterMap (μ: Nat) α [DecidableEq α] [Hashable α] := Std.ExtHashMap (Rules μ α Pred) (IfExprs μ α)
 def MemEnter.EnterMap.mk [DecidableEq α] [Hashable α] : EnterMap μ α := Std.ExtHashMap.emptyWithCapacity
 
 class MemEnter (m: Type -> Type u) (μ: outParam Nat) (α: outParam Type) [DecidableEq α] [Hashable α] where
@@ -19,7 +20,7 @@ namespace MemEnter
 def deriveEnter
   [DecidableEq α] [Hashable α]
   [Monad m] [Debug m] [MemEnter m μ α]
-  (xs: Exprs μ α): m (IfExprs μ α) := do
+  (xs: Rules μ α Pred): m (IfExprs μ α) := do
   let memoized <- MemEnter.getEnter
   match memoized.get? xs with
   | Option.none =>
@@ -32,4 +33,4 @@ def deriveEnter
     return value
 
 instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MemEnter m μ α] : Enter.DeriveEnter m μ α where
-  deriveEnter (xs: Exprs μ α): m (IfExprs μ α) := deriveEnter xs
+  deriveEnter (xs: Rules μ α Pred): m (IfExprs μ α) := deriveEnter xs

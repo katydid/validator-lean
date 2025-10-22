@@ -8,199 +8,201 @@ import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Pred
-import Validator.Expr.Expr
+import Validator.Expr.Grammar
 import Validator.Expr.Denote
+import Validator.Expr.Regex
 
 namespace OriginalTotal
 
-theorem decreasing_or_l (y: Expr μ α) (tree: Hedge.Node α):
+theorem decreasing_or_l {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (tree, y)
-    (tree, y.or z) := by
+    (x, r1)
+    (x, Regex.or r1 r2) := by
   apply Prod.Lex.right
-  simp +arith only [Expr.or.sizeOf_spec]
+  simp +arith only [Regex.or.sizeOf_spec]
 
-theorem decreasing_or_r (y: Expr μ α) (tree: Hedge.Node α):
+theorem decreasing_or_r {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (tree, z)
-    (tree, y.or z) := by
+    (x, r2)
+    (x, Regex.or r1 r2) := by
   apply Prod.Lex.right
-  simp +arith only [Expr.or.sizeOf_spec]
+  simp +arith only [Regex.or.sizeOf_spec]
 
-theorem decreasing_concat_l (y: Expr μ α) (tree: Hedge.Node α):
+theorem decreasing_concat_l {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (tree, y)
-    (tree, y.concat z) := by
+    (x, r1)
+    (x, Regex.concat r1 r2) := by
   apply Prod.Lex.right
-  simp +arith only [Expr.concat.sizeOf_spec]
+  simp +arith only [Regex.concat.sizeOf_spec]
 
-theorem decreasing_concat_r (y: Expr μ α) (tree: Hedge.Node α):
+theorem decreasing_concat_r {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (tree, z)
-    (tree, y.concat z) := by
+    (x, r2)
+    (x, Regex.concat r1 r2) := by
   apply Prod.Lex.right
-  simp +arith only [Expr.concat.sizeOf_spec]
+  simp +arith only [Regex.concat.sizeOf_spec]
 
-theorem decreasing_star (y: Expr μ α) (tree: Hedge.Node α):
+theorem decreasing_star {α: Type} {σ: Type} [SizeOf σ] (r: Regex σ) (x: Hedge.Node α):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (tree, y)
-    (tree, y.star) := by
+    (x, r)
+    (x, Regex.star r) := by
   apply Prod.Lex.right
-  simp +arith only [Expr.star.sizeOf_spec]
+  simp +arith only [Regex.star.sizeOf_spec]
 
-theorem decreasing_tree {s: Expr μ α} {children: Hedge α} (h: tree ∈ children):
+theorem decreasing_symbol {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (label: α) (children: Hedge α) (x: Hedge.Node α) (h: x ∈ children):
   Prod.Lex
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
     (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
-    (tree, s)
-    (Hedge.Node.mk label children, Expr.tree labelPred childrenExpr) := by
+    (x, r1)
+    (Hedge.Node.mk label children, r2) := by
   apply Prod.Lex.left
   simp +arith only [Hedge.Node.mk.sizeOf_spec]
   have h' := List.list_elem_lt h
   omega
 
-def derive [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (tree: Hedge.Node α): Expr μ α :=
-  match x with
-  | Expr.emptyset => Expr.emptyset
-  | Expr.epsilon => Expr.emptyset
-  | Expr.tree labelPred childRef =>
-    match tree with
+def Rule.derive [BEq α] [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (x: Hedge.Node α): Rule μ α Pred :=
+  match r with
+  | Regex.emptyset => Regex.emptyset
+  | Regex.emptystr => Regex.emptyset
+  | Regex.symbol (p, ref) =>
+    match x with
     | Hedge.Node.mk label children =>
-      Expr.onlyif
+      Regex.onlyif
         (
-          (Pred.eval labelPred label)
-          && Expr.nullable (List.foldl (derive g) (g.lookup childRef) children)
+          Pred.eval p label
+          /\ Rule.nullable (List.foldl (Rule.derive g) (g.lookup ref) children)
         )
-      Expr.epsilon
-  | Expr.or y z => Expr.or (derive g y tree) (derive g z tree)
-  | Expr.concat y z =>
-    Expr.or
-      (Expr.concat (derive g y tree) z)
-      (Expr.onlyif (Expr.nullable y) (derive g z tree))
-  | Expr.star y => Expr.concat (derive g y tree) (Expr.star y)
--- Lean cannot guess how the recursive function terminates,
--- so we have to tell it how the arguments decrease in size.
--- The arguments decrease in the tree case first
--- (which only happens in the Expr.tree case)
--- and in the expression, x, second (which is all other cases).
--- This means if the tree is not destructed, then the expression is destructed.
-termination_by (tree, x)
--- Once we tell Lean how the function terminates we have to prove that
--- the size of the arguments decrease on every call.
--- Prod.Lex.left represents the case where the tree argument decreases.
--- Prod.Lex.right represents the case where the tree argument does not decrease
--- and the expression x does decrease.
-decreasing_by
-  · apply decreasing_tree (by assumption)
-  · apply decreasing_tree (by assumption)
-  · apply decreasing_or_l
-  · apply decreasing_or_r
-  · apply decreasing_concat_l
-  · apply decreasing_concat_r
-  · apply decreasing_star
+        Regex.emptystr
+  | Regex.or r1 r2 =>
+    Regex.or (Rule.derive g r1 x) (Rule.derive g r2 x)
+  | Regex.concat r1 r2 =>
+    Regex.or
+      (Regex.concat (Rule.derive g r1 x) r2)
+      (Regex.onlyif (Rule.nullable r1) (Rule.derive g r2 x))
+  | Regex.star r1 =>
+    Regex.concat (Rule.derive g r1 x) (Regex.star r1)
+  -- Lean cannot guess how the recursive function terminates,
+  -- so we have to tell it how the arguments decrease in size.
+  -- The arguments decrease in the tree case first
+  -- (which only happens in the Regex.symbol case)
+  -- and in the expression, r, second (which is all other cases).
+  -- This means if the tree is not destructed, then the expression is destructed.
+  termination_by (x, r)
+  -- Once we tell Lean how the function terminates we have to prove that
+  -- the size of the arguments decrease on every call.
+  -- Prod.Lex.left represents the case where the tree argument decreases.
+  -- Prod.Lex.right represents the case where the tree argument does not decrease
+  -- and the expression r does decrease.
+  decreasing_by
+    · apply decreasing_symbol (h := by assumption)
+    · apply decreasing_symbol (h := by assumption)
+    · apply decreasing_symbol (h := by assumption)
+    · apply decreasing_or_l
+    · apply decreasing_or_r
+    · apply decreasing_concat_l
+    · apply decreasing_concat_r
+    · apply decreasing_star
 
-def validate [DecidableEq α] (g: Expr.Grammar μ α)(x: Expr μ α) (hedge: Hedge α): Bool :=
-  Expr.nullable (List.foldl (derive g) x hedge)
+def validate [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (hedge: Hedge α): Bool :=
+  Rule.nullable (List.foldl (Rule.derive g) r hedge)
 
-def run [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
-  Except.ok (validate g g.lookup0 [t])
+def run [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
+  Except.ok (validate g g.start [t])
 
 -- Tests
 
 open TokenTree (node)
 
 #guard run
-  (Expr.Grammar.singleton Expr.emptyset)
+  (Grammar.singleton Regex.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Expr.Grammar.mk (μ := 2)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
-    #v[Expr.epsilon]
+  (Grammar.mk (μ := 1)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    #v[Regex.emptystr]
   )
   (node "a" []) =
   Except.ok true
 
 #guard run
-  (Expr.Grammar.mk (μ := 2)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
-    #v[Expr.epsilon]
+  (Grammar.mk (μ := 1)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    #v[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
-  (Expr.Grammar.mk (μ := 3)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
+  (Grammar.mk (μ := 2)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
-      (Expr.tree (Pred.eq (Token.string "b")) 2)
-      , Expr.epsilon
+      (Regex.symbol (Pred.eq (Token.string "b"), 1))
+      , Regex.emptystr
     ]
   )
   (node "a" [node "b" []])
   = Except.ok true
 
 #guard run
-  (Expr.Grammar.mk (μ := 3)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
+  (Grammar.mk (μ := 2)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
-      (Expr.concat
-        (Expr.tree (Pred.eq (Token.string "b")) 2)
-        (Expr.tree (Pred.eq (Token.string "c")) 2)
+      (Regex.concat
+        (Regex.symbol (Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (Pred.eq (Token.string "c"), 1))
       )
-      , Expr.epsilon
+      , Regex.emptystr
     ]
   )
   (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard run
-  (Expr.Grammar.mk (μ := 4)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
+  (Grammar.mk (μ := 3)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
-      (Expr.concat
-        (Expr.tree (Pred.eq (Token.string "b")) 2)
-        (Expr.tree (Pred.eq (Token.string "c")) 3)
+      (Regex.concat
+        (Regex.symbol (Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (Pred.eq (Token.string "c"), 2))
       )
-      , Expr.epsilon
-      , (Expr.tree (Pred.eq (Token.string "d")) 2)
+      , Regex.emptystr
+      , (Regex.symbol (Pred.eq (Token.string "d"), 1))
     ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
-theorem derive_commutes {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (a: Hedge.Node α):
-  Denote.denote g (derive g x a) = Language.derive (Denote.denote g x) a := by
-  fun_induction (derive g) x a with
+theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (a: Hedge.Node α):
+  Rule.denote g (Rule.derive g r a) = Language.derive (Rule.denote g r) a := by
+  fun_induction (Rule.derive g) r a with
   | case1 => -- emptyset
-    rw [Denote.denote_emptyset]
+    rw [Rule.denote_emptyset]
     rw [Language.derive_emptyset]
-  | case2 => -- epsilon
-    rw [Denote.denote_emptyset]
-    rw [Denote.denote_epsilon]
+  | case2 => -- emptystr
+    rw [Rule.denote_emptyset]
+    rw [Rule.denote_emptystr]
     rw [Language.derive_emptystr]
   | case3 p childRef label children ih =>
-    rw [Denote.denote_tree]
+    rw [Rule.denote_symbol]
     rw [Language.derive_tree]
-    rw [Denote.denote_onlyif]
-    rw [Denote.denote_epsilon]
+    rw [Rule.denote_onlyif]
+    rw [Rule.denote_emptystr]
     apply (congrArg fun x => Language.onlyif x Language.emptystr)
-    simp only [Bool.and_eq_true]
-    simp only [decide_eq_true_eq]
     congr
     generalize (g.lookup childRef) = childExpr
-    rw [Denote.null_commutes]
+    rw [Rule.null_commutes]
     unfold Language.null
     induction children generalizing childExpr with
     | nil =>
@@ -222,25 +224,25 @@ theorem derive_commutes {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: 
         rw [List.mem_cons]
         apply Or.inr hchild
   | case4 a p q ihp ihq => -- or
-    rw [Denote.denote_or]
-    rw [Denote.denote_or]
+    rw [Rule.denote_or]
+    rw [Rule.denote_or]
     unfold Language.or
     rw [ihp]
     rw [ihq]
     rfl
   | case5 a p q ihp ihq => -- concat
-    rw [Denote.denote_concat]
-    rw [Denote.denote_or]
-    rw [Denote.denote_concat]
-    rw [Denote.denote_onlyif]
+    rw [Rule.denote_concat]
+    rw [Rule.denote_or]
+    rw [Rule.denote_concat]
+    rw [Rule.denote_onlyif]
     rw [Language.derive_concat]
     rw [<- ihp]
     rw [<- ihq]
-    congrm (Language.or (Language.concat (Denote.denote g (derive g p a)) (Denote.denote g q)) ?_)
-    rw [Denote.null_commutes]
+    congrm (Language.or (Language.concat (Rule.denote g (Rule.derive g p a)) (Rule.denote g q)) ?_)
+    rw [Rule.null_commutes]
   | case6 a r ih => -- star
-    rw [Denote.denote_star]
-    rw [Denote.denote_concat]
-    rw [Denote.denote_star]
+    rw [Rule.denote_star]
+    rw [Rule.denote_concat]
+    rw [Rule.denote_star]
     rw [Language.derive_star]
     rw [ih]

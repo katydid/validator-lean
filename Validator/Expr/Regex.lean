@@ -60,7 +60,7 @@ def Regex.unescapable (x: Regex σ): Bool :=
 def Regex.onlyif (cond: Prop) [dcond: Decidable cond] (x: Regex σ): Regex σ :=
   if cond then x else Regex.emptyset
 
-def smartOr (x y: Regex σ): Regex σ :=
+def Regex.smartOr (x y: Regex σ): Regex σ :=
   match x with
   | Regex.emptyset => y
   | _ =>
@@ -68,7 +68,7 @@ def smartOr (x y: Regex σ): Regex σ :=
     | Regex.emptyset => x
     | _ => Regex.or x y
 
-def smartConcat (x y: Regex σ): Regex σ :=
+def Regex.smartConcat (x y: Regex σ): Regex σ :=
   match x with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => y
@@ -78,7 +78,7 @@ def smartConcat (x y: Regex σ): Regex σ :=
     | Regex.emptystr => x
     | _ => Regex.concat x y
 
-def smartStar (x: Regex σ): Regex σ :=
+def Regex.smartStar (x: Regex σ): Regex σ :=
   match x with
   | Regex.star _ => x
   | Regex.emptyset => Regex.emptystr

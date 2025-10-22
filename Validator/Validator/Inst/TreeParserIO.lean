@@ -64,7 +64,7 @@ instance [DecidableEq α] [Hashable α]: MemEnter (Impl μ α) μ α where
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α where
-  deriveEnter (xs: Exprs μ α): Impl μ α (IfExprs μ α) := MemEnter.deriveEnter xs
+  deriveEnter (xs: Rules μ α Pred): Impl μ α (IfExprs μ α) := MemEnter.deriveEnter xs
 
 instance [DecidableEq α] [Hashable α]: MemLeave (Impl μ α) μ α where
   getLeave : Impl μ α (MemLeave.LeaveMap μ α) := do
@@ -77,7 +77,7 @@ instance [DecidableEq α] [Hashable α]: MemLeave (Impl μ α) μ α where
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl μ α) μ α where
-  deriveLeaveM (xs: Exprs μ α) (ns: List Bool): Impl μ α (Exprs μ α) := MemLeave.deriveLeaveM xs ns
+  deriveLeaveM (xs: Rules μ α Pred) (ns: List Bool): Impl μ α (Rules μ α Pred) := MemLeave.deriveLeaveM xs ns
 
 instance [DecidableEq α] [Hashable α]: ValidateM (Impl μ α) μ α where
   -- all instances have been created, so no implementations are required here

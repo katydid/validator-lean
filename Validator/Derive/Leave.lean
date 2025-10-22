@@ -1,42 +1,43 @@
-import Validator.Expr.Expr
+import Validator.Expr.Grammar
+import Validator.Expr.Regex
 
 namespace Leave
 
-def leaveM [Monad m] [MonadExcept String m] (x: Expr μ α) (ns: List Bool): m (Expr μ α × List Bool) := do
+def leaveM [Monad m] [MonadExcept String m] (x: Rule μ α Pred) (ns: List Bool): m (Rule μ α Pred × List Bool) := do
   match x with
-  | Expr.emptyset => return (Expr.emptyset, ns)
-  | Expr.epsilon => return (Expr.emptyset, ns)
-  | Expr.tree _ _ =>
+  | Regex.emptyset => return (Regex.emptyset, ns)
+  | Regex.emptystr => return (Regex.emptyset, ns)
+  | Regex.symbol _ =>
     match ns with
     | [] =>
       -- Should never occur if ns was acquired from calling `enter`.
       throw "wtf"
     | (null::ns') =>
       if null
-      then return (Expr.epsilon, ns')
-      else return (Expr.emptyset, ns')
-  | Expr.or y z =>
+      then return (Regex.emptystr, ns')
+      else return (Regex.emptyset, ns')
+  | Regex.or y z =>
     let (ly, yns) <- leaveM y ns
     let (lz, zns) <- leaveM z yns
-    return (Expr.smartOr ly lz, zns)
-  | Expr.concat y z =>
-    if Expr.nullable y
+    return (Regex.smartOr ly lz, zns)
+  | Regex.concat y z =>
+    if Regex.nullable y
     then
       let (ly, yns) <- leaveM y ns
       let (lz, zns) <- leaveM z yns
-      return (Expr.smartOr (Expr.smartConcat ly z) lz, zns)
+      return (Regex.smartOr (Regex.smartConcat ly z) lz, zns)
     else
       let (ly, yns) <- leaveM y ns
-      return (Expr.smartConcat ly z, yns)
-  | Expr.star y =>
+      return (Regex.smartConcat ly z, yns)
+  | Regex.star y =>
       let (ly, yns) <- leaveM y ns
-      return (Expr.smartConcat ly (Expr.smartStar y), yns)
+      return (Regex.smartConcat ly (Regex.smartStar y), yns)
 
 -- deriveLeaveM takes a list of expressions and list of bools.
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def deriveLeaveM [Monad m] [MonadExcept String m] (xs: Exprs μ α) (ns: List Bool): m (Exprs μ α) := do
+def deriveLeaveM [Monad m] [MonadExcept String m] (xs: Rules μ α Pred) (ns: List Bool): m (Rules μ α Pred) := do
   match xs with
   | [] =>
     match ns with
@@ -48,4 +49,4 @@ def deriveLeaveM [Monad m] [MonadExcept String m] (xs: Exprs μ α) (ns: List Bo
     return (lx::lxs)
 
 class DeriveLeaveM (m: Type -> Type u) (μ: Nat) (α: outParam Type) where
-  deriveLeaveM (xs: Exprs μ α) (ns: List Bool): m (Exprs μ α)
+  deriveLeaveM (xs: Rules μ α Pred) (ns: List Bool): m (Rules μ α Pred)

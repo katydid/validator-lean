@@ -8,7 +8,7 @@ import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
-import Validator.Expr.Expr
+import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
 import Validator.Expr.Language
 
@@ -17,8 +17,8 @@ import Validator.Derive.Leave
 
 namespace Basic
 
-def derive {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α) (t: Hedge.Node α): Except String (Exprs μ α) := do
-  if List.all xs Expr.unescapable
+def derive {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (xs: Rules μ α Pred) (t: Hedge.Node α): Except String (Rules μ α Pred) := do
+  if List.all xs Regex.unescapable
   then Except.ok xs
   else
     match t with
@@ -26,85 +26,85 @@ def derive {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (xs: Exprs μ α)
       -- enters is one of our two new memoizable functions.
       let ifExprs: IfExprs μ α := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: Exprs μ α := IfExpr.evals g ifExprs label
+      let childxs: Rules μ α Pred := IfExpr.evals g ifExprs label
       -- dchildxs = derivatives of children.
       let dchildxs <- List.foldlM (derive g) childxs children
       -- leaves is the other one of our two new memoizable functions.
-      Leave.deriveLeaveM xs (List.map Expr.nullable dchildxs)
+      Leave.deriveLeaveM xs (List.map Rule.nullable dchildxs)
 
-def derivs {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (hedge: Hedge α): Except String (Expr μ α) := do
+def derivs {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String (Rule μ α Pred) := do
   let dxs <- List.foldlM (derive g) [x] hedge
   match dxs with
   | [dx] => return dx
   | _ => throw "expected one expression"
 
-def validate {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (x: Expr μ α) (hedge: Hedge α): Except String Bool := do
+def validate {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String Bool := do
   let dx <- derivs g x hedge
-  return Expr.nullable dx
+  return Rule.nullable dx
 
-def run {α: Type} [DecidableEq α] (g: Expr.Grammar μ α) (t: Hedge.Node α): Except String Bool :=
-  validate g g.lookup0 [t]
+def run {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
+  validate g g.start [t]
 
 -- Tests
 
 open TokenTree (node)
 
 #guard run
-  (Expr.Grammar.singleton Expr.emptyset)
+  (Grammar.singleton Regex.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Expr.Grammar.mk (μ := 2)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
-    #v[Expr.epsilon]
+  (Grammar.mk (μ := 1)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    #v[Regex.emptystr]
   )
   (node "a" []) =
   Except.ok true
 
 #guard run
-  (Expr.Grammar.mk (μ := 2)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
-    #v[Expr.epsilon]
+  (Grammar.mk (μ := 1)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    #v[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
   Except.ok false
 
 #guard run
-  (Expr.Grammar.mk (μ := 3)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
+  (Grammar.mk (μ := 2)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
-      (Expr.tree (Pred.eq (Token.string "b")) 2)
-      , Expr.epsilon
+      (Regex.symbol (Pred.eq (Token.string "b"), 1))
+      , Regex.emptystr
     ]
   )
   (node "a" [node "b" []])
   = Except.ok true
 
 #guard run
-  (Expr.Grammar.mk (μ := 3)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
+  (Grammar.mk (μ := 2)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
-      (Expr.concat
-        (Expr.tree (Pred.eq (Token.string "b")) 2)
-        (Expr.tree (Pred.eq (Token.string "c")) 2)
+      (Regex.concat
+        (Regex.symbol (Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (Pred.eq (Token.string "c"), 1))
       )
-      , Expr.epsilon
+      , Regex.emptystr
     ]
   )
   (node "a" [node "b" [], node "c" []]) =
   Except.ok true
 
 #guard run
-  (Expr.Grammar.mk (μ := 4)
-    (Expr.tree (Pred.eq (Token.string "a")) 1)
+  (Grammar.mk (μ := 3)
+    (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
-      (Expr.concat
-        (Expr.tree (Pred.eq (Token.string "b")) 2)
-        (Expr.tree (Pred.eq (Token.string "c")) 3)
+      (Regex.concat
+        (Regex.symbol (Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (Pred.eq (Token.string "c"), 2))
       )
-      , Expr.epsilon
-      , (Expr.tree (Pred.eq (Token.string "d")) 2)
+      , Regex.emptystr
+      , (Regex.symbol (Pred.eq (Token.string "d"), 1))
     ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
