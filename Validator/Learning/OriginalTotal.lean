@@ -9,7 +9,6 @@ import Validator.Parser.TokenTree
 
 import Validator.Expr.Pred
 import Validator.Expr.Grammar
-import Validator.Expr.Denote
 import Validator.Expr.Regex
 
 namespace OriginalTotal

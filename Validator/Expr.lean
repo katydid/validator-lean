@@ -1,5 +1,3 @@
-import Validator.Expr.Denote
-import Validator.Expr.Expr
 import Validator.Expr.Compress
 import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
