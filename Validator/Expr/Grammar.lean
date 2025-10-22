@@ -24,6 +24,15 @@ def Grammar.lookup {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
   (g: Grammar μ α Φ) (ref: Fin μ): Rule μ α Φ :=
   Vector.get g.prods ref
 
+def Grammar.singleton (x: Rule 0 α Φ): Grammar 0 α Φ  :=
+  Grammar.mk x #v[]
+
+def Grammar.emptyset: Grammar 0 α Φ :=
+  Grammar.mk Regex.emptyset #v[]
+
+def Grammar.emptystr: Grammar 0 α Φ :=
+  Grammar.mk Regex.emptystr #v[]
+
 example : Grammar 5 String Pred := Grammar.mk
   -- start := ("html", Html)
   (start := Regex.symbol (Pred.eq "html", 0))
@@ -45,6 +54,25 @@ example : Grammar 5 String Pred := Grammar.mk
     , Regex.emptystr
   ])
 
+def example_grammar: Grammar 1 Char Pred :=
+  Grammar.mk
+    (Regex.or Regex.emptystr (Regex.symbol (Pred.eq 'a', 0)))
+    #v[Regex.emptystr]
+
+#guard
+  example_grammar.lookup (Fin.mk 0 (by omega))
+  = Regex.emptystr
+
+theorem denote_rule_decreasing {x: Hedge.Node α} {xs: Hedge α} (h: List.IsInfix [x] xs):
+  sizeOf x.getChildren < sizeOf xs := by
+  cases x with
+  | mk label children =>
+  simp only [Hedge.Node.getChildren]
+  have h := List.list_infix_is_leq_sizeOf h
+  simp only [List.cons.sizeOf_spec, List.nil.sizeOf_spec, Hedge.Node.mk.sizeOf_spec] at h
+  simp +arith only at h
+  omega
+
 def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
@@ -54,14 +82,7 @@ def denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred)
     | _ => False
   )
   termination_by xs
-  decreasing_by
-    cases x with
-    | mk label children =>
-    simp only [Hedge.Node.getChildren]
-    have h := List.list_infix_is_leq_sizeOf _hx
-    simp only [List.cons.sizeOf_spec, List.nil.sizeOf_spec, Hedge.Node.mk.sizeOf_spec] at h
-    simp +arith only at h
-    omega
+  decreasing_by exact (denote_rule_decreasing _hx)
 
 def Grammar.denote {α: Type} [BEq α] (g: Grammar μ α Pred) (xs: Hedge α): Prop :=
   denote_rule g g.start xs
@@ -308,3 +329,97 @@ theorem Grammar.denote_rule_star_n {μ: Nat} {α: Type} [BEq α]
   Language.star_n (denote_rule g r) := by
   funext xs
   rw [denote_rule_star_n']
+
+def Rule.nullable (r: Rule μ α Φ): Bool :=
+  Regex.nullable r
+
+def Grammar.nullable (g: Grammar μ α Φ): Bool :=
+  Rule.nullable g.start
+
+theorem decreasing_or_l {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (x, r1)
+    (x, Regex.or r1 r2) := by
+  apply Prod.Lex.right
+  simp +arith only [Regex.or.sizeOf_spec]
+
+theorem decreasing_or_r {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (x, r2)
+    (x, Regex.or r1 r2) := by
+  apply Prod.Lex.right
+  simp +arith only [Regex.or.sizeOf_spec]
+
+theorem decreasing_concat_l {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (x, r1)
+    (x, Regex.concat r1 r2) := by
+  apply Prod.Lex.right
+  simp +arith only [Regex.concat.sizeOf_spec]
+
+theorem decreasing_concat_r {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (x: Hedge.Node α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (x, r2)
+    (x, Regex.concat r1 r2) := by
+  apply Prod.Lex.right
+  simp +arith only [Regex.concat.sizeOf_spec]
+
+theorem decreasing_star {α: Type} {σ: Type} [SizeOf σ] (r: Regex σ) (x: Hedge.Node α):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (x, r)
+    (x, Regex.star r) := by
+  apply Prod.Lex.right
+  simp +arith only [Regex.star.sizeOf_spec]
+
+theorem decreasing_symbol {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (label: α) (children: Hedge α) (x: Hedge.Node α) (h: x ∈ children):
+  Prod.Lex
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (fun a₁ a₂ => sizeOf a₁ < sizeOf a₂)
+    (x, r1)
+    (Hedge.Node.mk label children, r2) := by
+  apply Prod.Lex.left
+  simp +arith only [Hedge.Node.mk.sizeOf_spec]
+  have h' := List.list_elem_lt h
+  omega
+
+def Rule.derive [BEq α] [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (x: Hedge.Node α): Rule μ α Pred :=
+  match r with
+  | Regex.emptyset => Regex.emptyset
+  | Regex.emptystr => Regex.emptyset
+  | Regex.symbol (p, ref) =>
+    match x with
+    | Hedge.Node.mk label children =>
+      Regex.onlyif
+        (
+          Pred.eval p label
+          /\ Rule.nullable (List.foldl (Rule.derive g) (g.lookup ref) children)
+        )
+        Regex.emptystr
+  | Regex.or r1 r2 =>
+    Regex.or (Rule.derive g r1 x) (Rule.derive g r2 x)
+  | Regex.concat r1 r2 =>
+    Regex.or
+      (Regex.concat (Rule.derive g r1 x) r2)
+      (Regex.onlyif (Rule.nullable r1) (Rule.derive g r2 x))
+  | Regex.star r1 =>
+    Regex.concat (Rule.derive g r1 x) (Regex.star r1)
+  termination_by (x, r)
+  decreasing_by
+    · apply decreasing_symbol (h := by assumption)
+    · apply decreasing_symbol (h := by assumption)
+    · apply decreasing_symbol (h := by assumption)
+    · apply decreasing_or_l
+    · apply decreasing_or_r
+    · apply decreasing_concat_l
+    · apply decreasing_concat_r
+    · apply decreasing_star

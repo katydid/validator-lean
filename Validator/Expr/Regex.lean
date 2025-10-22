@@ -4,13 +4,24 @@ import Validator.Expr.Pred
 import Validator.Expr.Language
 
 -- A regular expression is defined over a generic symbol
-inductive Regex σ where
+inductive Regex (σ: Type) where
   | emptyset
   | emptystr
   | symbol (s: σ)
   | or (p q: Regex σ)
   | concat (p q: Regex σ)
   | star (p: Regex σ)
+  deriving DecidableEq, Ord, Repr, Hashable
+
+instance [Ord σ]: Ord (Regex σ) := inferInstance
+
+instance [Repr σ]: Repr (Regex σ) := inferInstance
+
+instance [DecidableEq σ]: DecidableEq (Regex σ) := inferInstance
+
+instance [DecidableEq σ]: BEq (Regex σ) := inferInstance
+
+instance [Hashable σ]: Hashable (Regex σ) := inferInstance
 
 def Regex.map (r: Regex σ) (f: σ -> σ'): Regex σ' :=
   match r with
@@ -40,6 +51,38 @@ def Regex.nullable {σ: Type} (r: Regex σ): Bool :=
   | Regex.or p q => Regex.nullable p || Regex.nullable q
   | Regex.concat p q => Regex.nullable p && Regex.nullable q
   | Regex.star _ => true
+
+def Regex.unescapable (x: Regex σ): Bool :=
+  match x with
+  | Regex.emptyset => true
+  | _ => false
+
+def Regex.onlyif (cond: Prop) [dcond: Decidable cond] (x: Regex σ): Regex σ :=
+  if cond then x else Regex.emptyset
+
+def smartOr (x y: Regex σ): Regex σ :=
+  match x with
+  | Regex.emptyset => y
+  | _ =>
+    match y with
+    | Regex.emptyset => x
+    | _ => Regex.or x y
+
+def smartConcat (x y: Regex σ): Regex σ :=
+  match x with
+  | Regex.emptyset => Regex.emptyset
+  | Regex.emptystr => y
+  | _ =>
+    match y with
+    | Regex.emptyset => Regex.emptyset
+    | Regex.emptystr => x
+    | _ => Regex.concat x y
+
+def smartStar (x: Regex σ): Regex σ :=
+  match x with
+  | Regex.star _ => x
+  | Regex.emptyset => Regex.emptystr
+  | _ => Regex.star x
 
 -- We prove that for each regular expression the denotation holds for the specific language definition:
 -- * Regex.denote dσ Regex.emptyset = Language.emptyset
