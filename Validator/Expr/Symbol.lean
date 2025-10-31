@@ -41,25 +41,30 @@ def num (r: Regex σ): Nat :=
   | Regex.concat r1 r2 => num r1 + num r2
   | Regex.star r1 => num r1
 
+def nums (xs: List.Vector (Regex σ) μ): Nat :=
+  match xs with
+  | ⟨[], _⟩ => 0
+  | ⟨x::xs, h⟩ => nums ⟨xs, congrArg Nat.pred h⟩ + num x
+
 abbrev RegexID n := Regex (Fin n)
 abbrev Symbols σ n := List.Vector σ n
 
 def RegexID.add {n: Nat} (m: Nat) (r: RegexID n): RegexID (n + m) :=
   Regex.map r (fun s => (Fin.mk s.val (by omega)))
 
-def RegexID.cast (h: n = m) (r: RegexID n): RegexID m := by
+def RegexID.cast (r: RegexID n) (h: n = m): RegexID m := by
   rw [<- h]
   exact r
 
 def RegexID.add_or (r: RegexID (μ + num r1 + num r2)): RegexID (μ + num (Regex.or r1 r2)) :=
   have h : (μ + num r1 + num r2) = (μ + num (Regex.or r1 r2)) := by
     rw [<- Nat.add_assoc]
-  RegexID.cast h r
+  RegexID.cast r h
 
 def RegexID.add_concat (r: RegexID (μ + num r1 + num r2)): RegexID (μ + num (Regex.concat r1 r2)) :=
   have h : (μ + num r1 + num r2) = (μ + num (Regex.concat r1 r2)) := by
     rw [<- Nat.add_assoc]
-  RegexID.cast h r
+  RegexID.cast r h
 
 theorem List.Vector.toList_take:
   List.take n xs.val = (List.Vector.take n xs).toList := by
@@ -71,12 +76,12 @@ theorem List.Vector.toList_cons:
   simp only [Nat.succ_eq_add_one, _root_.List.Vector.toList_cons, List.cons.injEq, true_and]
   rfl
 
-def Symbols.cast (h: n = m) (xs: Symbols σ n): Symbols σ m := by
+def Symbols.cast (xs: Symbols σ n) (h: n = m): Symbols σ m := by
   rw [<- h]
   exact xs
 
 theorem List.Vector.toList_cast_is_toList (xs: List.Vector σ n):
-  List.Vector.toList xs = List.Vector.toList (Symbols.cast h xs) := by
+  List.Vector.toList xs = List.Vector.toList (Symbols.cast xs h) := by
   rcases xs with ⟨xs, hxs⟩
   simp [Symbols.cast, _root_.cast, List.Vector.toList]
   subst h hxs
@@ -93,14 +98,14 @@ abbrev Symbols.toList {α: Type} (v : List.Vector α n) := List.Vector.toList v
 def Symbols.add_or (xs: Symbols σ (μ + num r1 + num r2)): Symbols σ (μ + num (Regex.or r1 r2)) :=
   have h : (μ + num r1 + num r2) = (μ + num (Regex.or r1 r2)) := by
     rw [<- Nat.add_assoc]
-  Symbols.cast h xs
+  Symbols.cast xs h
 
 def Symbols.add_concat (xs: Symbols σ (μ + num r1 + num r2)): Symbols σ (μ + num (Regex.or r1 r2)) :=
   have h : (μ + num r1 + num r2) = (μ + num (Regex.concat r1 r2)) := by
     rw [<- Nat.add_assoc]
-  Symbols.cast h xs
+  Symbols.cast xs h
 
-theorem Symbols.cast_rfl {xs : Symbols α n} : Symbols.cast rfl xs = xs := by
+theorem Symbols.cast_rfl {xs : Symbols α n} : Symbols.cast xs rfl = xs := by
   rcases xs with ⟨xs, rfl⟩
   rfl
 
@@ -111,7 +116,7 @@ theorem Symbols.take_get (xs: Symbols σ (n + m)):
   simp only [Fin.cast_mk, List.get_eq_getElem, List.getElem_take]
 
 theorem Symbols.cast_nil:
-  ⟨[], h1⟩ = Symbols.cast h2 ⟨[], h3⟩ := by
+  ⟨[], h1⟩ = Symbols.cast ⟨[], h3⟩ h2 := by
   subst h3 h1
   simp only [List.length_nil]
   rfl
@@ -122,7 +127,7 @@ theorem Symbols.cons_is_list_cons (x: σ) (xs: List.Vector σ n) (hxs: (x :: xs.
   rfl
 
 theorem Symbols.cast_list {n m: Nat} {σ: Type} (xs: List σ) (h1: xs.length = n) (h2: m = n) (h3: xs.length = m):
-  ⟨xs, h1⟩ = Symbols.cast h2 ⟨xs, h3⟩ := by
+  ⟨xs, h1⟩ = Symbols.cast ⟨xs, h3⟩ h2 := by
   apply List.Vector.eq
   simp
   aesop
@@ -136,12 +141,6 @@ theorem Symbols.take_succ (xs: Symbols α n):
   (Symbols.cast
     (n := ((min i n) + 1))
     (m := (min (i + 1) (n + 1)))
-    (by
-      rw [Nat.min_def]
-      split_ifs
-      omega
-      omega
-    )
     (
       (
         Symbols.cons x (
@@ -149,6 +148,12 @@ theorem Symbols.take_succ (xs: Symbols α n):
         )
       )
       : Symbols α ((min i n) + 1)
+    )
+    (by
+      rw [Nat.min_def]
+      split_ifs
+      omega
+      omega
     )
   )
   := by
@@ -162,7 +167,7 @@ theorem Symbols.take_succ (xs: Symbols α n):
   simp [List.Vector.toList]
 
 theorem Symbols.cast_take (xs: Symbols σ n):
-  Symbols.take n xs = Symbols.cast (n := n) (m := min n n) (by omega) xs := by
+  Symbols.take n xs = Symbols.cast (n := n) (m := min n n) xs (by omega) := by
   unfold Symbols.take
   apply List.Vector.eq
   generalize_proofs h
@@ -173,9 +178,9 @@ theorem Symbols.cast_take (xs: Symbols σ n):
   omega
 
 theorem Symbols.cast_append_take (xs: Symbols σ n) (ys: Symbols σ m):
-  (xs ++ ys).take n = Symbols.cast (n := n) (m := min n (n + m)) ((by
+  (xs ++ ys).take n = Symbols.cast (n := n) (m := min n (n + m)) xs ((by
     omega
-  ): n = min n (n + m)) xs := by
+  ): n = min n (n + m)) := by
   unfold Symbols at *
   apply List.Vector.eq
   rw [<- List.Vector.toList_cast_is_toList]
@@ -215,13 +220,13 @@ def replace (r: RegexID μ) (xs: Symbols σ ν) (h: μ <= ν): Regex σ :=
     Regex.star (replace r1 xs h)
 
 theorem replace_cast_both (r: RegexID μ) (xs: Symbols σ μ) (h: μ = ν):
-  replace r xs (by omega) = replace (RegexID.cast h r) (Symbols.cast h xs) (by omega) := by
+  replace r xs (by omega) = replace (RegexID.cast r h) (Symbols.cast xs h) (by omega) := by
   subst h
   simp only [Symbols.cast_rfl]
   rfl
 
 theorem replace_cast_symbols (r: RegexID μ) (xs: Symbols σ μ) (h: μ = ν):
-  replace r xs (by omega) = replace r (Symbols.cast h xs) (by omega) := by
+  replace r xs (by omega) = replace r (Symbols.cast xs h) (by omega) := by
   subst h
   simp only [Symbols.cast_rfl]
 
@@ -376,7 +381,7 @@ theorem extract_append_toList (res: Symbols σ μ) (r: Regex σ):
     rw [ih1]
 
 theorem extract_append (res: Symbols σ μ) (r: Regex σ):
-  (extract r res).2 = Symbols.cast (by omega) (res ++ (extract r Symbols.nil).2) := by
+  (extract r res).2 = Symbols.cast (res ++ (extract r Symbols.nil).2) (by omega) := by
   apply List.Vector.eq
   rw [extract_append_toList]
   rw [<- List.Vector.toList_cast_is_toList]
@@ -408,50 +413,19 @@ theorem extract_take (res: Symbols σ μ):
       (extract r1 res).2).2
   )
   =
-    Symbols.cast (by omega)
-    (extract r1 res).2 := by
+    Symbols.cast
+    (extract r1 res).2
+    (by omega) := by
   apply List.Vector.eq
   rw [extract_take_toList]
   rw [<- List.Vector.toList_cast_is_toList]
 
 def replaceFrom (r: RegexID μ) (xs: Symbols σ μ): Regex σ :=
-  match r with
-  | Regex.emptyset => Regex.emptyset
-  | Regex.emptystr => Regex.emptystr
-  | Regex.symbol s => Regex.symbol (Symbols.get xs s)
-  | Regex.or r1 r2 =>
-    Regex.or (replaceFrom r1 xs) (replaceFrom r2 xs)
-  | Regex.concat r1 r2 =>
-    Regex.concat (replaceFrom r1 xs) (replaceFrom r2 xs)
-  | Regex.star r1 =>
-    Regex.star (replaceFrom r1 xs)
-
-theorem replaceFrom_is_replace (r: RegexID μ) (xs: Symbols σ μ):
-  replaceFrom r xs = replace r xs (le_refl μ) := by
-  induction r with
-  | emptyset =>
-    simp [replaceFrom, replace]
-  | emptystr =>
-    simp [replaceFrom, replace]
-  | symbol s =>
-    simp [replaceFrom, replace]
-  | or r1 r2 ih1 ih2 =>
-    simp [replaceFrom, replace]
-    rw [ih1]
-    rw [ih2]
-    apply And.intro rfl rfl
-  | concat r1 r2 ih1 ih2 =>
-    simp [replaceFrom, replace]
-    rw [ih1]
-    rw [ih2]
-    apply And.intro rfl rfl
-  | star r1 ih1 =>
-    simp [replaceFrom, replace]
-    rw [ih1]
+  replace r xs (le_refl μ)
 
 theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ μ):
   r = replaceFrom (extract r res).1 (extract r res).2 := by
-  rw [replaceFrom_is_replace]
+  simp only [replaceFrom]
   generalize_proofs hr
   revert res μ
   induction r with
@@ -535,5 +509,87 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ μ):
 
 theorem extract_replace_is_id (r: Regex σ) (res: Symbols σ μ):
   r = replace (extract r res).1 (extract r res).2 (by omega):= by
-  rw [<- replaceFrom_is_replace]
+  rw [<- replaceFrom]
   rw [<- extract_replaceFrom_is_id]
+
+def extractFrom (r: Regex σ): RegexID (num r) × Symbols σ (num r) :=
+  match extract r List.Vector.nil with
+  | (r', xs) => (RegexID.cast r' (by omega), Symbols.cast xs (by omega))
+
+theorem extractFrom_replaceFrom_is_id (r: Regex σ):
+  r = replaceFrom (extractFrom r).1 (extractFrom r).2 := by
+  simp only [extractFrom]
+  simp only [replaceFrom]
+  rw [<- replace_cast_both]
+  rw [<- extract_replace_is_id r List.Vector.nil]
+
+theorem nums_cons_is_add:
+  nums (⟨x::xs, h⟩)
+  = num x + nums ⟨xs, congrArg Nat.pred h⟩
+  := by
+  simp [nums]
+  ac_rfl
+
+theorem RegexID.cons_cast:
+  List.Vector (RegexID (nres + nums (⟨x::xs, h⟩))) n
+  = List.Vector (RegexID (nres + num x + nums ⟨xs, congrArg Nat.pred h⟩)) n := by
+  simp [nums]
+  ac_rfl
+
+def extracts (xs: List.Vector (Regex σ) nregex) (res: Symbols σ nres):
+  (List.Vector (RegexID (nres + nums xs)) nregex) × (Symbols σ (nres + nums xs)) :=
+  match xs with
+  | ⟨[], h⟩ =>
+    (
+      ⟨[], by assumption ⟩,
+      ⟨res.val, by simp only [List.Vector.length_val, nums, add_zero]⟩
+    )
+  | ⟨x::xs, h⟩ =>
+    let xs': List.Vector (Regex σ) nregex.pred := ⟨xs, congrArg Nat.pred h⟩
+    let (regex, symbols) := Symbol.extract x res
+    let regex' := RegexID.add (nums ⟨xs, congrArg Nat.pred h⟩) regex
+    let regex'': RegexID (nres + nums (⟨x::xs, h⟩)) :=
+      RegexID.cast
+      regex'
+      (by
+        simp
+        rw [nums_cons_is_add]
+        ac_rfl
+      )
+    let (regexes, symbols') := extracts xs' symbols
+    let regexes': List.Vector (RegexID (nres + nums (⟨x::xs, h⟩))) nregex.pred
+      := by
+        rw [RegexID.cons_cast]
+        exact regexes
+    let regexes'' : List.Vector (RegexID (nres + nums (⟨x::xs, h⟩))) nregex :=
+      (Symbols.cast
+        ((List.Vector.cons
+          regex''
+          regexes'
+        ): List.Vector (RegexID (nres + nums (⟨x::xs, h⟩))) nregex.pred.succ)
+        (by
+          rw [<- h]
+          simp only [List.length_cons, Nat.pred_eq_sub_one, add_tsub_cancel_right, Nat.succ_eq_add_one]
+        )
+      )
+    let symbols': Symbols σ (nres + nums (⟨x::xs, h⟩)) :=
+      Symbols.cast
+      symbols'
+      (by
+        simp [nums]
+        ac_rfl
+      )
+    (
+      regexes'',
+      symbols'
+    )
+
+def extractsSymbols (xs: List.Vector (Regex σ) μ) (res: Symbols σ μ1):
+  Symbols σ (μ1 + Symbol.nums xs) :=
+  match xs with
+  | ⟨[], h⟩ => ⟨res.val, by simp only [List.Vector.length_val, Symbol.nums, add_zero]⟩
+  | ⟨x::xs, h⟩ =>
+      (Symbol.Symbols.cast
+        (extractsSymbols ⟨xs, congrArg Nat.pred h⟩ (Symbol.extract x res).2)
+        (by simp only [Symbol.nums]; ac_rfl)
+      )

@@ -11,6 +11,7 @@
 * gt (greater than)
 * Γ (environment)
 * h, h.* (hypothesis or property)
+* i, j (indexes)
 * ih, ih.* (inductive hypothesis)
 * iff, Iff (if and only if)
 * l, l[0-9]* (length variable name)

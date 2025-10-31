@@ -1,3 +1,5 @@
+import Mathlib.Data.Vector.Snoc
+
 import Validator.Std.Hedge
 
 import Validator.Expr.Pred
@@ -16,8 +18,20 @@ abbrev Ref μ := Fin μ -- non-terminal
 abbrev Rule (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) :=
   Regex (Φ α × Ref μ)
 
-abbrev Rules (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) :=
-  List (Rule μ α Φ)
+abbrev Rules (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) (ν: Nat) :=
+  List.Vector (Rule μ α Φ) ν
+
+def hashVector [Hashable α] (xs: List.Vector α n): UInt64 :=
+  hash xs.toList
+
+instance (α: Type) (n: Nat) [Hashable α] : Hashable (List.Vector α n) where
+  hash := hashVector
+
+def hashRules {μ: Nat} {α: Type} {Φ: (α: Type) -> Type} {ν: Nat} [Hashable α] [Hashable (Φ α)] (xs: Rules μ α Φ ν): UInt64 :=
+  hash xs.toList
+
+instance (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) (ν: Nat) [Hashable α] [Hashable (Φ α)] : Hashable (Rules μ α Φ ν) where
+  hash := hashRules
 
 structure Grammar (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
   start: Rule μ α Φ
