@@ -7,7 +7,6 @@ import Validator.Std.Except
 import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
-import Validator.Expr.Compress
 import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
 import Validator.Expr.Language
@@ -17,32 +16,30 @@ import Validator.Derive.Leave
 
 namespace Basic
 
-def derive {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (xs: Rules μ α Pred) (t: Hedge.Node α): Except String (Rules μ α Pred) := do
-  if List.all xs Regex.unescapable
-  then Except.ok xs
+def derive {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν) (t: Hedge.Node α): Rules μ α Pred ν :=
+  if List.all xs.toList Regex.unescapable
+  then xs
   else
     match t with
     | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifExprs: IfExprs μ α := Enter.deriveEnter xs
+      let ifExprs: IfExprs μ α (Symbol.nums xs) := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: Rules μ α Pred := IfExpr.evals g ifExprs label
+      let childxs: Rules μ α Pred (Symbol.nums xs) := IfExpr.evals g ifExprs label
       -- dchildxs = derivatives of children.
-      let dchildxs <- List.foldlM (derive g) childxs children
+      let dchildxs := List.foldl (derive g) childxs children
       -- leaves is the other one of our two new memoizable functions.
-      Leave.deriveLeaveM xs (List.map Rule.nullable dchildxs)
+      Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
 
-def derivs {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String (Rule μ α Pred) := do
-  let dxs <- List.foldlM (derive g) [x] hedge
-  match dxs with
-  | [dx] => return dx
-  | _ => throw "expected one expression"
+def derivs {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Rule μ α Pred :=
+  let dxs := List.foldl (derive g) (List.Vector.cons x List.Vector.nil) hedge
+  dxs.head
 
-def validate {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String Bool := do
-  let dx <- derivs g x hedge
-  return Rule.nullable dx
+def validate {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Bool :=
+  let dx := derivs g x hedge
+  Rule.nullable dx
 
-def run {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
+def run {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Bool :=
   validate g g.start [t]
 
 -- Tests
@@ -51,24 +48,24 @@ open TokenTree (node)
 
 #guard run
   (Grammar.singleton Regex.emptyset)
-  (node "a" [node "b" [], node "c" [node "d" []]]) =
-  Except.ok false
+  (node "a" [node "b" [], node "c" [node "d" []]])
+  = false
 
 #guard run
   (Grammar.mk (μ := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
-  (node "a" []) =
-  Except.ok true
+  (node "a" [])
+  = true
 
 #guard run
   (Grammar.mk (μ := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
-  (node "a" [node "b" []]) =
-  Except.ok false
+  (node "a" [node "b" []])
+  = false
 
 #guard run
   (Grammar.mk (μ := 2)
@@ -79,7 +76,7 @@ open TokenTree (node)
     ]
   )
   (node "a" [node "b" []])
-  = Except.ok true
+  = true
 
 #guard run
   (Grammar.mk (μ := 2)
@@ -92,8 +89,8 @@ open TokenTree (node)
       , Regex.emptystr
     ]
   )
-  (node "a" [node "b" [], node "c" []]) =
-  Except.ok true
+  (node "a" [node "b" [], node "c" []])
+  = true
 
 #guard run
   (Grammar.mk (μ := 3)
@@ -107,5 +104,5 @@ open TokenTree (node)
       , (Regex.symbol (Pred.eq (Token.string "d"), 1))
     ]
   )
-  (node "a" [node "b" [], node "c" [node "d" []]]) =
-  Except.ok true
+  (node "a" [node "b" [], node "c" [node "d" []]])
+  = true

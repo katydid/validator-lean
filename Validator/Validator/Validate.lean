@@ -21,19 +21,19 @@ import Validator.Validator.Inst.TreeParserMemM
 
 namespace Validate
 
-def deriveEnter [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred): m (Rules μ α Pred) := do
+def deriveEnter [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred (Symbol.nums xs)) := do
   let token <- Parser.token
   let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals g enters token
 
-def deriveLeaveM [ValidateM m μ α] (xs: Rules μ α Pred) (cs: Rules μ α Pred): m (Rules μ α Pred) :=
-  Leave.DeriveLeaveM.deriveLeaveM xs (List.map Rule.nullable cs)
+def deriveLeaveM [ValidateM m μ α ν] (xs: Rules μ α Pred ν) (cs: Rules μ α Pred (Symbol.nums xs)): m (Rules μ α Pred ν) :=
+  Leave.DeriveLeaveM.deriveLeaveM xs (List.Vector.map Rule.nullable cs)
 
-def deriveValue [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred): m (Rules μ α Pred) := do
+def deriveValue [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
   deriveLeaveM xs (<- deriveEnter g xs)
 
-partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred): m (Rules μ α Pred) := do
-  if List.all xs Regex.unescapable then
+partial def derive [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
+  if List.all xs.toList Regex.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
   | Hint.field =>
@@ -57,7 +57,7 @@ partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) 
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (x: Rule μ α Pred): m Bool := do
+def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (x: Rule μ α Pred): m Bool := do
   let dxs <- derive g [x]
   match dxs with
   | [dx] => return Rule.nullable dx

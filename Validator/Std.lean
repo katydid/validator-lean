@@ -6,4 +6,5 @@ import Validator.Std.Nat
 import Validator.Std.Lex
 import Validator.Std.List
 import Validator.Std.Ltac
+import Validator.Std.Vec
 import Validator.Std.Slice
