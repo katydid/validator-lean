@@ -52,5 +52,8 @@ def deriveLeaves
   let (regexes, symbols) := Symbol.extracts xs List.Vector.nil
   deriveLeave regexes symbols (Symbol.Symbols.cast ns (by simp only [zero_add]))
 
-class DeriveLeaveM (m: Type -> Type u) (μ: Nat) (α: outParam Type) where
-  deriveLeaveM {ν: Nat} (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules μ α Pred ν)
+def deriveLeaveM [Monad m] {μ: Nat} {ν: Nat} (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules μ α Pred ν) := do
+  return deriveLeaves xs ns
+
+class DeriveLeaveM (m: Type -> Type u) (μ: Nat) (α: outParam Type) (ν: Nat) where
+  deriveLeaveM (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules μ α Pred ν)

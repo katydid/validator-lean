@@ -62,10 +62,10 @@ instance [DecidableEq α] [Hashable α]: MemEnter (Impl μ α) μ α where
       set (State.mk s.parser enter s.leave s.logs)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α where
-  deriveEnter (xs: Rules μ α Pred): Impl μ α (IfExprs μ α) := do
+instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α ν where
+  deriveEnter (xs: Rules μ α Pred ν): Impl μ α (IfExprs μ α (Symbol.nums xs)) := do
     let memoized <- MemEnter.getEnter
-    match memoized.get? xs with
+    match MemEnter.get? memoized xs with
     | Option.none =>
       throw "test cache miss"
     | Option.some value =>
@@ -82,17 +82,17 @@ instance [DecidableEq α] [Hashable α]: MemLeave (Impl μ α) μ α where
       set (State.mk s.parser s.enter leave s.logs)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl μ α) μ α where
-  deriveLeaveM (xs: Rules μ α Pred) (ns: List Bool): Impl μ α (Rules μ α Pred) := do
+instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl μ α) μ α ν where
+  deriveLeaveM (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): Impl μ α (Rules μ α Pred ν) := do
     let memoized <- MemLeave.getLeave
-    match memoized.get? (xs, ns) with
+    match MemLeave.get? memoized ⟨xs, ns⟩ with
     | Option.none =>
       throw "test cache miss"
     | Option.some value =>
       Debug.debug "test cache hit"
       return value
 
-instance [DecidableEq α] [Hashable α]: ValidateM (Impl μ α) μ α  where
+instance [DecidableEq α] [Hashable α]: ValidateM (Impl μ α) μ α ν where
   -- all instances have been created, so no implementations are required here
 
 def runPopulatedMem

@@ -1,5 +1,5 @@
-import Mathlib.Data.Vector.Basic
-import Mathlib.Data.Vector.Snoc
+import Validator.Std.Vec
+
 import Validator.Expr.Regex
 
 -- I want to define a map function over a regular expression:
@@ -45,6 +45,9 @@ def nums (xs: List.Vector (Regex σ) μ): Nat :=
   match xs with
   | ⟨[], _⟩ => 0
   | ⟨x::xs, h⟩ => nums ⟨xs, congrArg Nat.pred h⟩ + num x
+
+def nums_list (xs: List (Regex σ)): Nat :=
+  nums (Vec.fromList xs)
 
 abbrev RegexID n := Regex (Fin n)
 abbrev Symbols σ n := List.Vector σ n
@@ -593,3 +596,9 @@ def extractsSymbols (xs: List.Vector (Regex σ) μ) (res: Symbols σ μ1):
         (extractsSymbols ⟨xs, congrArg Nat.pred h⟩ (Symbol.extract x res).2)
         (by simp only [Symbol.nums]; ac_rfl)
       )
+
+def extracts_list (xs: List (Regex σ)) (res: List σ):
+  (List (RegexID (res.length + nums_list xs))) × (List σ) :=
+  let (r1, r2) := extracts (Vec.fromList xs) (Vec.fromList res)
+  let r2List: List σ := List.Vector.toList r2
+  (r1.toList, r2List)
