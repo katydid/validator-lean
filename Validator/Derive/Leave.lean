@@ -1,52 +1,59 @@
 import Validator.Expr.Grammar
 import Validator.Expr.Regex
+import Validator.Expr.Symbol
+import Validator.Derive.Enter
 
 namespace Leave
 
-def leaveM [Monad m] [MonadExcept String m] (x: Rule μ α Pred) (ns: List Bool): m (Rule μ α Pred × List Bool) := do
+def leave (x: Regex (Fin l)) (es: Symbol.Symbols (Pred α × Ref n) l) (ns: List.Vector Bool l): (Rule n (Pred α)) :=
   match x with
-  | Regex.emptyset => return (Regex.emptyset, ns)
-  | Regex.emptystr => return (Regex.emptyset, ns)
-  | Regex.symbol _ =>
-    match ns with
-    | [] =>
-      -- Should never occur if ns was acquired from calling `enter`.
-      throw "wtf"
-    | (null::ns') =>
-      if null
-      then return (Regex.emptystr, ns')
-      else return (Regex.emptyset, ns')
-  | Regex.or y z =>
-    let (ly, yns) <- leaveM y ns
-    let (lz, zns) <- leaveM z yns
-    return (Regex.smartOr ly lz, zns)
-  | Regex.concat y z =>
-    if Regex.nullable y
+  | Regex.emptyset => Regex.emptyset
+  | Regex.emptystr => Regex.emptyset
+  | Regex.symbol i =>
+    if List.Vector.get ns i
+    then Regex.emptystr
+    else Regex.emptyset
+  | Regex.or r1 r2 =>
+    Regex.smartOr (leave r1 es ns) (leave r2 es ns)
+  | Regex.concat r1 r2 =>
+    if Regex.nullable r1
     then
-      let (ly, yns) <- leaveM y ns
-      let (lz, zns) <- leaveM z yns
-      return (Regex.smartOr (Regex.smartConcat ly z) lz, zns)
+      Regex.smartOr (Regex.smartConcat (leave r1 es ns) (Symbol.replaceFrom r2 es)) (leave r2 es ns)
     else
-      let (ly, yns) <- leaveM y ns
-      return (Regex.smartConcat ly z, yns)
-  | Regex.star y =>
-      let (ly, yns) <- leaveM y ns
-      return (Regex.smartConcat ly (Regex.smartStar y), yns)
+      Regex.smartConcat (leave r1 es ns) (Symbol.replaceFrom r2 es)
+  | Regex.star r1 =>
+      Regex.smartConcat (leave r1 es ns) (Regex.smartStar (Symbol.replaceFrom r1 es))
 
--- deriveLeaveM takes a list of expressions and list of bools.
--- The list of bools represent the nullability of the derived child expressions.
--- Each bool will then replace each tree expression with either an epsilon or emptyset.
--- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def deriveLeaveM [Monad m] [MonadExcept String m] (xs: Rules μ α Pred) (ns: List Bool): m (Rules μ α Pred) := do
+-- deriveLeave takes a vector of expressions and vector of bools.
+-- The vectors of bools represent the nullability of the derived child expressions.
+-- Each bool will then replace each symbol expression with either an emptystr or emptyset.
+def deriveLeave
+  (xs: List.Vector (Regex (Fin l1)) l2)
+  (es: Symbol.Symbols (Pred α × Ref n) l1)
+  (ns: List.Vector Bool l1)
+  : (Rules n (Pred α) l2) :=
   match xs with
-  | [] =>
-    match ns with
-    | [] => return []
-    | _ => throw "Not all nulls were consumed, but there are no expressions to place them in."
-  | (x::xs') =>
-    let (lx, tailns) <- leaveM x ns
-    let lxs <- deriveLeaveM xs' tailns
-    return (lx::lxs)
+  | ⟨[], h⟩ => ⟨[], h⟩
+  | ⟨x::xs, h⟩ =>
+    Symbol.Symbols.cast
+      (List.Vector.cons
+        (leave x es ns)
+        (deriveLeave ⟨xs, congrArg Nat.pred h⟩ es ns))
+      (by
+        simp only [List.length_cons] at h
+        rw [<- h]
+        simp only [Nat.pred_eq_sub_one, add_tsub_cancel_right, Nat.succ_eq_add_one]
+      )
 
-class DeriveLeaveM (m: Type -> Type u) (μ: Nat) (α: outParam Type) where
-  deriveLeaveM (xs: Rules μ α Pred) (ns: List Bool): m (Rules μ α Pred)
+def deriveLeaves
+  (xs: Rules n (Pred α) l)
+  (ns: List.Vector Bool (Symbol.nums xs))
+  : (Rules n (Pred α) l) :=
+  let (regexes, symbols) := Symbol.extracts xs List.Vector.nil
+  deriveLeave regexes symbols (Symbol.Symbols.cast ns (by simp only [zero_add]))
+
+def deriveLeaveM [Monad m] {n: Nat} {l: Nat} (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := do
+  return deriveLeaves xs ns
+
+class DeriveLeaveM (m: Type -> Type u) (n: Nat) (α: outParam Type) where
+  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n (Pred α) l)

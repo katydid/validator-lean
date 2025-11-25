@@ -5,19 +5,19 @@ import Validator.Expr.Pred
 
 namespace BalancedContextFreeGrammar
 
-abbrev Ref μ := Fin μ
+abbrev Ref n := Fin n
 
 -- Balanced Context Free Grammars have the restriction that each non-terminal cannot represent any regular expression,
 -- but only regular expressions that are surrounded by a start and end terminal.
-structure Rule (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
+structure Rule (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
   enter: Φ α
-  child: Regex (Ref μ)
+  child: Regex (Ref n)
   leave: Φ α
 
-abbrev RegexRule (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) := Regex ((Φ α) ⊕ (Ref μ))
+abbrev RegexRule (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := Regex ((Φ α) ⊕ (Ref n))
 
-def Rule.toRegex {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
-  (r: Rule μ α Φ): RegexRule μ α Φ :=
+def Rule.toRegex {n: Nat} {α: Type} {Φ: (α: Type) -> Type}
+  (r: Rule n α Φ): RegexRule n α Φ :=
   (Regex.concat
     (Regex.symbol (Sum.inl r.enter))
     (Regex.concat
@@ -26,14 +26,14 @@ def Rule.toRegex {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
     )
   )
 
-abbrev Rules (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) := { xs: List (Rule μ α Φ) // xs.length > 0 }
+abbrev Rules (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := { xs: List (Rule n α Φ) // xs.length > 0 }
 
-structure BCFG (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
-  start: { s: List (Ref μ) // s.length > 0 }
-  prods: Vector (Rules μ α Φ) μ
+structure BCFG (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
+  start: { s: List (Ref n) // s.length > 0 }
+  prods: Vector (Rules n α Φ) n
 
-def union_rules {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
-  (xs: Rules μ α Φ): RegexRule μ α Φ :=
+def union_rules {n: Nat} {α: Type} {Φ: (α: Type) -> Type}
+  (xs: Rules n α Φ): RegexRule n α Φ :=
   match xs with
   | Subtype.mk xs hxs =>
   match xs with
@@ -42,8 +42,8 @@ def union_rules {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
   | (x::xs) => List.foldl Regex.or x.toRegex (List.map Rule.toRegex xs)
 
 def BCFG.getStart
-  {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
-  (g: BCFG μ α Φ): RegexRule μ α Φ :=
+  {n: Nat} {α: Type} {Φ: (α: Type) -> Type}
+  (g: BCFG n α Φ): RegexRule n α Φ :=
   match g.start with
   | Subtype.mk s hs =>
   match s with
@@ -52,15 +52,15 @@ def BCFG.getStart
     let xs' := (List.map (fun x' => Regex.symbol (Sum.inr x'))) xs
     List.foldl Regex.or (Regex.symbol (Sum.inr x)) xs'
 
-def BCFG.lookup {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
-  (g: BCFG μ α Φ) (ref: Fin μ): RegexRule μ α Φ :=
+def BCFG.lookup {n: Nat} {α: Type} {Φ: (α: Type) -> Type}
+  (g: BCFG n α Φ) (ref: Fin n): RegexRule n α Φ :=
   union_rules (Vector.get g.prods ref)
 
-def nullable {μ: Nat} {α: Type} {Φ: (α: Type) -> Type} (r: RegexRule μ α Φ): Bool :=
+def nullable {n: Nat} {α: Type} {Φ: (α: Type) -> Type} (r: RegexRule n α Φ): Bool :=
   Regex.nullable r
 
-partial def derive {μ: Nat} {α: Type} [DecidableEq α] [BEq α]
-  (g: BCFG μ α Pred) (r: RegexRule μ α Pred) (a: α): RegexRule μ α Pred :=
+partial def derive {n: Nat} {α: Type} [DecidableEq α] [BEq α]
+  (g: BCFG n α Pred) (r: RegexRule n α Pred) (a: α): RegexRule n α Pred :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset

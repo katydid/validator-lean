@@ -1,3 +1,4 @@
+import Validator.Std.Vec
 import Validator.Std.Hedge
 
 import Validator.Expr.Pred
@@ -11,32 +12,45 @@ import Validator.Expr.Language
 --   𝑆 the start symbol of a regular hedge grammar is a regular expression comprising pairs of nonterminals and terminals (a regular expression over N × T)
 --   𝑃 a set of production rules of a regular hedge grammar are of the form X → r such that r is a regular expression over N × T.
 
-abbrev Ref μ := Fin μ -- non-terminal
+-- n = the number of non-terminals
+abbrev Ref (n: Nat) := Fin n -- non-terminal
 
-abbrev Rule (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) :=
-  Regex (Φ α × Ref μ)
+abbrev Rule (n: Nat) (Φ: Type) :=
+  Regex (Φ × Ref n)
 
-abbrev Rules (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) :=
-  List (Rule μ α Φ)
+abbrev Rules (n: Nat) (Φ: Type) (l: Nat) :=
+  List.Vector (Rule n Φ) l
 
-structure Grammar (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
-  start: Rule μ α Φ
-  prods: Vector (Rule μ α Φ) μ
+def hashVector [Hashable α] (xs: List.Vector α n): UInt64 :=
+  hash xs.toList
 
-def Grammar.lookup {μ: Nat} {α: Type} {Φ: (α: Type) -> Type}
-  (g: Grammar μ α Φ) (ref: Fin μ): Rule μ α Φ :=
+instance (α: Type) (n: Nat) [Hashable α] : Hashable (List.Vector α n) where
+  hash := hashVector
+
+def hashRules {n: Nat} {Φ: Type} {l: Nat} [Hashable Φ] (xs: Rules n Φ l): UInt64 :=
+  hash xs.toList
+
+instance (n: Nat) (Φ: Type) (l: Nat) [Hashable Φ] : Hashable (Rules n Φ l) where
+  hash := hashRules
+
+structure Grammar (n: Nat) (Φ: Type) where
+  start: Rule n Φ
+  prods: Vector (Rule n Φ) n
+
+def Grammar.lookup {n: Nat} {Φ: Type}
+  (g: Grammar n Φ) (ref: Fin n): Rule n Φ :=
   Vector.get g.prods ref
 
-def Grammar.singleton (x: Rule 0 α Φ): Grammar 0 α Φ  :=
+def Grammar.singleton (x: Rule 0 Φ): Grammar 0 Φ  :=
   Grammar.mk x #v[]
 
-def Grammar.emptyset: Grammar 0 α Φ :=
+def Grammar.emptyset: Grammar 0 Φ :=
   Grammar.mk Regex.emptyset #v[]
 
-def Grammar.emptystr: Grammar 0 α Φ :=
+def Grammar.emptystr: Grammar 0 Φ :=
   Grammar.mk Regex.emptystr #v[]
 
-example : Grammar 5 String Pred := Grammar.mk
+example : Grammar 5 (Pred String) := Grammar.mk
   -- start := ("html", Html)
   (start := Regex.symbol (Pred.eq "html", 0))
   -- production rules
@@ -57,7 +71,7 @@ example : Grammar 5 String Pred := Grammar.mk
     , Regex.emptystr
   ])
 
-def example_grammar: Grammar 1 Char Pred :=
+def example_grammar: Grammar 1 (Pred Char) :=
   Grammar.mk
     (Regex.or Regex.emptystr (Regex.symbol (Pred.eq 'a', 0)))
     #v[Regex.emptystr]
@@ -76,7 +90,7 @@ theorem Rule.denote_decreasing {x: Hedge.Node α} {xs: Hedge α} (h: List.IsInfi
   simp +arith only at h
   omega
 
-def Rule.denote {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α): Prop :=
+def Rule.denote {α: Type} [BEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
     | Subtype.mk [x] _hx =>
@@ -87,10 +101,10 @@ def Rule.denote {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred)
   termination_by xs
   decreasing_by exact (Rule.denote_decreasing _hx)
 
-def Grammar.denote {α: Type} [BEq α] (g: Grammar μ α Pred) (xs: Hedge α): Prop :=
+def Grammar.denote {α: Type} [BEq α] (g: Grammar n (Pred α)) (xs: Hedge α): Prop :=
   Rule.denote g g.start xs
 
-theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α):
+theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (xs: Hedge α):
   (Regex.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
     | Subtype.mk [x] _hx =>
@@ -118,7 +132,7 @@ theorem simp_denote_rule' {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule �
     | nil =>
       simp
 
-theorem simp_denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (xs: Hedge α):
+theorem simp_denote_rule {α: Type} [BEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (xs: Hedge α):
   Rule.denote g r xs =
   Regex.denote_infix r xs (fun (pred, ref) xs' =>
     ∃ label children, xs'.val = [Hedge.Node.mk label children] /\ Pred.eval pred label /\ Rule.denote g (g.lookup ref) children
@@ -141,22 +155,22 @@ theorem simp_denote_rule {α: Type} [BEq α] (g: Grammar μ α Pred) (r: Rule μ
     obtain ⟨label, children, hxs, h⟩ := h
     exists Hedge.Node.mk label children
 
-theorem Rule.denote_emptyset {α: Type} [BEq α] {g: Grammar μ α Pred}:
+theorem Rule.denote_emptyset {α: Type} [BEq α] {g: Grammar n (Pred α)}:
   Rule.denote g Regex.emptyset = Language.emptyset := by
   unfold Language.emptyset
   funext xs
   unfold Rule.denote
   simp [Regex.denote_infix_emptyset]
 
-theorem Rule.denote_emptystr {α: Type} [BEq α] {g: Grammar μ α Pred}:
+theorem Rule.denote_emptystr {α: Type} [BEq α] {g: Grammar n (Pred α)}:
   Rule.denote g Regex.emptystr = Language.emptystr := by
   unfold Language.emptystr
   funext xs
   unfold Rule.denote
   simp [Regex.denote_infix_emptystr]
 
-theorem denote_rule_symbol' {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {pred: Pred α} {ref: Ref μ} {xs: Hedge α}:
+theorem denote_rule_symbol' {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {pred: Pred α} {ref: Ref n} {xs: Hedge α}:
   Rule.denote g (Regex.symbol (pred, ref)) xs
   <-> Language.tree (Pred.eval pred) (Rule.denote g (g.lookup ref)) xs := by
   cases xs with
@@ -202,15 +216,15 @@ theorem denote_rule_symbol' {μ: Nat} {α: Type} [BEq α]
         rw [<- Rule.denote] at hg
         apply And.intro hp hg
 
-theorem Rule.denote_symbol {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {pred: Pred α} {ref: Ref μ}:
+theorem Rule.denote_symbol {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {pred: Pred α} {ref: Ref n}:
   Rule.denote g (Regex.symbol (pred, ref))
   = Language.tree (Pred.eval pred) (Rule.denote g (g.lookup ref)) := by
   funext xs
   rw [denote_rule_symbol']
 
-theorem Rule.denote_or {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {p q: Rule μ α Pred}:
+theorem Rule.denote_or {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {p q: Rule n (Pred α)}:
   Rule.denote g (Regex.or p q)
   = Language.or (Rule.denote g p) (Rule.denote g q) := by
   funext xs
@@ -218,8 +232,8 @@ theorem Rule.denote_or {μ: Nat} {α: Type} [BEq α]
   unfold Rule.denote
   simp [Regex.denote_infix_or]
 
-theorem Rule.denote_concat_n {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {p q: Rule μ α Pred}:
+theorem Rule.denote_concat_n {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {p q: Rule n (Pred α)}:
   Rule.denote g (Regex.concat p q)
   = Language.concat_n (Rule.denote g p) (Rule.denote g q) := by
   funext xs
@@ -263,16 +277,16 @@ theorem Rule.denote_concat_n {μ: Nat} {α: Type} [BEq α]
       | cons _ _ =>
         simp
 
-theorem Rule.denote_concat {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {p q: Rule μ α Pred}:
+theorem Rule.denote_concat {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {p q: Rule n (Pred α)}:
   Rule.denote g (Regex.concat p q)
   = Language.concat (Rule.denote g p) (Rule.denote g q) := by
   rw [Rule.denote_concat_n]
   funext xs
   rw [Language.concat_is_concat_n]
 
-theorem denote_rule_star_n' {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {r: Rule μ α Pred} (xs: Hedge α):
+theorem denote_rule_star_n' {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {r: Rule n (Pred α)} (xs: Hedge α):
   Rule.denote g (Regex.star r) xs
   <->
   Language.star_n (Rule.denote g r) xs := by
@@ -333,16 +347,16 @@ theorem denote_rule_star_n' {μ: Nat} {α: Type} [BEq α]
     obtain ⟨n, hn⟩ := n
     apply List.list_length_drop_lt_cons
 
-theorem Rule.denote_star_n {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {r: Rule μ α Pred}:
+theorem Rule.denote_star_n {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {r: Rule n (Pred α)}:
   Rule.denote g (Regex.star r)
   =
   Language.star_n (Rule.denote g r) := by
   funext xs
   rw [denote_rule_star_n']
 
-theorem Rule.denote_star {μ: Nat} {α: Type} [BEq α]
-  {g: Grammar μ α Pred} {r: Rule μ α Pred}:
+theorem Rule.denote_star {n: Nat} {α: Type} [BEq α]
+  {g: Grammar n (Pred α)} {r: Rule n (Pred α)}:
   Rule.denote g (Regex.star r)
   =
   Language.star (Rule.denote g r) := by
@@ -350,7 +364,7 @@ theorem Rule.denote_star {μ: Nat} {α: Type} [BEq α]
   rw [denote_rule_star_n']
   rw [Language.star_is_star_n]
 
-def Rule.denote_onlyif {α: Type} [BEq α] (condition: Prop) [dcond: Decidable condition] (g: Grammar μ α Pred) (x: Rule μ α Pred):
+def Rule.denote_onlyif {α: Type} [BEq α] (condition: Prop) [dcond: Decidable condition] (g: Grammar n (Pred α)) (x: Rule n (Pred α)):
   denote g (Regex.onlyif condition x) = Language.onlyif condition (denote g x) := by
   unfold Language.onlyif
   unfold Regex.onlyif
@@ -367,13 +381,13 @@ def Rule.denote_onlyif {α: Type} [BEq α] (condition: Prop) [dcond: Decidable c
     intro hc'
     contradiction
 
-def Rule.nullable (r: Rule μ α Φ): Bool :=
+def Rule.nullable (r: Rule n Φ): Bool :=
   Regex.nullable r
 
-def Grammar.nullable (g: Grammar μ α Φ): Bool :=
+def Grammar.nullable (g: Grammar n Φ): Bool :=
   Rule.nullable g.start
 
-theorem Rule.null_commutes {α: Type} [BEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred):
+theorem Rule.null_commutes {α: Type} [BEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)):
   ((Rule.nullable x) = true) = Language.null (denote g x) := by
   induction x with
   | emptyset =>

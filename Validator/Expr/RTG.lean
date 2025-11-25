@@ -14,14 +14,14 @@ namespace RegularTreeGrammar
 --   a ∈ T
 --   r is a regular expression over N
 
-abbrev Ref μ := Fin μ
-abbrev Rule (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) := Φ α × Regex (Ref μ)
-abbrev Rules (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) := { xs: List (Rule μ α Φ) // xs.length > 0 }
+abbrev Ref n := Fin n
+abbrev Rule (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := Φ α × Regex (Ref n)
+abbrev Rules (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := { xs: List (Rule n α Φ) // xs.length > 0 }
 
-structure RTG (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
-  start: { s: List (Ref μ) // s.length > 0 }
-  prods: Vector (Rules μ α Φ) μ
+structure RTG (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
+  start: { s: List (Ref n) // s.length > 0 }
+  prods: Vector (Rules n α Φ) n
 
-def RTG.lookup (μ: Nat) (α: Type) (Φ: (α: Type) -> Type)
-  (g: RTG μ α Φ) (ref: Fin μ): Rules μ α Φ :=
+def RTG.lookup (n: Nat) (α: Type) (Φ: (α: Type) -> Type)
+  (g: RTG n α Φ) (ref: Fin n): Rules n α Φ :=
   Vector.get g.prods ref

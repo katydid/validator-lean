@@ -19,33 +19,31 @@ import Validator.Derive.Leave
 namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
-def derive [DecidableEq α] (g: Grammar μ α Pred) (xs: Rules μ α Pred) (t: Hedge.Node α): Except String (Rules μ α Pred) := do
-  if List.all xs Regex.unescapable
-  then return xs
+def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l) (t: Hedge.Node α): Rules n (Pred α) l :=
+  if List.all xs.toList Regex.unescapable
+  then xs
   else
     match t with
     | Hedge.Node.mk label children =>
-      let ifexprs: IfExprs μ α := Enter.deriveEnter xs
-      let childxs: Rules μ α Pred := IfExpr.evals g ifexprs label
+      let ifexprs: IfExprs n α (Symbol.nums xs) := Enter.deriveEnter xs
+      let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
-      let (cchildxs, indices) <- Compress.compress childxs
+      let ⟨n, cchildxs, indices⟩ := Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.
-      let cdchildxs <- List.foldlM (derive g) cchildxs children
+      let cdchildxs := List.foldl (derive g) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
-      let dchildxs <- Compress.expand indices cdchildxs
-      Leave.deriveLeaveM xs (List.map Rule.nullable dchildxs)
+      let dchildxs := Compress.expand indices cdchildxs
+      Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
 
-def derivs [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String (Rule μ α Pred) := do
-  let dxs <- List.foldlM (derive g) [x] hedge
-  match dxs with
-  | [dx] => return dx
-  | _ => throw "expected one expression"
+def derivs [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=
+  let dxs := List.foldl (derive g) (List.Vector.cons x List.Vector.nil) hedge
+  dxs.head
 
-def validate [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String Bool := do
-  let dx <- derivs g x hedge
-  return Regex.nullable dx
+def validate [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Bool :=
+  let dx := derivs g x hedge
+  Rule.nullable dx
 
-def run [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Bool :=
   validate g g.start [t]
 
 -- Tests
@@ -54,27 +52,27 @@ open TokenTree (node)
 
 #guard run
   (Grammar.singleton Regex.emptyset)
-  (node "a" [node "b" [], node "c" [node "d" []]]) =
-  Except.ok false
+  (node "a" [node "b" [], node "c" [node "d" []]])
+  = false
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
-  (node "a" []) =
-  Except.ok true
+  (node "a" [])
+  = true
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
-  (node "a" [node "b" []]) =
-  Except.ok false
+  (node "a" [node "b" []])
+  = false
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
@@ -82,10 +80,10 @@ open TokenTree (node)
     ]
   )
   (node "a" [node "b" []])
-  = Except.ok true
+  = true
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -95,11 +93,11 @@ open TokenTree (node)
       , Regex.emptystr
     ]
   )
-  (node "a" [node "b" [], node "c" []]) =
-  Except.ok true
+  (node "a" [node "b" [], node "c" []])
+  = true
 
 #guard run
-  (Grammar.mk (μ := 3)
+  (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -110,5 +108,5 @@ open TokenTree (node)
       , (Regex.symbol (Pred.eq (Token.string "d"), 1))
     ]
   )
-  (node "a" [node "b" [], node "c" [node "d" []]]) =
-  Except.ok true
+  (node "a" [node "b" [], node "c" [node "d" []]])
+  = true

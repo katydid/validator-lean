@@ -10,60 +10,52 @@ import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
 import Validator.Expr.Regex
 
-import Validator.Derive.Enter
+import Validator.Learning.ImperativeEnter
 import Validator.Learning.ImperativeLeave
 
 namespace ImperativeBasic
 
 -- foldLoop is a more readable version of List.foldlM for imperative programmers:
-private def foldLoop (deriv: Rules μ α Pred -> Hedge.Node α -> Except String (Rules μ α Pred)) (start: Rules μ α Pred) (hedge: Hedge α): Except String (Rules μ α Pred) := do
+private def foldLoop (deriv: List (Rule n (Pred α)) -> Hedge.Node α -> List (Rule n (Pred α))) (start: List (Rule n (Pred α))) (hedge: Hedge α): Id (List (Rule n (Pred α))) := do
   let mut res := start
   for tree in hedge do
-    match deriv res tree with
-    | Except.error err => throw err
-    | Except.ok r => res := r
+    res := deriv res tree
   return res
 
-def derive [DecidableEq α] (g: Grammar μ α Pred) (xs: Rules μ α Pred) (tree: Hedge.Node α): Except String (Rules μ α Pred) :=
+def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: List (Rule n (Pred α))) (tree: Hedge.Node α): List (Rule n (Pred α)) :=
   -- If all expressions are unescapable, then simply return without look at the input tree.
   -- An example of an unescapable expression is emptyset, since its derivative is always emptyset, no matter the input.
   if List.all xs Regex.unescapable
-  then Except.ok xs
+  then xs
   else
     -- Desconstruct the tree to retrieve its label and children
     match tree with
     | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifexprs: IfExprs μ α := Enter.deriveEnter xs
+      let ifexprs: List (IfExpr n α) := ImperativeEnter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: Rules μ α Pred := IfExpr.evals g ifexprs label
+      let childxs: List (Rule n (Pred α)) := List.map (fun x => IfExpr.eval g x label) ifexprs
       -- dchildxs = derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let dchildxs': Except String (Rules μ α Pred) := List.foldlM (derive g) childxs children
-      match dchildxs' with
-      | Except.error err => Except.error err
-      | Except.ok dchildxs =>
+      let dchildxs: List (Rule n (Pred α)) := List.foldl (derive g) childxs children
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
       -- leaves is the other one of our two new memoizable functions.
-      let dxs': Except String (Rules μ α Pred) := ImperativeLeave.deriveLeave xs (List.map Regex.nullable dchildxs)
-      match dxs' with
-      | Except.error err => Except.error err
-      | Except.ok dxs => Except.ok dxs
+      let dxs: List (Rule n (Pred α)) := ImperativeLeave.deriveLeave xs (List.map Regex.nullable dchildxs)
+      dxs
 
-def derivs [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String (Rule μ α Pred) :=
+def derivs [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Except String (Rule n (Pred α)) :=
   -- see foldLoop for an explanation of what List.foldM does.
-  let dxs := List.foldlM (derive g) [x] hedge
+  let dxs := List.foldl (derive g) [x] hedge
   match dxs with
-  | Except.error err => Except.error err
-  | Except.ok [dx] => Except.ok dx
-  | Except.ok _ => Except.error "expected one expression"
+  | [dx] => Except.ok dx
+  | _ => Except.error "expected one expression"
 
-def validate [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String Bool :=
+def validate [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Except String Bool :=
   match derivs g x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Rule.nullable x')
 
-def run [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   validate g g.start [t]
 
 -- Tests
@@ -76,7 +68,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -84,7 +76,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -92,7 +84,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
@@ -103,7 +95,7 @@ open TokenTree (node)
   = Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -117,7 +109,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 3)
+  (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat

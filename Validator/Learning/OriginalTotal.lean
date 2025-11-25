@@ -69,7 +69,7 @@ theorem decreasing_symbol {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (l
   have h' := List.list_elem_lt h
   omega
 
-def Rule.derive [BEq α] [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (x: Hedge.Node α): Rule μ α Pred :=
+def Rule.derive [BEq α] [DecidableEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (x: Hedge.Node α): Rule n (Pred α) :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
@@ -112,10 +112,10 @@ def Rule.derive [BEq α] [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α
     · apply decreasing_concat_r
     · apply decreasing_star
 
-def validate [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (hedge: Hedge α): Bool :=
+def validate [DecidableEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (hedge: Hedge α): Bool :=
   Rule.nullable (List.foldl (Rule.derive g) r hedge)
 
-def run [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate g g.start [t])
 
 -- Tests
@@ -128,7 +128,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -136,7 +136,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -144,7 +144,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
@@ -155,7 +155,7 @@ open TokenTree (node)
   = Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -169,7 +169,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 3)
+  (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -183,7 +183,7 @@ open TokenTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
-theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar μ α Pred) (r: Rule μ α Pred) (a: Hedge.Node α):
+theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (a: Hedge.Node α):
   Rule.denote g (Rule.derive g r a) = Language.derive (Rule.denote g r) a := by
   fun_induction (Rule.derive g) r a with
   | case1 => -- emptyset
