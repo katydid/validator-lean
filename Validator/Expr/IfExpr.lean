@@ -1,5 +1,4 @@
-import Mathlib.Data.Vector.Snoc
-import Mathlib.Data.Vector.MapLemmas
+import Validator.Std.Vec
 
 import Validator.Expr.Pred
 import Validator.Expr.Regex

@@ -69,16 +69,6 @@ def RegexID.add_concat (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Reg
     rw [<- Nat.add_assoc]
   RegexID.cast r h
 
-theorem List.Vector.toList_take:
-  List.take n xs.val = (List.Vector.take n xs).toList := by
-  simp only [_root_.List.Vector.toList_take]
-  rfl
-
-theorem List.Vector.toList_cons:
-  List.cons x xs.val = (List.Vector.cons x xs).toList := by
-  simp only [Nat.succ_eq_add_one, _root_.List.Vector.toList_cons, List.cons.injEq, true_and]
-  rfl
-
 def Symbols.cast (xs: Symbols σ n) (h: n = m): Symbols σ m := by
   rw [<- h]
   exact xs
@@ -163,10 +153,10 @@ theorem Symbols.take_succ (xs: Symbols α n):
   unfold Symbols at *
   apply List.Vector.eq
   rw [<- List.Vector.toList_cast_is_toList]
-  rw [<- List.Vector.toList_take]
-  rw [<- List.Vector.toList_cons]
+  rw [<- Vec.toList_take]
+  rw [<- Vec.toList_cons]
   simp only [List.Vector.cons_val, List.take_succ_cons, List.cons.injEq, true_and]
-  rw [List.Vector.toList_take]
+  rw [Vec.toList_take]
   simp [List.Vector.toList]
 
 theorem Symbols.cast_take (xs: Symbols σ n):
@@ -175,7 +165,7 @@ theorem Symbols.cast_take (xs: Symbols σ n):
   apply List.Vector.eq
   generalize_proofs h
   rw [<- List.Vector.toList_cast_is_toList]
-  rw [<- List.Vector.toList_take]
+  rw [<- Vec.toList_take]
   rcases xs with ⟨xs, hxs⟩
   simp only [List.Vector.toList_mk, List.take_eq_self_iff]
   omega
@@ -399,7 +389,7 @@ theorem extract_take_toList (res: Symbols σ l):
   )
   =
   (List.Vector.toList (extract r1 res).2) := by
-  rw [<- List.Vector.toList_take]
+  rw [<- Vec.toList_take]
   rw [<- List.Vector.toList]
   rw [extract_append_toList]
   rw [List.Vector.toList_append]

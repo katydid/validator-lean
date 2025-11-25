@@ -1,5 +1,4 @@
-import Mathlib.Data.Vector.Snoc
-
+import Validator.Std.Vec
 import Validator.Std.Hedge
 
 import Validator.Expr.Pred

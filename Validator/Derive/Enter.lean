@@ -1,4 +1,4 @@
-import Mathlib.Data.Vector.Snoc
+import Validator.Std.Vec
 
 import Validator.Expr.Regex
 import Validator.Expr.Grammar
