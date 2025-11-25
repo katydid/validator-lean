@@ -79,13 +79,53 @@ def idxOf? [DecidableEq α] (xs : List α) (y: α) (i : Nat := 0) : Option Nat :
     then Option.some i
     else idxOf? xs y (i + 1)
 
+theorem idxOf_length' [DecidableEq α] {y: α} (h: idxOf? xs y n = some i):
+  i < List.length xs + n := by
+  induction xs generalizing i n with
+  | nil =>
+    simp [idxOf?] at h
+  | cons x xs ih =>
+    simp [idxOf?] at h
+    split_ifs at h
+    case pos hxy =>
+      simp_all
+    case neg hxy =>
+      simp_all
+      have ih' := @ih (n + 1)
+      rw [Nat.add_assoc]
+      nth_rewrite 2 [Nat.add_comm]
+      apply ih' h
+
 theorem idxOf_length [DecidableEq α] {y: α} (h: idxOf? xs y = some i):
   i < List.length xs := by
-  sorry
+  apply idxOf_length' (n := 0) h
 
-theorem idxOf?_eq_none_iff [DecidableEq α] {l : List α} {a : α} :
-  idxOf? l a = none ↔ a ∉ l := by
-  sorry
+theorem idxOf?_eq_none_iff' [DecidableEq α] {xs : List α} {y : α} :
+  idxOf? xs y i = none ↔ y ∉ xs := by
+  induction xs generalizing i with
+  | nil =>
+    simp [idxOf?]
+  | cons x xs ih =>
+    simp [idxOf?]
+    split_ifs
+    case pos h =>
+      subst_vars
+      -- aesop?
+      simp_all only [not_true_eq_false, false_and]
+    case neg h =>
+      have ih' := ih (i := i + 1)
+      -- aesop?
+      simp_all only [iff_and_self]
+      intro a
+      simp_all only [not_false_eq_true, iff_true]
+      apply Aesop.BuiltinRules.not_intro
+      intro a_1
+      subst a_1
+      simp_all only [not_true_eq_false]
+
+theorem idxOf?_eq_none_iff [DecidableEq α] {xs : List α} {y : α} :
+  idxOf? xs y = none ↔ y ∉ xs := by
+  apply idxOf?_eq_none_iff' (i := 0)
 
 def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, x ∈ ys' }): List.Vector (Fin (List.length ys.val)) (List.length xs) :=
   match xs with
