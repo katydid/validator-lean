@@ -6,7 +6,7 @@ import Validator.Expr.Regex
 
 namespace ImperativeLeave
 
-def leave (x: Rule μ (Pred α)) (ns: List Bool): (Rule μ (Pred α) × List Bool) :=
+def leave (x: Rule n (Pred α)) (ns: List Bool): (Rule n (Pred α) × List Bool) :=
   match x with
   | Regex.emptyset => (Regex.emptyset, ns)
   | Regex.emptystr => (Regex.emptyset, ns)
@@ -40,10 +40,10 @@ def leave (x: Rule μ (Pred α)) (ns: List Bool): (Rule μ (Pred α) × List Boo
 -- The list of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each tree expression with either an epsilon or emptyset.
 -- The lists do not to be the same length, because each expression can contain an arbitrary number of tree expressions.
-def deriveLeave (xs: List (Rule μ (Pred α))) (ns: List Bool): List (Rule μ (Pred α)) :=
+def deriveLeave (xs: List (Rule n (Pred α))) (ns: List Bool): List (Rule n (Pred α)) :=
   match xs with
   | [] => []
   | (x::xs') =>
-    let (lx, tailns): (Rule μ (Pred α) × List Bool) := leave x ns
-    let lxs: List (Rule μ (Pred α)) := deriveLeave xs' tailns
+    let (lx, tailns): (Rule n (Pred α) × List Bool) := leave x ns
+    let lxs: List (Rule n (Pred α)) := deriveLeave xs' tailns
     lx::lxs

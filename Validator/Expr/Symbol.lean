@@ -192,8 +192,8 @@ theorem Symbols.cast_append_take (xs: Symbols σ n) (ys: Symbols σ m):
   subst hxs
   simp_all only [List.take_left']
 
-theorem Symbols.push_get {μ: Nat} {α: Type} (xs: Symbols α μ) (x: α):
-  Symbols.get (Symbols.snoc xs x) (Fin.mk μ (by omega)) = x := by
+theorem Symbols.push_get {n: Nat} {α: Type} (xs: Symbols α n) (x: α):
+  Symbols.get (Symbols.snoc xs x) (Fin.mk n (by omega)) = x := by
   unfold Symbols at *
   unfold Symbols.get
   unfold Symbols.snoc
@@ -433,17 +433,17 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ l):
   revert res l
   induction r with
   | emptyset =>
-    intro μ res hr
+    intro n res hr
     simp only [replace, extract]
   | emptystr =>
-    intro μ res hr
+    intro n res hr
     simp only [replace, extract]
   | symbol s =>
-    intro μ res hr
+    intro n res hr
     simp only [replace, extract]
     rw [Symbols.push_get]
   | or r1 r2 ih1 ih2 =>
-    intro μ res hr
+    intro n res hr
     simp only [extract]
     simp only [replace]
     have hh1 :
@@ -474,7 +474,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ l):
     rw [<- replace_cast_both]
     rw [<- ih2 ((extract r1 res).2)]
   | concat r1 r2 ih1 ih2 =>
-    intro μ res hr
+    intro n res hr
     simp only [extract]
     simp only [replace]
     have hh1 :
@@ -507,7 +507,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ l):
   | star r1 ih1 =>
     simp only [extract]
     simp only [replace]
-    intro μ res hr
+    intro n res hr
     rw [<- ih1 res]
 
 theorem extract_replace_is_id (r: Regex σ) (res: Symbols σ l):

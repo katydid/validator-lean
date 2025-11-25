@@ -8,14 +8,14 @@ import Validator.Validator.ValidateM
 
 namespace TestIO
 
-def validate {m} [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)): m Bool :=
+def validate {m} [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)): m Bool :=
   Validate.validate g x
 
-unsafe def run [DecidableEq α] [Hashable α] (g: Grammar μ (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (TreeParserIO.run' (μ := μ) (validate g g.start) t)
+unsafe def run [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  unsafeEIO (TreeParserIO.run' (n := n) (validate g g.start) t)
 
 -- runTwice is used to check if the cache was hit on the second run
-def runTwice [DecidableEq α] [Hashable α] [DecidableEq β] (f: TreeParserIO.Impl μ α β) (t: Hedge.Node α): EIO String β := do
+def runTwice [DecidableEq α] [Hashable α] [DecidableEq β] (f: TreeParserIO.Impl n α β) (t: Hedge.Node α): EIO String β := do
   let initial := TreeParserIO.Impl.mk (TreeParser.ParserState.mk' t)
   let (res1, updated) <- StateT.run f initial
   _ <- TreeParserIO.EIO.println "start second run"
@@ -25,8 +25,8 @@ def runTwice [DecidableEq α] [Hashable α] [DecidableEq β] (f: TreeParserIO.Im
   else return res1
 
 -- runTwice is used to check if the cache was hit on the second run
-unsafe def runTwice' [DecidableEq α] [Hashable α] (g: Grammar μ (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (runTwice (μ := μ) (validate g g.start) t)
+unsafe def runTwice' [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  unsafeEIO (runTwice (n := n) (validate g g.start) t)
 
 open TokenTree (node)
 
@@ -35,21 +35,21 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 1)
+--   (Grammar.mk (n := 1)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptystr]
 --   )
 --   (node "a" [])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 1)
+--   (Grammar.mk (n := 1)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptystr]
 --   )
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 2)
+--   (Grammar.mk (n := 2)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.symbol (Pred.eq (Token.string "b"), 1))
@@ -59,7 +59,7 @@ open TokenTree (node)
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 2)
+--   (Grammar.mk (n := 2)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -72,7 +72,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" []])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 3)
+--   (Grammar.mk (n := 3)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -87,14 +87,14 @@ open TokenTree (node)
 
 -- -- try to engage skip using emptyset, since it is unescapable
 -- #eval runTwice'
---   (Grammar.mk (μ := 1)
+--   (Grammar.mk (n := 1)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptyset]
 --   )
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 4)
+--   (Grammar.mk (n := 4)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -109,7 +109,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 2)
+--   (Grammar.mk (n := 2)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -122,7 +122,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 3)
+--   (Grammar.mk (n := 3)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -136,7 +136,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (μ := 4)
+--   (Grammar.mk (n := 4)
 --     (Regex.symbol (Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat

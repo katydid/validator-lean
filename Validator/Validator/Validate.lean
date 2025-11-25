@@ -21,18 +21,18 @@ import Validator.Validator.Inst.TreeParserMemM
 
 namespace Validate
 
-def deriveEnter [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν): m (Rules μ (Pred α) (Symbol.nums xs)) := do
+def deriveEnter [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l): m (Rules n (Pred α) (Symbol.nums xs)) := do
   let token <- Parser.token
   let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals g enters token
 
-def deriveLeaveM [ValidateM m μ α] (xs: Rules μ (Pred α) ν) (cs: Rules μ (Pred α) (Symbol.nums xs)): m (Rules μ (Pred α) ν) :=
+def deriveLeaveM [ValidateM m n α] (xs: Rules n (Pred α) l) (cs: Rules n (Pred α) (Symbol.nums xs)): m (Rules n (Pred α) l) :=
   Leave.DeriveLeaveM.deriveLeaveM xs (List.Vector.map Rule.nullable cs)
 
-def deriveValue [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν): m (Rules μ (Pred α) ν) := do
+def deriveValue [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l): m (Rules n (Pred α) l) := do
   deriveLeaveM xs (<- deriveEnter g xs)
 
-partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν): m (Rules μ (Pred α) ν) := do
+partial def derive [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l): m (Rules n (Pred α) l) := do
   if List.all xs.toList Regex.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
@@ -57,7 +57,7 @@ partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)): m Bool := do
+def validate {m} {n: Nat} {α: Type} [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)): m Bool := do
   let dxs <- derive g (List.Vector.cons x List.Vector.nil)
   return Rule.nullable dxs.head
 

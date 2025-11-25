@@ -9,27 +9,27 @@ import Validator.Expr.Symbol
 
 import Validator.Derive.Enter
 
-abbrev MemEnter.EnterMap (μ: Nat) α [DecidableEq α] [Hashable α] :=
+abbrev MemEnter.EnterMap (n: Nat) α [DecidableEq α] [Hashable α] :=
   Std.ExtDHashMap
     Nat
-    (fun ν =>
+    (fun l =>
       Std.ExtDHashMap
-        (Rules μ (Pred α) ν)
+        (Rules n (Pred α) l)
         (fun xs =>
-          (IfExprs μ α (Symbol.nums xs))
+          (IfExprs n α (Symbol.nums xs))
         )
     )
 
-def MemEnter.EnterMap.mk [DecidableEq α] [Hashable α] : EnterMap μ α := Std.ExtDHashMap.emptyWithCapacity
+def MemEnter.EnterMap.mk [DecidableEq α] [Hashable α] : EnterMap n α := Std.ExtDHashMap.emptyWithCapacity
 
-class MemEnter (m: Type -> Type u) (μ: outParam Nat) (α: outParam Type) [DecidableEq α] [Hashable α] where
-  getEnter : m (MemEnter.EnterMap μ α)
-  setEnter : (MemEnter.EnterMap μ α) → m Unit
+class MemEnter (m: Type -> Type u) (n: outParam Nat) (α: outParam Type) [DecidableEq α] [Hashable α] where
+  getEnter : m (MemEnter.EnterMap n α)
+  setEnter : (MemEnter.EnterMap n α) → m Unit
 
 namespace MemEnter
 
-def get? [DecidableEq α] [Hashable α] (m: MemEnter.EnterMap μ α) (xs: Rules μ (Pred α) ν): Option (IfExprs μ α (Symbol.nums xs)) :=
-  match m.get? ν with
+def get? [DecidableEq α] [Hashable α] (m: MemEnter.EnterMap n α) (xs: Rules n (Pred α) l): Option (IfExprs n α (Symbol.nums xs)) :=
+  match m.get? l with
   | Option.none => Option.none
   | Option.some mxs =>
     match mxs.get? xs with
@@ -37,20 +37,20 @@ def get? [DecidableEq α] [Hashable α] (m: MemEnter.EnterMap μ α) (xs: Rules 
     | Option.some ifs => Option.some ifs
 
 def insert [DecidableEq α] [Hashable α]
-  (m: MemEnter.EnterMap μ α)
-  (key: Rules μ (Pred α) ν)
-  (value: IfExprs μ α (Symbol.nums key))
-  : MemEnter.EnterMap μ α :=
-  match m.get? ν with
+  (m: MemEnter.EnterMap n α)
+  (key: Rules n (Pred α) l)
+  (value: IfExprs n α (Symbol.nums key))
+  : MemEnter.EnterMap n α :=
+  match m.get? l with
   | Option.none =>
-    m.insert ν (Std.ExtDHashMap.emptyWithCapacity.insert key value)
+    m.insert l (Std.ExtDHashMap.emptyWithCapacity.insert key value)
   | Option.some mxs =>
-    m.insert ν (mxs.insert key value)
+    m.insert l (mxs.insert key value)
 
 def deriveEnter
   [DecidableEq α] [Hashable α]
-  [Monad m] [Debug m] [MemEnter m μ α]
-  {ν: Nat} (xs: Rules μ (Pred α) ν): m (IfExprs μ α (Symbol.nums xs)) := do
+  [Monad m] [Debug m] [MemEnter m n α]
+  {l: Nat} (xs: Rules n (Pred α) l): m (IfExprs n α (Symbol.nums xs)) := do
   let memoized <- MemEnter.getEnter
   match get? memoized xs with
   | Option.none =>
@@ -62,5 +62,5 @@ def deriveEnter
     Debug.debug "cache hit"
     return value
 
-instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MemEnter m μ α] : Enter.DeriveEnter m μ α where
-  deriveEnter {ν: Nat} (xs: Rules μ (Pred α) ν): m (IfExprs μ α (Symbol.nums xs)) := deriveEnter xs
+instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MemEnter m n α] : Enter.DeriveEnter m n α where
+  deriveEnter {l: Nat} (xs: Rules n (Pred α) l): m (IfExprs n α (Symbol.nums xs)) := deriveEnter xs

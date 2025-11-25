@@ -16,30 +16,30 @@ import Validator.Derive.Leave
 
 namespace Basic
 
-def derive {α: Type} [DecidableEq α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν) (t: Hedge.Node α): Rules μ (Pred α) ν :=
+def derive {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l) (t: Hedge.Node α): Rules n (Pred α) l :=
   if List.all xs.toList Regex.unescapable
   then xs
   else
     match t with
     | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifExprs: IfExprs μ α (Symbol.nums xs) := Enter.deriveEnter xs
+      let ifExprs: IfExprs n α (Symbol.nums xs) := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: Rules μ (Pred α) (Symbol.nums xs) := IfExpr.evals g ifExprs label
+      let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifExprs label
       -- dchildxs = derivatives of children.
       let dchildxs := List.foldl (derive g) childxs children
       -- leaves is the other one of our two new memoizable functions.
       Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
 
-def derivs {α: Type} [DecidableEq α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)) (hedge: Hedge α): Rule μ (Pred α) :=
+def derivs {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=
   let dxs := List.foldl (derive g) (List.Vector.cons x List.Vector.nil) hedge
   dxs.head
 
-def validate {α: Type} [DecidableEq α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)) (hedge: Hedge α): Bool :=
+def validate {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Bool :=
   let dx := derivs g x hedge
   Rule.nullable dx
 
-def run {α: Type} [DecidableEq α] (g: Grammar μ (Pred α)) (t: Hedge.Node α): Bool :=
+def run {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Bool :=
   validate g g.start [t]
 
 -- Tests
