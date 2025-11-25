@@ -17,6 +17,3 @@ def deriveEnter (xs: Rules n (Pred α) l): IfExprs n α (Symbol.nums xs) :=
 
 class DeriveEnter (m: Type -> Type u) (n: Nat) (α: outParam Type) where
   deriveEnter {l: Nat} (xs: Rules n (Pred α) l): m (IfExprs n α (Symbol.nums xs))
-
-def deriveEnter_list (xs: List (Rule n (Pred α))): List (IfExpr n α) :=
-  List.map (fun (pred, ref) => IfExpr.mk pred ref) (Symbol.extracts_list xs []).2

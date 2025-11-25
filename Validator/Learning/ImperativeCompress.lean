@@ -13,8 +13,8 @@ import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
 import Validator.Expr.Regex
 
-import Validator.Derive.Enter
 import Validator.Learning.ImperativeLeave
+import Validator.Learning.ImperativeEnter
 
 namespace ImperativeCompress
 
@@ -90,7 +90,7 @@ def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: List (Rule n (Pred α)
   else
     match t with
     | Hedge.Node.mk label children =>
-      let ifexprs: List (IfExpr n α) := Enter.deriveEnter_list xs
+      let ifexprs: List (IfExpr n α) := ImperativeEnter.deriveEnter xs
       -- List.Vector.map (fun x => eval g x t) ifExprs
       let childxs: List (Rule n (Pred α)) := List.map (fun x => IfExpr.eval g x label) ifexprs
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.

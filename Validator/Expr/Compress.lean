@@ -279,10 +279,6 @@ def ofIndex (xs: Rules n (Pred α) l) (index: Index l): Rule n (Pred α) :=
 def compressed [DecidableEq σ] (xs: List.Vector (Regex σ) l): Nat :=
   (List.erase (List.eraseReps xs.toList) Regex.emptyset).length
 
--- theorem compressed_cons_emptyset [DecidableEq σ] (xs: List (Regex σ)):
---   compressed ⟨Regex.emptyset :: xs, h⟩ = compressed ⟨xs, congrArg Nat.pred h⟩ := by
---   sorry
-
 def numReps [DecidableEq α] (xs: List.Vector α l) (x: Option α := Option.none): Nat :=
   match x with
   | Option.none =>
@@ -367,73 +363,6 @@ theorem numReps_le_length [DecidableEq α] (xs: List.Vector α l) (y: Option α)
   | some y =>
     apply numReps_some_le_length
 
--- def eraseReps [DecidableEq α] (xs: List.Vector α l) (x: Option α := Option.none): List.Vector α (l - numReps xs x) :=
---   match x with
---   | Option.none =>
---     match xs with
---     | ⟨[], h⟩ => ⟨[], by
---         subst h
---         simp only [List.length_nil, zero_tsub]
---       ⟩
---     | ⟨x::xs, h⟩ => ⟨
---         x :: (eraseReps ⟨xs, congrArg Nat.pred h⟩ (Option.some x)).val, by
---         subst h
---         simp only [numReps]
---         simp only [
---           List.length_cons,
---           Nat.pred_eq_sub_one,
---           List.Vector.length_val,
---         ]
---         rename_i xs'
---         generalize_proofs hxs'
---         have hnone := numReps_le_length ⟨xs', hxs'⟩ none
---         have hsome := numReps_le_length ⟨xs', hxs'⟩ (some x)
---         simp only [List.Vector.length] at hsome
---         simp only [List.Vector.length] at hnone
---         omega
---       ⟩
---   | Option.some x =>
---     match xs with
---     | ⟨[], h⟩ => ⟨[], by
---         subst h
---         simp only [List.length_nil, zero_tsub]
---       ⟩
---     | ⟨x'::xs, h⟩ =>
---       if heq: x == x'
---       then ⟨(eraseReps ⟨xs, congrArg Nat.pred h⟩ (Option.some x')).val, by
---         simp only [Nat.pred_eq_sub_one, List.Vector.length_val]
---         subst h
---         rename_i xs'
---         simp only [numReps]
---         simp at heq
---         split_ifs
---         case pos h =>
---           subst heq
---           omega
---         case neg h =>
---           simp at h
---           contradiction
---       ⟩
---       else ⟨x :: (eraseReps ⟨xs, congrArg Nat.pred h⟩ (Option.some x')).val, by
---         simp only [Nat.pred_eq_sub_one, List.length_cons, List.Vector.length_val]
---         simp [numReps]
---         split_ifs
---         case pos h =>
---           simp at heq
---           contradiction
---         case neg h =>
---           rename_i hlen
---           subst hlen
---           simp
---           rename_i xs'
---           generalize_proofs hxs'
---           have hnone := numReps_le_length ⟨xs', hxs'⟩ none
---           have hsome := numReps_le_length ⟨xs', hxs'⟩ (some x')
---           simp only [List.Vector.length] at hsome
---           simp only [List.Vector.length] at hnone
---           rw [Nat.sub_add_comm hsome]
---       ⟩
-
 def smallest [DecidableEq α] [LT α] [DecidableLT α] (xs: List.Vector α l) (y: α): Option (Fin l) :=
   match xs with
   | ⟨[], h⟩ => Option.none
@@ -456,25 +385,6 @@ def smallest [DecidableEq α] [LT α] [DecidableLT α] (xs: List.Vector α l) (y
           subst h
           simp
         ⟩
-
--- def comp [DecidableEq σ] [LT (Regex σ)] [DecidableLT (Regex σ)] (xs: List.Vector (Regex σ) l) (dup: Option (Regex σ) := Option.none): (List.Vector (Regex σ) (compressed xs)) × (Indices l (compressed xs)) :=
---   match xs with
---   | ⟨[], h⟩ => (⟨[], by simp [compressed, List.eraseReps, List.eraseRepsBy]⟩, ⟨[], h⟩)
---   | ⟨x::xs, h⟩ =>
---     match smallest ⟨xs, congrArg Nat.pred h⟩ x with
---     | Option.none =>
---       match dup with
---       | Option.none =>
---         match x with
---         | Regex.emptyset =>
---           let (regexes, indices) := comp ⟨xs, congrArg Nat.pred h⟩ (Option.some x)
---           (⟨regexes.val, by
-
---           ⟩ , List.Vector.cons Index.emptyset (indices))
---         | _ =>
---           sorry
---       | Option.some dup => sorry
---     | Option.some i => sorry
 
 def compressM [DecidableEq α] [Monad m] (xs: Rules n (Pred α) l1): m (Σ l2, (Rules n (Pred α) l2) × Indices l2 l1) := do
   return compress xs

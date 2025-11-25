@@ -10,7 +10,7 @@ import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
 import Validator.Expr.Regex
 
-import Validator.Derive.Enter
+import Validator.Learning.ImperativeEnter
 import Validator.Learning.ImperativeLeave
 
 namespace ImperativeBasic
@@ -32,7 +32,7 @@ def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: List (Rule n (Pred α)
     match tree with
     | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifexprs: List (IfExpr n α) := Enter.deriveEnter_list xs
+      let ifexprs: List (IfExpr n α) := ImperativeEnter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
       let childxs: List (Rule n (Pred α)) := List.map (fun x => IfExpr.eval g x label) ifexprs
       -- dchildxs = derivatives of children. The ' is for the exception it is wrapped in.
