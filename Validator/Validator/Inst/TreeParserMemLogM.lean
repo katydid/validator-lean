@@ -64,8 +64,8 @@ instance [DecidableEq α] [Hashable α]: MemEnter (Impl μ α) μ α where
       set (State.mk s.parser enter s.leave s.logs)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α ν where
-  deriveEnter (xs: Rules μ α Pred ν): Impl μ α (IfExprs μ α (Symbol.nums xs)) := MemEnter.deriveEnter xs
+instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl μ α) μ α where
+  deriveEnter {ν: Nat} (xs: Rules μ α Pred ν): Impl μ α (IfExprs μ α (Symbol.nums xs)) := MemEnter.deriveEnter xs
 
 instance [DecidableEq α] [Hashable α]: MemLeave (Impl μ α) μ α where
   getLeave : Impl μ α (MemLeave.LeaveMap μ α) := do
@@ -77,10 +77,10 @@ instance [DecidableEq α] [Hashable α]: MemLeave (Impl μ α) μ α where
       set (State.mk s.parser s.enter leave s.logs)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl μ α) μ α ν where
-  deriveLeaveM (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): Impl μ α (Rules μ α Pred ν) := MemLeave.deriveLeaveM xs ns
+instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl μ α) μ α where
+  deriveLeaveM {ν: Nat} (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): Impl μ α (Rules μ α Pred ν) := MemLeave.deriveLeaveM xs ns
 
-instance [DecidableEq α] [Hashable α]: ValidateM (Impl μ α) μ α ν where
+instance [DecidableEq α] [Hashable α]: ValidateM (Impl μ α) μ α where
   -- all instances have been created, so no implementations are required here
 
 def run [DecidableEq α] [Hashable α] (f: Impl μ α β) (t: Hedge.Node α): EStateM.Result String (State μ α) β :=

@@ -62,5 +62,5 @@ def deriveEnter
     Debug.debug "cache hit"
     return value
 
-instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MemEnter m μ α] : Enter.DeriveEnter m μ α ν where
-  deriveEnter (xs: Rules μ α Pred ν): m (IfExprs μ α (Symbol.nums xs)) := deriveEnter xs
+instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MemEnter m μ α] : Enter.DeriveEnter m μ α where
+  deriveEnter {ν: Nat} (xs: Rules μ α Pred ν): m (IfExprs μ α (Symbol.nums xs)) := deriveEnter xs

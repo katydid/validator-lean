@@ -21,18 +21,18 @@ import Validator.Validator.Inst.TreeParserMemM
 
 namespace Validate
 
-def deriveEnter [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred (Symbol.nums xs)) := do
+def deriveEnter [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred (Symbol.nums xs)) := do
   let token <- Parser.token
   let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals g enters token
 
-def deriveLeaveM [ValidateM m μ α ν] (xs: Rules μ α Pred ν) (cs: Rules μ α Pred (Symbol.nums xs)): m (Rules μ α Pred ν) :=
+def deriveLeaveM [ValidateM m μ α] (xs: Rules μ α Pred ν) (cs: Rules μ α Pred (Symbol.nums xs)): m (Rules μ α Pred ν) :=
   Leave.DeriveLeaveM.deriveLeaveM xs (List.Vector.map Rule.nullable cs)
 
-def deriveValue [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
+def deriveValue [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
   deriveLeaveM xs (<- deriveEnter g xs)
 
-partial def derive [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
+partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
   if List.all xs.toList Regex.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
@@ -42,7 +42,7 @@ partial def derive [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pre
       match <- Parser.next with
       | Hint.value => deriveValue g childxs -- derive child value
       | Hint.enter =>
-        let (cchildxs, indices) <- Compress.compressM childxs -- NEW: compress
+        let ⟨_, cchildxs, indices⟩ <- Compress.compressM childxs -- NEW: compress
         let cdchildxs <- derive g cchildxs -- derive children, until return from a Hint.leave
         Compress.expandM indices cdchildxs -- NEW: expand
       | hint => throw s!"unexpected {hint}"
@@ -50,18 +50,16 @@ partial def derive [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pre
     derive g xsLeave -- deriv next
   | Hint.value => deriveValue g xs >>= derive g -- derive value and then derive next
   | Hint.enter =>
-    let (cchildxs, indices) <- Compress.compressM xs -- NEW: compress
+    let ⟨_, cchildxs, indices⟩ <- Compress.compressM xs -- NEW: compress
     let cdchildxs <- derive g cchildxs -- derive children, until return from a Hint.leave
     let dchildxs <- Compress.expandM indices cdchildxs -- NEW: expand
     derive g dchildxs -- derive next
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α ν] (g: Grammar μ α Pred) (x: Rule μ α Pred): m Bool := do
-  let dxs <- derive g [x]
-  match dxs with
-  | [dx] => return Rule.nullable dx
-  | _ => throw "expected one expression"
+def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (x: Rule μ α Pred): m Bool := do
+  let dxs <- derive g (List.Vector.cons x List.Vector.nil)
+  return Rule.nullable dxs.head
 
 def run {μ: Nat} {α: Type} [DecidableEq α] [Hashable α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
   TreeParserMemM.run' (μ := μ) (validate g g.start) t

@@ -19,13 +19,13 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance : Enter.DeriveEnter (Impl α) μ α ν where
+instance : Enter.DeriveEnter (Impl α) μ α where
   deriveEnter xs := return Enter.deriveEnter xs
 
-instance : Leave.DeriveLeaveM (Impl α) μ α ν where
+instance : Leave.DeriveLeaveM (Impl α) μ α where
   deriveLeaveM xs ns := Leave.deriveLeaveM xs ns
 
-instance [DecidableEq α]: ValidateM (Impl α) μ α ν where
+instance [DecidableEq α]: ValidateM (Impl α) μ α where
   -- all instances have been created, so no implementations are required here
 
 def run' (x: Impl α β) (t: Hedge.Node α): Except String β :=
