@@ -15,14 +15,14 @@ import Validator.Expr.Language
 --         n → a <r>, where n is a non-terminal in N, a is a symbol in Σ, and r is a regular expression comprising non-terminals,
 --     rf is a regular expression comprising non-terminals.
 
-structure Grammar99 (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) where
-  start: Regex (Ref μ)
-  prods: Vector (Φ α × Regex (Ref μ)) μ
+structure Grammar99 (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
+  start: Regex (Ref n)
+  prods: Vector (Φ α × Regex (Ref n)) n
 
-def Grammar99.lookup (g: Grammar99 μ α Φ) (ref: Fin μ): Φ α × Regex (Ref μ) :=
+def Grammar99.lookup (g: Grammar99 n α Φ) (ref: Fin n): Φ α × Regex (Ref n) :=
   Vector.get g.prods ref
 
-def Grammar99.denote_prod {α: Type} [BEq α] (g: Grammar99 μ α Pred) (pred: Pred α) (r: Regex (Ref μ)) (xs: Hedge α): Prop :=
+def Grammar99.denote_prod {α: Type} [BEq α] (g: Grammar99 n α Pred) (pred: Pred α) (r: Regex (Ref n)) (xs: Hedge α): Prop :=
   match xs with
   | [Hedge.Node.mk label children] =>
     Pred.eval pred label /\
@@ -40,19 +40,19 @@ def Grammar99.denote_prod {α: Type} [BEq α] (g: Grammar99 μ α Pred) (pred: P
     simp only [List.cons.sizeOf_spec, List.nil.sizeOf_spec, Hedge.Node.mk.sizeOf_spec]
     omega
 
-def Grammar99.denote_start {α: Type} [BEq α] (g: Grammar99 μ α Pred) (r: Regex (Ref μ)) (xs: Hedge α): Prop :=
+def Grammar99.denote_start {α: Type} [BEq α] (g: Grammar99 n α Pred) (r: Regex (Ref n)) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun ref xs' =>
     match (g.lookup ref) with
     | (pred', r') =>
       Grammar99.denote_prod g pred' r' xs'
   )
 
-def Grammar99.denote {α: Type} [BEq α] (g: Grammar99 μ α Pred) (xs: Hedge α): Prop :=
+def Grammar99.denote {α: Type} [BEq α] (g: Grammar99 n α Pred) (xs: Hedge α): Prop :=
   Grammar99.denote_start g g.start xs
 
 namespace Grammar99
 
-def convert99' (g99: Grammar99 μ α Φ) (r: Regex (Ref μ)): Rule μ α Φ :=
+def convert99' (g99: Grammar99 n α Φ) (r: Regex (Ref n)): Rule n α Φ :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptystr
@@ -61,12 +61,12 @@ def convert99' (g99: Grammar99 μ α Φ) (r: Regex (Ref μ)): Rule μ α Φ :=
   | Regex.concat p q => Regex.concat (convert99' g99 p) (convert99' g99 q)
   | Regex.star p => Regex.star (convert99' g99 p)
 
-def convert99 (g99: Grammar99 μ α Φ): Grammar μ α Φ :=
+def convert99 (g99: Grammar99 n α Φ): Grammar n α Φ :=
   match g99 with
   | Grammar99.mk start prods =>
     Grammar.mk (convert99' g99 start) (Vector.map (fun (_, rref) => convert99' g99 rref) prods)
 
-def convert' (g: Grammar μ α Φ) (r: Regex (Φ α × Ref μ)): Regex (Ref μ) :=
+def convert' (g: Grammar n α Φ) (r: Regex (Φ α × Ref n)): Regex (Ref n) :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptystr

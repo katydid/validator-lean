@@ -7,7 +7,7 @@ import Validator.Expr.Symbol
 
 namespace Enter
 
-def deriveEnter (xs: Rules μ α Pred ν): IfExprs μ α (Symbol.nums xs) :=
+def deriveEnter (xs: Rules n α Pred l): IfExprs n α (Symbol.nums xs) :=
   List.Vector.map
     (fun (pred, ref) => IfExpr.mk pred ref)
     (Symbol.Symbols.cast
@@ -15,8 +15,8 @@ def deriveEnter (xs: Rules μ α Pred ν): IfExprs μ α (Symbol.nums xs) :=
       (by ac_rfl)
     )
 
-class DeriveEnter (m: Type -> Type u) (μ: Nat) (α: outParam Type) where
-  deriveEnter {ν: Nat} (xs: Rules μ α Pred ν): m (IfExprs μ α (Symbol.nums xs))
+class DeriveEnter (m: Type -> Type u) (n: Nat) (α: outParam Type) where
+  deriveEnter {l: Nat} (xs: Rules n α Pred l): m (IfExprs n α (Symbol.nums xs))
 
-def deriveEnter_list (xs: List (Rule μ α Pred)): List (IfExpr μ α) :=
+def deriveEnter_list (xs: List (Rule n α Pred)): List (IfExpr n α) :=
   List.map (fun (pred, ref) => IfExpr.mk pred ref) (Symbol.extracts_list xs []).2

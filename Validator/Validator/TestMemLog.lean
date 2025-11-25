@@ -8,23 +8,23 @@ import Validator.Validator.Inst.TreeParserMemTestM
 
 namespace TestMemLog
 
-def validate {m} [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (x: Rule μ α Pred): m Bool :=
+def validate {m} [DecidableEq α] [ValidateM m n α] (g: Grammar n α Pred) (x: Rule n α Pred): m Bool :=
   Validate.validate g x
 
 def run
   [DecidableEq α] [Hashable α]
-  (g: Grammar μ α Pred) (t: Hedge.Node α): (List String × Except String Bool) :=
-  TreeParserMemLogM.run' (μ := μ) (validate g g.start) t
+  (g: Grammar n α Pred) (t: Hedge.Node α): (List String × Except String Bool) :=
+  TreeParserMemLogM.run' (n := n) (validate g g.start) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
-  (g: Grammar μ α Pred) (t: Hedge.Node α): (List String × Except String Bool) :=
-  match TreeParserMemLogM.run (μ := μ) (validate g g.start) t with
+  (g: Grammar n α Pred) (t: Hedge.Node α): (List String × Except String Bool) :=
+  match TreeParserMemLogM.run (n := n) (validate g g.start) t with
   | EStateM.Result.error err state1 => (state1.logs, Except.error err)
   | EStateM.Result.ok res1 state1 =>
-    match TreeParserMemLogM.runPopulatedMem (μ := μ) (validate g g.start) t state1.enter state1.leave with
+    match TreeParserMemLogM.runPopulatedMem (n := n) (validate g g.start) t state1.enter state1.leave with
     | EStateM.Result.error err state2 => (state1.logs ++ state2.logs, Except.error err)
     | EStateM.Result.ok res2 state2 =>
       if res1 ≠ res2
@@ -35,8 +35,8 @@ def testCacheIsHitOnSecondRun
 -- This tests that given an empty cache the test does actually fail.
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
-  (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemTestM.run' (μ := μ) (validate g g.start) t
+  (g: Grammar n α Pred) (t: Hedge.Node α): Except String Bool :=
+  TreeParserMemTestM.run' (n := n) (validate g g.start) t
 
 open TokenTree (node)
 
@@ -53,7 +53,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -80,7 +80,7 @@ open TokenTree (node)
   )
 
 #guard testThatTestCacheBreaksWithEmptyCache
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -88,7 +88,7 @@ open TokenTree (node)
   Except.error "test cache miss"
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -123,7 +123,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
@@ -161,7 +161,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -214,7 +214,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 3)
+  (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -277,7 +277,7 @@ open TokenTree (node)
 
 -- try to engage skip using emptyset, since it is unescapable
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -312,7 +312,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 4)
+  (Grammar.mk (n := 4)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -359,7 +359,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -404,7 +404,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 3)
+  (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -466,7 +466,7 @@ open TokenTree (node)
   )
 
 #guard testCacheIsHitOnSecondRun
-  (Grammar.mk (μ := 4)
+  (Grammar.mk (n := 4)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat

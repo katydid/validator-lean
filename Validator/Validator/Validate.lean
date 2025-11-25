@@ -61,8 +61,8 @@ def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α] (g: G
   let dxs <- derive g (List.Vector.cons x List.Vector.nil)
   return Rule.nullable dxs.head
 
-def run {μ: Nat} {α: Type} [DecidableEq α] [Hashable α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemM.run' (μ := μ) (validate g g.start) t
+def run {α: Type} [DecidableEq α] [Hashable α] (g: Grammar n α Pred) (t: Hedge.Node α): Except String Bool :=
+  TreeParserMemM.run' (n := n) (validate g g.start) t
 
 -- Tests
 
@@ -74,7 +74,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -82,7 +82,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptystr]
   )
@@ -90,7 +90,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
@@ -101,7 +101,7 @@ open TokenTree (node)
   = Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -115,7 +115,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (μ := 3)
+  (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -131,7 +131,7 @@ open TokenTree (node)
 
 -- try to engage skip using emptyset, since it is unescapable
 #guard run
-  (Grammar.mk (μ := 1)
+  (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[Regex.emptyset]
   )
@@ -139,7 +139,7 @@ open TokenTree (node)
   = Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 4)
+  (Grammar.mk (n := 4)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -155,7 +155,7 @@ open TokenTree (node)
   = Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 2)
+  (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -169,7 +169,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 3)
+  (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat
@@ -184,7 +184,7 @@ open TokenTree (node)
   = Except.ok false
 
 #guard run
-  (Grammar.mk (μ := 4)
+  (Grammar.mk (n := 4)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
     #v[
       (Regex.concat

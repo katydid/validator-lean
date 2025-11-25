@@ -41,7 +41,7 @@ def num (r: Regex σ): Nat :=
   | Regex.concat r1 r2 => num r1 + num r2
   | Regex.star r1 => num r1
 
-def nums (xs: List.Vector (Regex σ) μ): Nat :=
+def nums (xs: List.Vector (Regex σ) l): Nat :=
   match xs with
   | ⟨[], _⟩ => 0
   | ⟨x::xs, h⟩ => nums ⟨xs, congrArg Nat.pred h⟩ + num x
@@ -50,7 +50,7 @@ def nums_list (xs: List (Regex σ)): Nat :=
   nums (Vec.fromList xs)
 
 abbrev RegexID n := Regex (Fin n)
-abbrev Symbols σ n := List.Vector σ n
+abbrev Symbols σ l := List.Vector σ l
 
 def RegexID.add {n: Nat} (m: Nat) (r: RegexID n): RegexID (n + m) :=
   Regex.map r (fun s => (Fin.mk s.val (by omega)))
@@ -59,13 +59,13 @@ def RegexID.cast (r: RegexID n) (h: n = m): RegexID m := by
   rw [<- h]
   exact r
 
-def RegexID.add_or (r: RegexID (μ + num r1 + num r2)): RegexID (μ + num (Regex.or r1 r2)) :=
-  have h : (μ + num r1 + num r2) = (μ + num (Regex.or r1 r2)) := by
+def RegexID.add_or (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.or r1 r2)) :=
+  have h : (n + num r1 + num r2) = (n + num (Regex.or r1 r2)) := by
     rw [<- Nat.add_assoc]
   RegexID.cast r h
 
-def RegexID.add_concat (r: RegexID (μ + num r1 + num r2)): RegexID (μ + num (Regex.concat r1 r2)) :=
-  have h : (μ + num r1 + num r2) = (μ + num (Regex.concat r1 r2)) := by
+def RegexID.add_concat (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.concat r1 r2)) :=
+  have h : (n + num r1 + num r2) = (n + num (Regex.concat r1 r2)) := by
     rw [<- Nat.add_assoc]
   RegexID.cast r h
 
@@ -90,21 +90,21 @@ theorem List.Vector.toList_cast_is_toList (xs: List.Vector σ n):
   subst h hxs
   simp only
 
-abbrev Symbols.take {α: Type} (i: Nat) (xs: List.Vector α n) := List.Vector.take i xs
-abbrev Symbols.get {α: Type} (xs: List.Vector α n) (i: Fin n) := List.Vector.get xs i
+abbrev Symbols.take {α: Type} (i: Nat) (xs: List.Vector α l) := List.Vector.take i xs
+abbrev Symbols.get {α: Type} (xs: List.Vector α l) (i: Fin l) := List.Vector.get xs i
 abbrev Symbols.nil {α: Type} := @List.Vector.nil α
-abbrev Symbols.snoc {α: Type} (xs: List.Vector α n) (x: α) := List.Vector.snoc xs x
-abbrev Symbols.cons {α: Type} (x: α) (xs: List.Vector α n) := List.Vector.cons x xs
-abbrev Symbols.set {α: Type} (v : List.Vector α n) (i : Fin n) (a : α) := List.Vector.set v i a
-abbrev Symbols.toList {α: Type} (v : List.Vector α n) := List.Vector.toList v
+abbrev Symbols.snoc {α: Type} (xs: List.Vector α l) (x: α) := List.Vector.snoc xs x
+abbrev Symbols.cons {α: Type} (x: α) (xs: List.Vector α l) := List.Vector.cons x xs
+abbrev Symbols.set {α: Type} (v : List.Vector α l) (i : Fin l) (a : α) := List.Vector.set v i a
+abbrev Symbols.toList {α: Type} (v : List.Vector α l) := List.Vector.toList v
 
-def Symbols.add_or (xs: Symbols σ (μ + num r1 + num r2)): Symbols σ (μ + num (Regex.or r1 r2)) :=
-  have h : (μ + num r1 + num r2) = (μ + num (Regex.or r1 r2)) := by
+def Symbols.add_or (xs: Symbols σ (n + num r1 + num r2)): Symbols σ (n + num (Regex.or r1 r2)) :=
+  have h : (n + num r1 + num r2) = (n + num (Regex.or r1 r2)) := by
     rw [<- Nat.add_assoc]
   Symbols.cast xs h
 
-def Symbols.add_concat (xs: Symbols σ (μ + num r1 + num r2)): Symbols σ (μ + num (Regex.or r1 r2)) :=
-  have h : (μ + num r1 + num r2) = (μ + num (Regex.concat r1 r2)) := by
+def Symbols.add_concat (xs: Symbols σ (n + num r1 + num r2)): Symbols σ (n + num (Regex.or r1 r2)) :=
+  have h : (n + num r1 + num r2) = (n + num (Regex.concat r1 r2)) := by
     rw [<- Nat.add_assoc]
   Symbols.cast xs h
 
@@ -206,7 +206,7 @@ theorem Symbols.push_get {μ: Nat} {α: Type} (xs: Symbols α μ) (x: α):
   simp only [Fin.cast_mk, List.get_eq_getElem, le_refl, List.getElem_append_right, tsub_self,
     List.getElem_cons_zero]
 
-def replace (r: RegexID μ) (xs: Symbols σ ν) (h: μ <= ν): Regex σ :=
+def replace (r: RegexID n) (xs: Symbols σ l) (h: n <= l): Regex σ :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptystr
@@ -222,13 +222,13 @@ def replace (r: RegexID μ) (xs: Symbols σ ν) (h: μ <= ν): Regex σ :=
   | Regex.star r1 =>
     Regex.star (replace r1 xs h)
 
-theorem replace_cast_both (r: RegexID μ) (xs: Symbols σ μ) (h: μ = ν):
+theorem replace_cast_both (r: RegexID n) (xs: Symbols σ n) (h: n = l):
   replace r xs (by omega) = replace (RegexID.cast r h) (Symbols.cast xs h) (by omega) := by
   subst h
   simp only [Symbols.cast_rfl]
   rfl
 
-theorem replace_cast_symbols (r: RegexID μ) (xs: Symbols σ μ) (h: μ = ν):
+theorem replace_cast_symbols (r: RegexID n) (xs: Symbols σ n) (h: n = l):
   replace r xs (by omega) = replace r (Symbols.cast xs h) (by omega) := by
   subst h
   simp only [Symbols.cast_rfl]
@@ -256,8 +256,8 @@ theorem replace_nil_is_map_id (r: Regex (Fin 0)):
     simp [replace, Regex.map]
     rw [ih1]
 
-theorem replace_take (r: RegexID μ) (xs: Symbols σ (μ + n)):
-  replace r (Symbols.take μ xs) (by omega) = replace r xs (by omega):= by
+theorem replace_take (r: RegexID n) (xs: Symbols σ (n + l)):
+  replace r (Symbols.take n xs) (by omega) = replace r xs (by omega):= by
   induction r with
   | emptyset =>
     simp [replace]
@@ -287,8 +287,8 @@ theorem replace_take (r: RegexID μ) (xs: Symbols σ (μ + n)):
     generalize_proofs h1 at *
     rw [<- ih1]
 
-theorem replace_regexid_add (r: RegexID μ) (xs: List.Vector σ (μ + n)):
-  replace r xs (by omega) = replace (RegexID.add n r) xs (by omega):= by
+theorem replace_regexid_add (r: RegexID n) (xs: List.Vector σ (n + l)):
+  replace r xs (by omega) = replace (RegexID.add l r) xs (by omega):= by
   generalize_proofs h1 h2
   rcases xs with ⟨xs, hxs⟩
   induction r with
@@ -317,11 +317,11 @@ theorem replace_regexid_add (r: RegexID μ) (xs: List.Vector σ (μ + n)):
     rw [ih1]
     rfl
 
-def extract (r: Regex σ) (res: Symbols σ μ): RegexID (μ + num r) × Symbols σ (μ + num r) :=
+def extract (r: Regex σ) (res: Symbols σ n): RegexID (n + num r) × Symbols σ (n + num r) :=
   match r with
   | Regex.emptyset => (Regex.emptyset, res)
   | Regex.emptystr => (Regex.emptystr, res)
-  | Regex.symbol s => (Regex.symbol (Fin.mk μ (by
+  | Regex.symbol s => (Regex.symbol (Fin.mk n (by
       simp only [num]
       omega
     )), Symbols.snoc res s)
@@ -337,9 +337,9 @@ def extract (r: Regex σ) (res: Symbols σ μ): RegexID (μ + num r) × Symbols 
     let (er1, res1) := extract r1 res
     (Regex.star er1, res1)
 
-theorem extract_append_toList (res: Symbols σ μ) (r: Regex σ):
+theorem extract_append_toList (res: Symbols σ n) (r: Regex σ):
   List.Vector.toList (extract r res).2 = List.Vector.toList (res ++ (extract r Symbols.nil).2) := by
-  induction r generalizing res μ  with
+  induction r generalizing res n  with
   | emptyset =>
     simp only [num, Nat.add_zero, extract, List.Vector.append_nil]
   | emptystr =>
@@ -383,16 +383,16 @@ theorem extract_append_toList (res: Symbols σ μ) (r: Regex σ):
     simp only [extract]
     rw [ih1]
 
-theorem extract_append (res: Symbols σ μ) (r: Regex σ):
+theorem extract_append (res: Symbols σ l) (r: Regex σ):
   (extract r res).2 = Symbols.cast (res ++ (extract r Symbols.nil).2) (by omega) := by
   apply List.Vector.eq
   rw [extract_append_toList]
   rw [<- List.Vector.toList_cast_is_toList]
 
-theorem extract_take_toList (res: Symbols σ μ):
+theorem extract_take_toList (res: Symbols σ l):
   (List.Vector.toList
     (List.Vector.take
-      (μ + num r1)
+      (l + num r1)
       (extract r2
       (extract r1 res).2).2
     )
@@ -409,9 +409,9 @@ theorem extract_take_toList (res: Symbols σ μ):
   simp only
   simp_all only [List.take_left']
 
-theorem extract_take (res: Symbols σ μ):
+theorem extract_take (res: Symbols σ l):
   (List.Vector.take
-    (μ + num r1)
+    (l + num r1)
     (extract r2
       (extract r1 res).2).2
   )
@@ -423,14 +423,14 @@ theorem extract_take (res: Symbols σ μ):
   rw [extract_take_toList]
   rw [<- List.Vector.toList_cast_is_toList]
 
-def replaceFrom (r: RegexID μ) (xs: Symbols σ μ): Regex σ :=
-  replace r xs (le_refl μ)
+def replaceFrom (r: RegexID n) (xs: Symbols σ n): Regex σ :=
+  replace r xs (le_refl n)
 
-theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ μ):
+theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ l):
   r = replaceFrom (extract r res).1 (extract r res).2 := by
   simp only [replaceFrom]
   generalize_proofs hr
-  revert res μ
+  revert res l
   induction r with
   | emptyset =>
     intro μ res hr
@@ -510,7 +510,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (res: Symbols σ μ):
     intro μ res hr
     rw [<- ih1 res]
 
-theorem extract_replace_is_id (r: Regex σ) (res: Symbols σ μ):
+theorem extract_replace_is_id (r: Regex σ) (res: Symbols σ l):
   r = replace (extract r res).1 (extract r res).2 (by omega):= by
   rw [<- replaceFrom]
   rw [<- extract_replaceFrom_is_id]
@@ -587,8 +587,8 @@ def extracts (xs: List.Vector (Regex σ) nregex) (res: Symbols σ nres):
       symbols'
     )
 
-def extractsSymbols (xs: List.Vector (Regex σ) μ) (res: Symbols σ μ1):
-  Symbols σ (μ1 + Symbol.nums xs) :=
+def extractsSymbols (xs: List.Vector (Regex σ) l1) (res: Symbols σ l2):
+  Symbols σ (l2 + Symbol.nums xs) :=
   match xs with
   | ⟨[], h⟩ => ⟨res.val, by simp only [List.Vector.length_val, Symbol.nums, add_zero]⟩
   | ⟨x::xs, h⟩ =>
