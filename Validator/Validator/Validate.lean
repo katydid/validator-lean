@@ -21,18 +21,18 @@ import Validator.Validator.Inst.TreeParserMemM
 
 namespace Validate
 
-def deriveEnter [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred (Symbol.nums xs)) := do
+def deriveEnter [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν): m (Rules μ (Pred α) (Symbol.nums xs)) := do
   let token <- Parser.token
   let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals g enters token
 
-def deriveLeaveM [ValidateM m μ α] (xs: Rules μ α Pred ν) (cs: Rules μ α Pred (Symbol.nums xs)): m (Rules μ α Pred ν) :=
+def deriveLeaveM [ValidateM m μ α] (xs: Rules μ (Pred α) ν) (cs: Rules μ (Pred α) (Symbol.nums xs)): m (Rules μ (Pred α) ν) :=
   Leave.DeriveLeaveM.deriveLeaveM xs (List.Vector.map Rule.nullable cs)
 
-def deriveValue [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
+def deriveValue [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν): m (Rules μ (Pred α) ν) := do
   deriveLeaveM xs (<- deriveEnter g xs)
 
-partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν): m (Rules μ α Pred ν) := do
+partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν): m (Rules μ (Pred α) ν) := do
   if List.all xs.toList Regex.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
@@ -57,11 +57,11 @@ partial def derive [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) 
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α] (g: Grammar μ α Pred) (x: Rule μ α Pred): m Bool := do
+def validate {m} {μ: Nat} {α: Type} [DecidableEq α] [ValidateM m μ α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)): m Bool := do
   let dxs <- derive g (List.Vector.cons x List.Vector.nil)
   return Rule.nullable dxs.head
 
-def run {α: Type} [DecidableEq α] [Hashable α] (g: Grammar n α Pred) (t: Hedge.Node α): Except String Bool :=
+def run {α: Type} [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   TreeParserMemM.run' (n := n) (validate g g.start) t
 
 -- Tests

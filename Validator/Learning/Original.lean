@@ -16,7 +16,7 @@ namespace Original
 -- foldLoop is a more readable version of List.foldl for imperative programmers:
 -- Imperative programmers can imagine that `Id (Expr α)` = `Expr α`, because it does.
 -- The Id wrapper just adds a monad wrapper to enable the do notation, so that we can use the for loop in Lean.
-private def foldLoop (deriv: Rule n α Pred -> Hedge.Node α -> Rule n α Pred) (start: Rule n α Pred) (hedge: Hedge α): Id (Rule n α Pred) := do
+private def foldLoop (deriv: Rule n (Pred α) -> Hedge.Node α -> Rule n (Pred α)) (start: Rule n (Pred α)) (hedge: Hedge α): Id (Rule n (Pred α)) := do
   let mut res := start
   for tree in hedge do
     res := deriv res tree
@@ -26,7 +26,7 @@ private def foldLoop (deriv: Rule n α Pred -> Hedge.Node α -> Rule n α Pred) 
 -- It returns the expression that is left to match after matching the tree.
 -- Note we need to use `partial`, since Lean cannot automatically figure out that the derive function terminates.
 -- In OriginalTotal we show how to remove this, by manually proving that it in fact does terminate.
-partial def derive [DecidableEq α] (g: Grammar n α Pred) (x: Rule n α Pred) (tree: Hedge.Node α): Rule n α Pred :=
+partial def derive [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (tree: Hedge.Node α): Rule n (Pred α) :=
   match x with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
@@ -46,10 +46,10 @@ partial def derive [DecidableEq α] (g: Grammar n α Pred) (x: Rule n α Pred) (
     else Regex.concat (derive g y tree) z
   | Regex.star y => Regex.concat (derive g y tree) (Regex.star y)
 
-partial def validate [DecidableEq α] (g: Grammar n α Pred) (x: Rule n α Pred) (hedge: Hedge α): Bool :=
+partial def validate [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Bool :=
   Rule.nullable (List.foldl (derive g) x hedge)
 
-def run [DecidableEq α] (g: Grammar n α Pred) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate g g.start [t])
 
 -- Tests

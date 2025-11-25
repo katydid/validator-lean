@@ -133,8 +133,8 @@ def vector_cast (h: n = m) (xs: List.Vector α n): List.Vector α m := by
   subst h
   exact xs
 
-def compress [DecidableEq α] (xs: Rules n α Pred l1): Σ l2, ((Rules n α Pred l2) × (Indices l2 l1)) :=
-  let xs_list: List (Rule n α Pred) := xs.toList
+def compress [DecidableEq α] (xs: Rules n (Pred α) l1): Σ l2, ((Rules n (Pred α) l2) × (Indices l2 l1)) :=
+  let xs_list: List (Rule n (Pred α)) := xs.toList
   have hn : xs_list.length = l1 := by
     simp_all only [List.Vector.toList_length, xs_list]
 
@@ -142,7 +142,7 @@ def compress [DecidableEq α] (xs: Rules n α Pred l1): Σ l2, ((Rules n α Pred
   -- TODO: let sxs := List.mergeSort xs
 
   -- remove duplicates
-  let xs_noreps: { ys: List (Rule n α Pred) // ∀ x ∈ xs_list, x ∈ ys } := eraseReps_sub xs_list
+  let xs_noreps: { ys: List (Rule n (Pred α)) // ∀ x ∈ xs_list, x ∈ ys } := eraseReps_sub xs_list
 
   -- get indices
   let xs_idxs: List.Vector (Fin (xs_noreps.val).length) (List.length xs_list) := indices xs_noreps
@@ -228,10 +228,10 @@ def indexOf [DecidableEq α] (xs: List.Vector (Regex α) l) (y: Regex α) (h: y 
   then Index.emptyset
   else Index.val (indexOf' xs y (memVector_emptyset h hy))
 
-def ofIndex' (xs: Rules n α Pred l) (index: Fin l): Rule n α Pred :=
+def ofIndex' (xs: Rules n (Pred α) l) (index: Fin l): Rule n (Pred α) :=
   xs.get index
 
-def ofIndex (xs: Rules n α Pred l) (index: Index l): Rule n α Pred :=
+def ofIndex (xs: Rules n (Pred α) l) (index: Index l): Rule n (Pred α) :=
   match index with
   | Index.emptyset => Regex.emptyset
   | Index.val n => ofIndex' xs n
@@ -436,12 +436,12 @@ def smallest [DecidableEq α] [LT α] [DecidableLT α] (xs: List.Vector α l) (y
 --       | Option.some dup => sorry
 --     | Option.some i => sorry
 
-def compressM [DecidableEq α] [Monad m] (xs: Rules n α Pred l1): m (Σ l2, (Rules n α Pred l2) × Indices l2 l1) := do
+def compressM [DecidableEq α] [Monad m] (xs: Rules n (Pred α) l1): m (Σ l2, (Rules n (Pred α) l2) × Indices l2 l1) := do
   return compress xs
 
 -- expand expands a list of expressions.
-def expand (indices: Indices l1 l2) (xs: Rules n α Pred l1): (Rules n α Pred l2) :=
+def expand (indices: Indices l1 l2) (xs: Rules n (Pred α) l1): (Rules n (Pred α) l2) :=
   List.Vector.map (ofIndex xs) indices
 
-def expandM [Monad m] (indices: Indices l1 l2) (xs: Rules n α Pred l1): m (Rules n α Pred l2) :=
+def expandM [Monad m] (indices: Indices l1 l2) (xs: Rules n (Pred α) l1): m (Rules n (Pred α) l2) :=
   return (expand indices xs)

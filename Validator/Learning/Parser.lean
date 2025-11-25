@@ -20,21 +20,21 @@ import Validator.Validator.Inst.TreeParserM
 
 namespace Parser
 
-def deriveEnter [DecidableEq α] [ValidateM m n α] (g: Grammar n α Pred) (xs: Rules n α Pred l): m (Rules n α Pred (Symbol.nums xs)) := do
+def deriveEnter [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l): m (Rules n (Pred α) (Symbol.nums xs)) := do
   let enters <- Enter.DeriveEnter.deriveEnter xs
   let token <- Parser.token
   return IfExpr.evals g enters token
 
-def deriveLeaveM [DecidableEq α] [ValidateM m n α] (xs: Rules n α Pred l) (cs: Rules n α Pred (Symbol.nums xs)): m (Rules n α Pred l) :=
+def deriveLeaveM [DecidableEq α] [ValidateM m n α] (xs: Rules n (Pred α) l) (cs: Rules n (Pred α) (Symbol.nums xs)): m (Rules n (Pred α) l) :=
   Leave.DeriveLeaveM.deriveLeaveM xs (List.Vector.map Rule.nullable cs)
 
-def deriveValue [DecidableEq α] [ValidateM m n α] (g: Grammar n α Pred) (xs: Rules n α Pred l): m (Rules n α Pred l) := do
+def deriveValue [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l): m (Rules n (Pred α) l) := do
   deriveEnter g xs >>= deriveLeaveM xs
 
 -- TODO: Is it possible to have a Parser type that can be proved to be of the correct shape, and have not expection throwing
 -- for example: can you prove that your Parser will never return an Hint.leave after returning a Hint.field.
 -- This class can be called the LawfulParser.
-partial def derive [DecidableEq α] [ValidateM m n α] (g: Grammar n α Pred) (xs: Rules n α Pred l): m (Rules n α Pred l) := do
+partial def derive [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l): m (Rules n (Pred α) l) := do
   if List.all xs.toList Regex.unescapable then
     Parser.skip; return xs
   match <- Parser.next with
@@ -52,11 +52,11 @@ partial def derive [DecidableEq α] [ValidateM m n α] (g: Grammar n α Pred) (x
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} [DecidableEq α] [ValidateM m n α] (g: Grammar n α Pred) (x: Rule n α Pred): m Bool := do
+def validate {m} [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)): m Bool := do
   let dxs <- derive g (List.Vector.cons x List.Vector.nil)
   return Rule.nullable dxs.head
 
-def run [DecidableEq α] (g: Grammar n α Pred) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   TreeParserM.run' (validate g g.start) t
 
 -- Tests

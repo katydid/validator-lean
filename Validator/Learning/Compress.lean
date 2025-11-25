@@ -19,14 +19,14 @@ import Validator.Derive.Leave
 namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
-def derive [DecidableEq α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν) (t: Hedge.Node α): Rules μ α Pred ν :=
+def derive [DecidableEq α] (g: Grammar μ (Pred α)) (xs: Rules μ (Pred α) ν) (t: Hedge.Node α): Rules μ (Pred α) ν :=
   if List.all xs.toList Regex.unescapable
   then xs
   else
     match t with
     | Hedge.Node.mk label children =>
       let ifexprs: IfExprs μ α (Symbol.nums xs) := Enter.deriveEnter xs
-      let childxs: Rules μ α Pred (Symbol.nums xs) := IfExpr.evals g ifexprs label
+      let childxs: Rules μ (Pred α) (Symbol.nums xs) := IfExpr.evals g ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
       let ⟨n, cchildxs, indices⟩ := Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.
@@ -35,15 +35,15 @@ def derive [DecidableEq α] (g: Grammar μ α Pred) (xs: Rules μ α Pred ν) (t
       let dchildxs := Compress.expand indices cdchildxs
       Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
 
-def derivs [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Rule μ α Pred :=
+def derivs [DecidableEq α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)) (hedge: Hedge α): Rule μ (Pred α) :=
   let dxs := List.foldl (derive g) (List.Vector.cons x List.Vector.nil) hedge
   dxs.head
 
-def validate [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Bool :=
+def validate [DecidableEq α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)) (hedge: Hedge α): Bool :=
   let dx := derivs g x hedge
   Rule.nullable dx
 
-def run [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Bool :=
+def run [DecidableEq α] (g: Grammar μ (Pred α)) (t: Hedge.Node α): Bool :=
   validate g g.start [t]
 
 -- Tests

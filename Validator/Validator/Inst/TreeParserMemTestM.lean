@@ -63,7 +63,7 @@ instance [DecidableEq α] [Hashable α]: MemEnter (Impl n α) n α where
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl n α) n α where
-  deriveEnter {ν: Nat} (xs: Rules n α Pred ν): Impl n α (IfExprs n α (Symbol.nums xs)) := do
+  deriveEnter {ν: Nat} (xs: Rules n (Pred α) ν): Impl n α (IfExprs n α (Symbol.nums xs)) := do
     let memoized <- MemEnter.getEnter
     match MemEnter.get? memoized xs with
     | Option.none =>
@@ -83,7 +83,7 @@ instance [DecidableEq α] [Hashable α]: MemLeave (Impl n α) n α where
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl n α) n α where
-  deriveLeaveM {ν: Nat} (xs: Rules n α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): Impl n α (Rules n α Pred ν) := do
+  deriveLeaveM {ν: Nat} (xs: Rules n (Pred α) ν) (ns: List.Vector Bool (Symbol.nums xs)): Impl n α (Rules n (Pred α) ν) := do
     let memoized <- MemLeave.getLeave
     match MemLeave.get? memoized ⟨xs, ns⟩ with
     | Option.none =>

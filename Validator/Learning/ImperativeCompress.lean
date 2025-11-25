@@ -22,7 +22,7 @@ inductive Index where
  | val (n: Nat)
  | emptyset
 
-def indexOf [DecidableEq α] (xs: List (Regex (Pred α × Ref μ))) (y: (Rule μ α Pred)): Except String Index :=
+def indexOf [DecidableEq α] (xs: List (Regex (Pred α × Ref μ))) (y: (Rule μ (Pred α))): Except String Index :=
   match y with
   | Regex.emptyset => Except.ok Index.emptyset
   | _ =>
@@ -30,7 +30,7 @@ def indexOf [DecidableEq α] (xs: List (Regex (Pred α × Ref μ))) (y: (Rule μ
     | Option.none => Except.error "indexOf: unable to find expression"
     | Option.some idx => Except.ok (Index.val idx)
 
-def ofIndex' (xs: List (Rule μ α Pred)) (index: Nat): Except String (Rule μ α Pred) :=
+def ofIndex' (xs: List (Rule μ (Pred α))) (index: Nat): Except String (Rule μ (Pred α)) :=
   match xs with
   | [] => Except.error "index overflow"
   | x::xs' =>
@@ -38,7 +38,7 @@ def ofIndex' (xs: List (Rule μ α Pred)) (index: Nat): Except String (Rule μ �
     | 0 => Except.ok x
     | (n' + 1) => ofIndex' xs' n'
 
-def ofIndex (xs: List (Rule μ α Pred)) (index: Index): Except String (Rule μ α Pred) :=
+def ofIndex (xs: List (Rule μ (Pred α))) (index: Index): Except String (Rule μ (Pred α)) :=
   match index with
   | Index.emptyset => Except.ok Regex.emptyset
   | Index.val n =>
@@ -50,11 +50,11 @@ def ofIndex (xs: List (Rule μ α Pred)) (index: Index): Except String (Rule μ 
 inductive Indices where
   | mk (indices: List Index)
 
-def compressed [DecidableEq α] (xs: Rules μ α Pred ν): Nat :=
+def compressed [DecidableEq α] (xs: Rules μ (Pred α) ν): Nat :=
   (List.erase (List.eraseReps xs.toList) Regex.emptyset).length
 
 -- compress compresses a list of expressions.
-def compress [DecidableEq α] (xs: List (Rule μ α Pred)): Except String ((List (Rule μ α Pred)) × Indices) := do
+def compress [DecidableEq α] (xs: List (Rule μ (Pred α))): Except String ((List (Rule μ (Pred α))) × Indices) := do
   -- sort to increase chance of cache hit
   -- TODO: let sxs := List.mergeSort xs
 
@@ -76,7 +76,7 @@ def compress [DecidableEq α] (xs: List (Rule μ α Pred)): Except String ((List
   )
 
 -- expand expands a list of expressions.
-def expand (indices: Indices) (xs: List (Rule μ α Pred)): Except String (List (Rule μ α Pred)) :=
+def expand (indices: Indices) (xs: List (Rule μ (Pred α))): Except String (List (Rule μ (Pred α))) :=
   match indices with
   | Indices.mk indexes =>
     match MonadExcept.ofExcept (List.mapM (ofIndex xs) indexes) with
@@ -84,7 +84,7 @@ def expand (indices: Indices) (xs: List (Rule μ α Pred)): Except String (List 
     | Except.ok k => Except.ok k
 
 -- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
-def derive [DecidableEq α] (g: Grammar μ α Pred) (xs: List (Rule μ α Pred)) (t: Hedge.Node α): Except String (List (Rule μ α Pred)) :=
+def derive [DecidableEq α] (g: Grammar μ (Pred α)) (xs: List (Rule μ (Pred α))) (t: Hedge.Node α): Except String (List (Rule μ (Pred α))) :=
   if List.all xs Regex.unescapable
   then Except.ok xs
   else
@@ -92,15 +92,15 @@ def derive [DecidableEq α] (g: Grammar μ α Pred) (xs: List (Rule μ α Pred))
     | Hedge.Node.mk label children =>
       let ifexprs: List (IfExpr μ α) := Enter.deriveEnter_list xs
       -- List.Vector.map (fun x => eval g x t) ifExprs
-      let childxs: List (Rule μ α Pred) := List.map (fun x => IfExpr.eval g x label) ifexprs
+      let childxs: List (Rule μ (Pred α)) := List.map (fun x => IfExpr.eval g x label) ifexprs
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
-      let cchildxs' : Except String ((List (Rule μ α Pred)) × Indices) := compress childxs
+      let cchildxs' : Except String ((List (Rule μ (Pred α))) × Indices) := compress childxs
       match cchildxs' with
       | Except.error err => Except.error err
       | Except.ok (cchildxs, indices) =>
       -- cdchildxs = compressed derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let cdchildxs' : Except String (List (Rule μ α Pred)) := List.foldlM (derive g) cchildxs children
+      let cdchildxs' : Except String (List (Rule μ (Pred α))) := List.foldlM (derive g) cchildxs children
       match cdchildxs' with
       | Except.error err => Except.error err
       | Except.ok cdchildxs =>
@@ -110,10 +110,10 @@ def derive [DecidableEq α] (g: Grammar μ α Pred) (xs: List (Rule μ α Pred))
       | Except.error err => Except.error err
       | Except.ok dchildxs =>
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
-      let dxs: List (Rule μ α Pred) := ImperativeLeave.deriveLeave xs (List.map Rule.nullable dchildxs)
+      let dxs: List (Rule μ (Pred α)) := ImperativeLeave.deriveLeave xs (List.map Rule.nullable dchildxs)
       Except.ok dxs
 
-def derivs [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String (Rule μ α Pred) :=
+def derivs [DecidableEq α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)) (hedge: Hedge α): Except String (Rule μ (Pred α)) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM (derive g) [x] hedge
   match dxs with
@@ -121,12 +121,12 @@ def derivs [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge:
   | Except.ok [dx] => Except.ok dx
   | Except.ok _ => Except.error "expected one expression"
 
-def validate [DecidableEq α] (g: Grammar μ α Pred) (x: Rule μ α Pred) (hedge: Hedge α): Except String Bool :=
+def validate [DecidableEq α] (g: Grammar μ (Pred α)) (x: Rule μ (Pred α)) (hedge: Hedge α): Except String Bool :=
   match derivs g x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Regex.nullable x')
 
-def run [DecidableEq α] (g: Grammar μ α Pred) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (g: Grammar μ (Pred α)) (t: Hedge.Node α): Except String Bool :=
   validate g g.start [t]
 
 -- Tests

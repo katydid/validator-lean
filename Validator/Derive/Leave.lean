@@ -5,7 +5,7 @@ import Validator.Derive.Enter
 
 namespace Leave
 
-def leave (x: Regex (Fin l)) (es: Symbol.Symbols (Pred α × Ref n) l) (ns: List.Vector Bool l): (Rule n α Pred) :=
+def leave (x: Regex (Fin l)) (es: Symbol.Symbols (Pred α × Ref n) l) (ns: List.Vector Bool l): (Rule n (Pred α)) :=
   match x with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
@@ -31,7 +31,7 @@ def deriveLeave
   (xs: List.Vector (Regex (Fin l1)) l2)
   (es: Symbol.Symbols (Pred α × Ref n) l1)
   (ns: List.Vector Bool l1)
-  : (Rules n α Pred l2) :=
+  : (Rules n (Pred α) l2) :=
   match xs with
   | ⟨[], h⟩ => ⟨[], h⟩
   | ⟨x::xs, h⟩ =>
@@ -46,14 +46,14 @@ def deriveLeave
       )
 
 def deriveLeaves
-  (xs: Rules n α Pred l)
+  (xs: Rules n (Pred α) l)
   (ns: List.Vector Bool (Symbol.nums xs))
-  : (Rules n α Pred l) :=
+  : (Rules n (Pred α) l) :=
   let (regexes, symbols) := Symbol.extracts xs List.Vector.nil
   deriveLeave regexes symbols (Symbol.Symbols.cast ns (by simp only [zero_add]))
 
-def deriveLeaveM [Monad m] {n: Nat} {l: Nat} (xs: Rules n α Pred l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n α Pred l) := do
+def deriveLeaveM [Monad m] {n: Nat} {l: Nat} (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := do
   return deriveLeaves xs ns
 
 class DeriveLeaveM (m: Type -> Type u) (n: Nat) (α: outParam Type) where
-  deriveLeaveM {l: Nat} (xs: Rules n α Pred l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n α Pred l)
+  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n (Pred α) l)

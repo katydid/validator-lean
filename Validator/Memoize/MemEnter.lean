@@ -14,7 +14,7 @@ abbrev MemEnter.EnterMap (μ: Nat) α [DecidableEq α] [Hashable α] :=
     Nat
     (fun ν =>
       Std.ExtDHashMap
-        (Rules μ α Pred ν)
+        (Rules μ (Pred α) ν)
         (fun xs =>
           (IfExprs μ α (Symbol.nums xs))
         )
@@ -28,7 +28,7 @@ class MemEnter (m: Type -> Type u) (μ: outParam Nat) (α: outParam Type) [Decid
 
 namespace MemEnter
 
-def get? [DecidableEq α] [Hashable α] (m: MemEnter.EnterMap μ α) (xs: Rules μ α Pred ν): Option (IfExprs μ α (Symbol.nums xs)) :=
+def get? [DecidableEq α] [Hashable α] (m: MemEnter.EnterMap μ α) (xs: Rules μ (Pred α) ν): Option (IfExprs μ α (Symbol.nums xs)) :=
   match m.get? ν with
   | Option.none => Option.none
   | Option.some mxs =>
@@ -38,7 +38,7 @@ def get? [DecidableEq α] [Hashable α] (m: MemEnter.EnterMap μ α) (xs: Rules 
 
 def insert [DecidableEq α] [Hashable α]
   (m: MemEnter.EnterMap μ α)
-  (key: Rules μ α Pred ν)
+  (key: Rules μ (Pred α) ν)
   (value: IfExprs μ α (Symbol.nums key))
   : MemEnter.EnterMap μ α :=
   match m.get? ν with
@@ -50,7 +50,7 @@ def insert [DecidableEq α] [Hashable α]
 def deriveEnter
   [DecidableEq α] [Hashable α]
   [Monad m] [Debug m] [MemEnter m μ α]
-  {ν: Nat} (xs: Rules μ α Pred ν): m (IfExprs μ α (Symbol.nums xs)) := do
+  {ν: Nat} (xs: Rules μ (Pred α) ν): m (IfExprs μ α (Symbol.nums xs)) := do
   let memoized <- MemEnter.getEnter
   match get? memoized xs with
   | Option.none =>
@@ -63,4 +63,4 @@ def deriveEnter
     return value
 
 instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MemEnter m μ α] : Enter.DeriveEnter m μ α where
-  deriveEnter {ν: Nat} (xs: Rules μ α Pred ν): m (IfExprs μ α (Symbol.nums xs)) := deriveEnter xs
+  deriveEnter {ν: Nat} (xs: Rules μ (Pred α) ν): m (IfExprs μ α (Symbol.nums xs)) := deriveEnter xs

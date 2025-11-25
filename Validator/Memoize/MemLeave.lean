@@ -9,10 +9,10 @@ import Validator.Expr.Symbol
 
 import Validator.Derive.Leave
 
-def hashRulesAndNulls {μ: Nat} {α: Type} {Φ: (α: Type) -> Type} {ν: Nat} [Hashable α] [Hashable (Φ α)] (x: (xs: Rules μ α Φ ν) × (List.Vector Bool (Symbol.nums xs))): UInt64 :=
+def hashRulesAndNulls {μ: Nat} {Φ: Type} {ν: Nat} [Hashable Φ] (x: (xs: Rules μ Φ ν) × (List.Vector Bool (Symbol.nums xs))): UInt64 :=
   mixHash (hash x.1) (hash x.2)
 
-instance (μ: Nat) (α: Type) (Φ: (α: Type) -> Type) (ν: Nat) [Hashable α] [Hashable (Φ α)] : Hashable ((xs: Rules μ α Φ ν) × (List.Vector Bool (Symbol.nums xs))) where
+instance (μ: Nat) (Φ: Type) (ν: Nat) [Hashable Φ] : Hashable ((xs: Rules μ Φ ν) × (List.Vector Bool (Symbol.nums xs))) where
   hash := hashRulesAndNulls
 
 abbrev MemLeave.LeaveMap μ α [DecidableEq α] [Hashable α] :=
@@ -20,8 +20,8 @@ abbrev MemLeave.LeaveMap μ α [DecidableEq α] [Hashable α] :=
     Nat
     (fun ν =>
       Std.ExtHashMap
-        ((xs: Rules μ α Pred ν) × (List.Vector Bool (Symbol.nums xs)))
-        (Rules μ α Pred ν)
+        ((xs: Rules μ (Pred α) ν) × (List.Vector Bool (Symbol.nums xs)))
+        (Rules μ (Pred α) ν)
     )
 
 def MemLeave.LeaveMap.mk [DecidableEq α] [Hashable α]: LeaveMap μ α := Std.ExtDHashMap.emptyWithCapacity
@@ -34,16 +34,16 @@ namespace MemLeave
 
 def get? [DecidableEq α] [Hashable α]
   (m: MemLeave.LeaveMap μ α)
-  (key: (xs: Rules μ α Pred ν) × (List.Vector Bool (Symbol.nums xs)))
-  : Option (Rules μ α Pred ν) :=
+  (key: (xs: Rules μ (Pred α) ν) × (List.Vector Bool (Symbol.nums xs)))
+  : Option (Rules μ (Pred α) ν) :=
   match m.get? ν with
   | Option.none => Option.none
   | Option.some mkey => mkey.get? key
 
 def insert [DecidableEq α] [Hashable α]
   (m: MemLeave.LeaveMap μ α)
-  (key: (xs: Rules μ α Pred ν) × (List.Vector Bool (Symbol.nums xs)))
-  (value: Rules μ α Pred ν) :=
+  (key: (xs: Rules μ (Pred α) ν) × (List.Vector Bool (Symbol.nums xs)))
+  (value: Rules μ (Pred α) ν) :=
   match m.get? ν with
   | Option.none =>
     m.insert ν (Std.ExtHashMap.emptyWithCapacity.insert key value)
@@ -53,9 +53,9 @@ def insert [DecidableEq α] [Hashable α]
 def deriveLeaveM
   [DecidableEq α] [Hashable α]
   [Monad m] [Debug m] [MonadExcept String m] [MemLeave m μ α]
-  (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules μ α Pred ν) := do
+  (xs: Rules μ (Pred α) ν) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules μ (Pred α) ν) := do
   let memoized <- MemLeave.getLeave
-  let key: ((xs: Rules μ α Pred ν) × (List.Vector Bool (Symbol.nums xs))) := Sigma.mk xs ns
+  let key: ((xs: Rules μ (Pred α) ν) × (List.Vector Bool (Symbol.nums xs))) := Sigma.mk xs ns
   match get? memoized key with
   | Option.none =>
     Debug.debug "cache miss"
@@ -67,4 +67,4 @@ def deriveLeaveM
     return value
 
 instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m μ α] : Leave.DeriveLeaveM m μ α where
-  deriveLeaveM {ν: Nat} (xs: Rules μ α Pred ν) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules μ α Pred ν) := deriveLeaveM xs ns
+  deriveLeaveM {ν: Nat} (xs: Rules μ (Pred α) ν) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules μ (Pred α) ν) := deriveLeaveM xs ns
