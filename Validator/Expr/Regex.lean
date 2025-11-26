@@ -472,3 +472,97 @@ def Regex.derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: �
       (concat (derive p r1 a) r2)
   | star r1 =>
     concat (derive p r1 a) (star r1)
+
+-- derive2 is the same as derive, except the answer to the predicate is already included in a tuple with the original symbol.
+def Regex.derive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
+  match r with
+  | emptyset => emptyset
+  | emptystr => emptyset
+  | symbol (_, b) =>
+    if b
+    then emptystr
+    else emptyset
+  | or r1 r2 =>
+    or (derive2 r1) (derive2 r2)
+  | concat r1 r2 =>
+    if nullable r1
+    then
+      or (concat (derive2 r1) (first r2)) (derive2 r2)
+    else
+      concat (derive2 r1) (first r2)
+  | star r1 =>
+      concat (derive2 r1) (star (first r1))
+
+theorem map_first (p: σ -> α -> Bool) (r: Regex σ) (a: α):
+  (r.map (fun s => (s, p s a))).first = r := by
+  induction r with
+  | emptyset =>
+    simp only [Regex.map, Regex.first]
+  | emptystr =>
+    simp only [Regex.map, Regex.first]
+  | symbol _ =>
+    simp only [Regex.map, Regex.first]
+  | or r1 r2 ih1 ih2 =>
+    simp only [Regex.map, Regex.first]
+    simp_all only [Regex.or.injEq]
+    apply And.intro
+    · exact ih1
+    · exact ih2
+  | concat r1 r2 ih1 ih2 =>
+    simp only [Regex.map, Regex.first]
+    simp_all only [Regex.concat.injEq]
+    apply And.intro
+    · exact ih1
+    · exact ih2
+  | star r1 ih1 =>
+    simp only [Regex.map, Regex.first]
+    simp_all only [Regex.star.injEq]
+    exact ih1
+
+theorem map_nullable (p: σ -> α -> Bool) (r: Regex σ) (a: α):
+  (r.map (fun s => (s, p s a))).nullable = r.nullable := by
+  induction r with
+  | emptyset =>
+    simp only [Regex.map, Regex.nullable]
+  | emptystr =>
+    simp only [Regex.map, Regex.nullable]
+  | symbol _ =>
+    simp only [Regex.map, Regex.nullable]
+  | or r1 r2 ih1 ih2 =>
+    simp only [Regex.map, Regex.nullable]
+    simp_all only
+  | concat r1 r2 ih1 ih2 =>
+    simp only [Regex.map, Regex.nullable]
+    simp_all only
+  | star r1 ih1 =>
+    simp only [Regex.map, Regex.nullable]
+
+theorem Regex.derive_is_derive2 (p: σ -> α -> Bool) (r: Regex σ) (a: α):
+  derive p r a = derive2 (map r (fun s => (s, p s a))) := by
+  induction r with
+  | emptyset =>
+    simp only [Regex.derive, Regex.map, Regex.derive2]
+  | emptystr =>
+    simp only [Regex.derive, Regex.map, Regex.derive2]
+  | symbol _ =>
+    simp only [Regex.derive, Regex.map, Regex.derive2]
+  | or r1 r2 ih1 ih2 =>
+    simp only [Regex.derive, Regex.map, Regex.derive2]
+    rw [<- ih1]
+    rw [<- ih2]
+  | concat r1 r2 ih1 ih2 =>
+    simp only [Regex.derive, Regex.map, Regex.derive2]
+    rw [<- ih1]
+    rw [<- ih2]
+    have h : (r2.map fun s => (s, p s a)).first = r2 := by
+      apply map_first
+    have h' : (r1.map fun s => (s, p s a)).nullable = r1.nullable := by
+      apply map_nullable
+    rw [h]
+    rw [h']
+  | star r1 ih1 =>
+    simp only [Regex.derive, Regex.map, Regex.derive2]
+    rw [<- ih1]
+    have h : (r1.map fun s => (s, p s a)).first = r1 := by
+      apply map_first
+    rw [h]
