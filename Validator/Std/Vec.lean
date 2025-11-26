@@ -13,6 +13,9 @@ def singleton (x: α): List.Vector α 1 :=
 def nil: List.Vector α 0 :=
   List.Vector.nil
 
+def zip : List.Vector α n → List.Vector β n → List.Vector (α × β) n
+  | ⟨x, _⟩, ⟨y, _⟩ => ⟨List.zipWith (fun x' y' => (x', y')) x y, by simp [*]⟩
+
 theorem toList_take:
   List.take n xs.val = (List.Vector.take n xs).toList := by
   simp only [_root_.List.Vector.toList_take]

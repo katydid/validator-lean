@@ -6,23 +6,28 @@ import Validator.Derive.Enter
 namespace Leave
 
 def leave (r: Regex (Fin l)) (es: Symbol.Symbols (Pred α × Ref n) l) (ns: List.Vector Bool l): (Rule n (Pred α)) :=
-  match r with
-  | Regex.emptyset => Regex.emptyset
-  | Regex.emptystr => Regex.emptyset
-  | Regex.symbol i =>
-    if List.Vector.get ns i
-    then Regex.emptystr
-    else Regex.emptyset
-  | Regex.or r1 r2 =>
-    Regex.smartOr (leave r1 es ns) (leave r2 es ns)
-  | Regex.concat r1 r2 =>
-    if Regex.nullable r1
-    then
-      Regex.smartOr (Regex.smartConcat (leave r1 es ns) (Symbol.replaceFrom r2 es)) (leave r2 es ns)
-    else
-      Regex.smartConcat (leave r1 es ns) (Symbol.replaceFrom r2 es)
-  | Regex.star r1 =>
-      Regex.smartConcat (leave r1 es ns) (Regex.smartStar (Symbol.replaceFrom r1 es))
+  let res: List.Vector ((Pred α × Ref n) × Bool) l := Vec.zip es ns
+  let r': Regex ((Pred α × Ref n) × Bool) := Symbol.replaceFrom r res
+  Regex.smartDerive2 r'
+
+-- def leave (r: Regex (Fin l)) (es: Symbol.Symbols (Pred α × Ref n) l) (ns: List.Vector Bool l): (Rule n (Pred α)) :=
+--   match r with
+--   | Regex.emptyset => Regex.emptyset
+--   | Regex.emptystr => Regex.emptyset
+--   | Regex.symbol i =>
+--     if List.Vector.get ns i
+--     then Regex.emptystr
+--     else Regex.emptyset
+--   | Regex.or r1 r2 =>
+--     Regex.smartOr (leave r1 es ns) (leave r2 es ns)
+--   | Regex.concat r1 r2 =>
+--     if Regex.nullable r1
+--     then
+--       Regex.smartOr (Regex.smartConcat (leave r1 es ns) (Symbol.replaceFrom r2 es)) (leave r2 es ns)
+--     else
+--       Regex.smartConcat (leave r1 es ns) (Symbol.replaceFrom r2 es)
+--   | Regex.star r1 =>
+--       Regex.smartConcat (leave r1 es ns) (Regex.smartStar (Symbol.replaceFrom r1 es))
 
 -- deriveLeave takes a vector of expressions and vector of bools.
 -- The vectors of bools represent the nullability of the derived child expressions.

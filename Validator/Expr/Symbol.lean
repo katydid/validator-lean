@@ -764,7 +764,7 @@ theorem extractFrom_replaceFrom_is_fmap (r: Regex α) (f: α -> β):
   rw [<- replace_cast_both]
   rw [<- extract_replace_is_fmap r List.Vector.nil]
 
-def Symbol.derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+def derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
   Regex.derive2 (replaceFrom (extractFrom r).1 (List.Vector.map (fun s => (s, p s a)) (extractFrom r).2))
 
 theorem Symbol_derive_is_Regex_derive

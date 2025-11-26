@@ -566,3 +566,22 @@ theorem Regex.derive_is_derive2 (p: σ -> α -> Bool) (r: Regex σ) (a: α):
     have h : (r1.map fun s => (s, p s a)).first = r1 := by
       apply map_first
     rw [h]
+
+def Regex.smartDerive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
+  match r with
+  | emptyset => emptyset
+  | emptystr => emptyset
+  | symbol (_, b) =>
+    if b
+    then emptystr
+    else emptyset
+  | or r1 r2 =>
+    smartOr (derive2 r1) (derive2 r2)
+  | concat r1 r2 =>
+    if nullable r1
+    then
+      smartOr (smartConcat (derive2 r1) (first r2)) (derive2 r2)
+    else
+      smartConcat (derive2 r1) (first r2)
+  | star r1 =>
+      smartConcat (derive2 r1) (smartStar (first r1))
