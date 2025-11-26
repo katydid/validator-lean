@@ -447,7 +447,7 @@ theorem extract_take_toList_fmap (acc: Symbols σ l):
   simp_all only [List.map_append, List.length_map, List.take_left', List.Vector.toList_map,
     List.Vector.toList_mk]
 
-theorem extract_take_fmap [DecidableEq α] [DecidableEq β] (acc: Symbols α l) (f: α -> β):
+theorem extract_take_fmap (acc: Symbols α l) (f: α -> β):
   (List.Vector.take
     (l + num r1)
     (List.Vector.map
@@ -652,12 +652,12 @@ theorem snoc_fmap:
   = (Symbols.snoc (List.Vector.map f acc) (f s)) := by
   simp_all only [List.Vector.map_snoc]
 
-theorem map_cast [DecidableEq α] [DecidableEq β] (xs: List.Vector α l1) (f: α -> β) (h: l1 = l2):
+theorem map_cast (xs: List.Vector α l1) (f: α -> β) (h: l1 = l2):
   List.Vector.map f (Symbols.cast xs h) = Symbols.cast (List.Vector.map f xs) h := by
   subst h
   rfl
 
-theorem extract_replaceFrom_is_fmap [DecidableEq α] [DecidableEq β] (r: Regex α) (acc: Symbols α l) (f: α -> β):
+theorem extract_replaceFrom_is_fmap (r: Regex α) (acc: Symbols α l) (f: α -> β):
   Regex.map r f = replaceFrom (extract r acc).1 (List.Vector.map f (extract r acc).2) := by
   simp only [replaceFrom]
   generalize_proofs hr
@@ -750,3 +750,26 @@ theorem extract_replaceFrom_is_fmap [DecidableEq α] [DecidableEq β] (r: Regex 
     intro n acc hr
     rw [<- ih1 acc]
     simp only [Regex.map]
+
+theorem extract_replace_is_fmap (r: Regex α) (acc: Symbols α l) (f: α -> β):
+  Regex.map r f = replace (extract r acc).1 (List.Vector.map f (extract r acc).2) (by omega) := by
+  rw [<- replaceFrom]
+  rw [<- extract_replaceFrom_is_fmap]
+
+theorem extractFrom_replaceFrom_is_fmap (r: Regex α) (f: α -> β):
+  Regex.map r f = replaceFrom (extractFrom r).1 (List.Vector.map f (extractFrom r).2) := by
+  simp only [extractFrom]
+  simp only [replaceFrom]
+  rw [map_cast]
+  rw [<- replace_cast_both]
+  rw [<- extract_replace_is_fmap r List.Vector.nil]
+
+def Symbol.derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+  Regex.derive2 (replaceFrom (extractFrom r).1 (List.Vector.map (fun s => (s, p s a)) (extractFrom r).2))
+
+theorem Symbol_derive_is_Regex_derive
+  {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α):
+  Symbol.derive p r a = Regex.derive p r a := by
+  unfold Symbol.derive
+  rw [<- extractFrom_replaceFrom_is_fmap]
+  rw [Regex.derive_is_derive2]
