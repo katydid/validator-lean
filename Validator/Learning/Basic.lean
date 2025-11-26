@@ -27,12 +27,13 @@ def derive {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pr
       -- childxs = expressions to evaluate on children.
       let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifExprs label
       -- dchildxs = derivatives of children.
-      let dchildxs := List.foldl (derive g) childxs children
+      let dchildxs: Rules n (Pred α) (Symbol.nums xs) := List.foldl (derive g) childxs children
       -- leaves is the other one of our two new memoizable functions.
-      Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
+      let lchildxs: Rules n (Pred α) l := Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
+      lchildxs
 
 def derivs {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=
-  let dxs := List.foldl (derive g) (List.Vector.cons x List.Vector.nil) hedge
+  let dxs := List.foldl (derive g) (Vec.singleton x) hedge
   dxs.head
 
 def validate {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Bool :=

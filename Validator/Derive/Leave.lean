@@ -5,8 +5,8 @@ import Validator.Derive.Enter
 
 namespace Leave
 
-def leave (x: Regex (Fin l)) (es: Symbol.Symbols (Pred α × Ref n) l) (ns: List.Vector Bool l): (Rule n (Pred α)) :=
-  match x with
+def leave (r: Regex (Fin l)) (es: Symbol.Symbols (Pred α × Ref n) l) (ns: List.Vector Bool l): (Rule n (Pred α)) :=
+  match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
   | Regex.symbol i =>

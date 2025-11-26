@@ -13,17 +13,17 @@ inductive Regex (σ: Type) where
   | star (p: Regex σ)
   deriving DecidableEq, Ord, Repr, Hashable
 
-instance [Ord σ]: Ord (Regex σ) := inferInstance
+instance [Ord α]: Ord (Regex α) := inferInstance
 
-instance [Repr σ]: Repr (Regex σ) := inferInstance
+instance [Repr α]: Repr (Regex α) := inferInstance
 
-instance [DecidableEq σ]: DecidableEq (Regex σ) := inferInstance
+instance [DecidableEq α]: DecidableEq (Regex α) := inferInstance
 
-instance [DecidableEq σ]: BEq (Regex σ) := inferInstance
+instance [DecidableEq α]: BEq (Regex α) := inferInstance
 
-instance [Hashable σ]: Hashable (Regex σ) := inferInstance
+instance [Hashable α]: Hashable (Regex α) := inferInstance
 
-def Regex.map (r: Regex σ) (f: σ -> σ'): Regex σ' :=
+def Regex.map (r: Regex α) (f: α -> β): Regex β :=
   match r with
   | emptyset => emptyset
   | emptystr => emptystr
@@ -31,6 +31,9 @@ def Regex.map (r: Regex σ) (f: σ -> σ'): Regex σ' :=
   | or r1 r2 => or (r1.map f) (r2.map f)
   | concat r1 r2 => concat (r1.map f) (r2.map f)
   | star r1 => star (r1.map f)
+
+def Regex.first (r: Regex (α × β)): Regex α :=
+  Regex.map r (fun (s, _) => s)
 
 -- A regular expression is denoted as usual, expect that allow the user to inject the denotation of the generic symbol, dσ.
 -- This allows us to handle generic predicates or even trees, without extending the original regular expression with new operators.

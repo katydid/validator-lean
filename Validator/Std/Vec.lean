@@ -7,6 +7,12 @@ namespace Vec
 def fromList (xs: List α): List.Vector α (xs.length) :=
   Subtype.mk xs rfl
 
+def singleton (x: α): List.Vector α 1 :=
+  List.Vector.cons x List.Vector.nil
+
+def nil: List.Vector α 0 :=
+  List.Vector.nil
+
 theorem toList_take:
   List.take n xs.val = (List.Vector.take n xs).toList := by
   simp only [_root_.List.Vector.toList_take]

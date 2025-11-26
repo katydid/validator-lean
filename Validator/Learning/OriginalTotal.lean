@@ -183,9 +183,9 @@ open TokenTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
-theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (a: Hedge.Node α):
-  Rule.denote g (Rule.derive g r a) = Language.derive (Rule.denote g r) a := by
-  fun_induction (Rule.derive g) r a with
+theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (x: Hedge.Node α):
+  Rule.denote g (Rule.derive g r x) = Language.derive (Rule.denote g r) x := by
+  fun_induction (Rule.derive g) r x with
   | case1 => -- emptyset
     rw [Rule.denote_emptyset]
     rw [Language.derive_emptyset]
@@ -222,14 +222,14 @@ theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (r:
         apply ih
         rw [List.mem_cons]
         apply Or.inr hchild
-  | case4 a p q ihp ihq => -- or
+  | case4 x p q ihp ihq => -- or
     rw [Rule.denote_or]
     rw [Rule.denote_or]
     unfold Language.or
     rw [ihp]
     rw [ihq]
     rfl
-  | case5 a p q ihp ihq => -- concat
+  | case5 x p q ihp ihq => -- concat
     rw [Rule.denote_concat]
     rw [Rule.denote_or]
     rw [Rule.denote_concat]
@@ -237,9 +237,9 @@ theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (r:
     rw [Language.derive_concat]
     rw [<- ihp]
     rw [<- ihq]
-    congrm (Language.or (Language.concat (Rule.denote g (Rule.derive g p a)) (Rule.denote g q)) ?_)
+    congrm (Language.or (Language.concat (Rule.denote g (Rule.derive g p x)) (Rule.denote g q)) ?_)
     rw [Rule.null_commutes]
-  | case6 a r ih => -- star
+  | case6 x r ih => -- star
     rw [Rule.denote_star]
     rw [Rule.denote_concat]
     rw [Rule.denote_star]

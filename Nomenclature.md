@@ -1,6 +1,6 @@
 # Nomenclature and reserved syntax
 
-* a, b (generic alphabet varaibles)
+* a, b (generic alphabet variables)
 * α, β (generic type parameters)
 * c (char)
 * eq (equal)
