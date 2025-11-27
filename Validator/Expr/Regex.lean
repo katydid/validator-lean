@@ -505,19 +505,19 @@ theorem map_first (p: σ -> α -> Bool) (r: Regex σ) (a: α):
     simp only [Regex.map, Regex.first]
   | or r1 r2 ih1 ih2 =>
     simp only [Regex.map, Regex.first]
-    simp_all only [Regex.or.injEq]
+    simp only [Regex.or.injEq]
     apply And.intro
     · exact ih1
     · exact ih2
   | concat r1 r2 ih1 ih2 =>
     simp only [Regex.map, Regex.first]
-    simp_all only [Regex.concat.injEq]
+    simp only [Regex.concat.injEq]
     apply And.intro
     · exact ih1
     · exact ih2
   | star r1 ih1 =>
     simp only [Regex.map, Regex.first]
-    simp_all only [Regex.star.injEq]
+    simp only [Regex.star.injEq]
     exact ih1
 
 theorem map_nullable (p: σ -> α -> Bool) (r: Regex σ) (a: α):
@@ -531,10 +531,12 @@ theorem map_nullable (p: σ -> α -> Bool) (r: Regex σ) (a: α):
     simp only [Regex.map, Regex.nullable]
   | or r1 r2 ih1 ih2 =>
     simp only [Regex.map, Regex.nullable]
-    simp_all only
+    rw [ih1]
+    rw [ih2]
   | concat r1 r2 ih1 ih2 =>
     simp only [Regex.map, Regex.nullable]
-    simp_all only
+    rw [ih1]
+    rw [ih2]
   | star r1 ih1 =>
     simp only [Regex.map, Regex.nullable]
 
@@ -586,6 +588,9 @@ def Regex.smartDerive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
       smartConcat (derive2 r1) (first r2)
   | star r1 =>
       smartConcat (derive2 r1) (smartStar (first r1))
+
+def Regexes.map (rs: List.Vector (Regex α) l) (f: α -> β): List.Vector (Regex β) l :=
+  List.Vector.map (fun r => Regex.map r f) rs
 
 def Regex.derives (p: σ -> α -> Bool) (rs: List.Vector (Regex σ) l) (a: α): List.Vector (Regex σ) l :=
   List.Vector.map (fun r => derive p r a) rs

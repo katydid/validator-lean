@@ -55,31 +55,32 @@ abbrev Symbols σ l := List.Vector σ l
 def RegexID.add {n: Nat} (m: Nat) (r: RegexID n): RegexID (n + m) :=
   Regex.map r (fun s => (Fin.mk s.val (by omega)))
 
-def RegexID.cast (r: RegexID n) (h: n = m): RegexID m := by
-  rw [<- h]
-  exact r
+def RegexID.cast (r: RegexID n) (h: n = m): RegexID m :=
+  match h with
+  | Eq.refl _ => r
 
 def RegexID.casts (rs: List.Vector (RegexID n) l) (h: n = m): List.Vector (RegexID m) l :=
   List.Vector.map (fun r => RegexID.cast r h) rs
 
-def RegexID.add_or (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.or r1 r2)) :=
-  have h : (n + num r1 + num r2) = (n + num (Regex.or r1 r2)) := by
+abbrev RegexID.add_assoc (r: RegexID (n + num r1 + num r2)): RegexID (n + (num r1 + num r2)) :=
+  have h : (n + num r1 + num r2) = n + (num r1 + num r2) := by
     rw [<- Nat.add_assoc]
   RegexID.cast r h
+
+def RegexID.add_or (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.or r1 r2)) :=
+  RegexID.add_assoc r
 
 def RegexID.add_concat (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.concat r1 r2)) :=
-  have h : (n + num r1 + num r2) = (n + num (Regex.concat r1 r2)) := by
-    rw [<- Nat.add_assoc]
-  RegexID.cast r h
+  RegexID.add_assoc r
 
-def Symbols.cast (xs: Symbols σ n) (h: n = m): Symbols σ m := by
-  rw [<- h]
-  exact xs
+def Symbols.cast (xs: Symbols σ n) (h: n = m): Symbols σ m :=
+  match h with
+  | Eq.refl _ => xs
 
 theorem List.Vector.toList_cast_is_toList (xs: List.Vector σ n):
   List.Vector.toList xs = List.Vector.toList (Symbols.cast xs h) := by
   rcases xs with ⟨xs, hxs⟩
-  simp [Symbols.cast, _root_.cast, List.Vector.toList]
+  simp [Symbols.cast, List.Vector.toList]
   subst h hxs
   simp only
 
@@ -96,7 +97,7 @@ def Symbols.add_or (xs: Symbols σ (n + num r1 + num r2)): Symbols σ (n + num (
     rw [<- Nat.add_assoc]
   Symbols.cast xs h
 
-def Symbols.add_concat (xs: Symbols σ (n + num r1 + num r2)): Symbols σ (n + num (Regex.or r1 r2)) :=
+def Symbols.add_concat (xs: Symbols σ (n + num r1 + num r2)): Symbols σ (n + num (Regex.concat r1 r2)) :=
   have h : (n + num r1 + num r2) = (n + num (Regex.concat r1 r2)) := by
     rw [<- Nat.add_assoc]
   Symbols.cast xs h
@@ -770,6 +771,32 @@ theorem extractFrom_replaceFrom_is_fmap (r: Regex α) (f: α -> β):
 def derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
   Regex.derive2 (replaceFrom (extractFrom r).1 (List.Vector.map (fun s => (s, p s a)) (extractFrom r).2))
 
+def derive' {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+  let (r', symbols): (RegexID (num r) × Symbols σ (num r)) := extractFrom r
+  let pred_results: List.Vector Bool (num r) := List.Vector.map (fun s => p s a) symbols
+  let replaces: List.Vector (σ × Bool) (num r) := Vec.zip symbols pred_results
+  let replaced: Regex (σ × Bool) := replaceFrom r' replaces
+  Regex.derive2 replaced
+
+theorem zip_map {α: Type} {β: Type} (f: α -> β) (xs: List.Vector α l):
+  (List.Vector.map (fun x => (x, f x)) xs) =
+  (Vec.zip xs (List.Vector.map f xs)) := by
+  simp only [Vec.zip, List.Vector.map]
+  cases xs with
+  | mk xs h =>
+  simp only
+  congr
+  rw [← List.zip_eq_zipWith]
+  rw [← List.map_prod_left_eq_zip]
+
+theorem Symbol_derive_is_derive'
+  {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α):
+  Symbol.derive p r a = Symbol.derive' p r a := by
+  unfold Symbol.derive
+  unfold Symbol.derive'
+  simp only
+  rw [zip_map]
+
 theorem Symbol_derive_is_Regex_derive
   {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α):
   Symbol.derive p r a = Regex.derive p r a := by
@@ -793,3 +820,78 @@ def derives {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: List.Vector (Regex 
   let replaces: List.Vector (σ × Bool) (nums rs) := Vec.zip symbols pred_results
   let replaced: List.Vector (Regex (σ × Bool)) l := replacesFrom rs' replaces
   Regex.derives2 replaced
+
+theorem replacesFrom_cast_both (rs: List.Vector (RegexID n) l) (ss: Symbols σ n) (h: n = m):
+  replacesFrom rs ss =
+  replacesFrom (RegexID.casts rs h) (Symbols.cast ss h) := by
+  sorry
+
+theorem extractsFrom_replacesFrom_is_fmap (rs: List.Vector (Regex α) l) (f: α -> β):
+  Regexes.map rs f = replacesFrom (extractsFrom rs).1 (List.Vector.map f (extractsFrom rs).2) := by
+  unfold extractsFrom
+  simp only
+  unfold Regexes.map
+  generalize_proofs hnumrs
+  rw [map_cast]
+  rw [<- replacesFrom_cast_both]
+  sorry
+
+theorem Symbol_derives_is_fmap
+  {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: List.Vector (Regex σ) l) (a: α):
+  Symbol.derives p rs a = List.Vector.map (fun r => Symbol.derive p r a) rs := by
+  unfold Symbol.derives
+  simp only
+  unfold Regex.derives2
+  unfold Symbol.derive
+  nth_rewrite 2 [<- List.Vector.map_map]
+  nth_rewrite 1 [<- List.Vector.map_map]
+  apply (congrArg (List.Vector.map Regex.derive2))
+  rw [<- zip_map]
+  -- rewrites under the closure
+  simp only [<- extractFrom_replaceFrom_is_fmap]
+  rw [<- extractsFrom_replacesFrom_is_fmap]
+  unfold Regexes.map
+  simp only [List.Vector.map_map]
+
+theorem Symbol_derives_is_Regex_derives
+  {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: List.Vector (Regex σ) l) (a: α):
+  Symbol.derives p r a = Regex.derives p r a := by
+  rw [Symbol_derives_is_fmap]
+  unfold Symbol.derive
+  unfold Regex.derives
+  congr
+  funext r
+  rw [<- extractFrom_replaceFrom_is_fmap]
+  rw [Regex.derive_is_derive2]
+
+def leave
+  (rs: List.Vector (Regex σ) l)
+  (ns: List.Vector Bool (Symbol.nums rs))
+  : (List.Vector (Regex σ) l) :=
+  let replaces: List.Vector (σ × Bool) (nums rs) := Vec.zip (Symbol.extractsFrom rs).2 ns
+  let replaced: List.Vector (Regex (σ × Bool)) l := replacesFrom (Symbol.extractsFrom rs).1 replaces
+  Regex.derives2 replaced
+
+def enter (rs: List.Vector (Regex σ) l): Symbols σ (nums rs) :=
+  let (_, symbols): (List.Vector (RegexID (nums rs)) l × Symbols σ (nums rs)) := Symbol.extractsFrom rs
+  symbols
+
+-- derives_preds unlike derives takes a predicate that works out the full vector of predicates.
+-- This gives the predicate control over the evaluation order of α, for example α is a tree, we can first evaluate the same label, before traversing down.
+def derives_preds {σ: Type} {α: Type}
+  (ps: {n: Nat} -> List.Vector σ n -> α -> List.Vector Bool n) (rs: List.Vector (Regex σ) l) (a: α): List.Vector (Regex σ) l :=
+  let symbols: Symbols σ (nums rs) := enter rs
+  let pred_results: List.Vector Bool (nums rs) := ps symbols a
+  leave rs pred_results
+
+theorem Symbol_derive_is_derive_preds
+  {σ: Type} {α: Type} (ps: {n: Nat} -> List.Vector σ n -> α -> List.Vector Bool n) (rs: List.Vector (Regex σ) l) (a: α)
+  (h: ∀ {n': Nat} (xs: List.Vector σ n') (a: α), ps xs a = List.Vector.map (fun x => (ps (Vec.singleton x) a).head) xs):
+  Symbol.derives (fun s a => (ps (Vec.singleton s) a).head) rs a = Symbol.derives_preds ps rs a := by
+  unfold derives
+  simp only
+  rw [<- h]
+  unfold derives_preds
+  unfold leave
+  unfold enter
+  simp only
