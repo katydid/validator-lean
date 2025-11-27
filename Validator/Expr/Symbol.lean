@@ -59,6 +59,9 @@ def RegexID.cast (r: RegexID n) (h: n = m): RegexID m := by
   rw [<- h]
   exact r
 
+def RegexID.casts (rs: List.Vector (RegexID n) l) (h: n = m): List.Vector (RegexID m) l :=
+  List.Vector.map (fun r => RegexID.cast r h) rs
+
 def RegexID.add_or (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.or r1 r2)) :=
   have h : (n + num r1 + num r2) = (n + num (Regex.or r1 r2)) := by
     rw [<- Nat.add_assoc]
@@ -773,3 +776,20 @@ theorem Symbol_derive_is_Regex_derive
   unfold Symbol.derive
   rw [<- extractFrom_replaceFrom_is_fmap]
   rw [Regex.derive_is_derive2]
+
+def extractsFrom (xs: List.Vector (Regex σ) nregex):
+  (List.Vector (RegexID (nums xs)) nregex) × (Symbols σ (nums xs)) :=
+  let (xs0, symbols0) := extracts xs List.Vector.nil
+  let symbols': Symbols σ (nums xs) := Symbols.cast symbols0 (by ac_rfl)
+  let xs': List.Vector (RegexID (nums xs)) nregex := RegexID.casts xs0 (by ac_rfl)
+  (xs', symbols')
+
+def replacesFrom (rs: List.Vector (RegexID n) l) (xs: List.Vector σ n): List.Vector (Regex σ) l :=
+  List.Vector.map (fun r => replaceFrom r xs) rs
+
+def derives {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: List.Vector (Regex σ) l) (a: α): List.Vector (Regex σ) l :=
+  let (rs', symbols): (List.Vector (RegexID (nums rs)) l × Symbols σ (nums rs)) := Symbol.extractsFrom rs
+  let pred_results: List.Vector Bool (nums rs) := List.Vector.map (fun s => p s a) symbols
+  let replaces: List.Vector (σ × Bool) (nums rs) := Vec.zip symbols pred_results
+  let replaced: List.Vector (Regex (σ × Bool)) l := replacesFrom rs' replaces
+  Regex.derives2 replaced

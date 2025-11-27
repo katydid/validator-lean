@@ -20,16 +20,17 @@ def derive {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pr
   if List.all xs.toList Regex.unescapable
   then xs
   else
+    -- enters is one of our two new memoizable functions.
+    let ifExprs: IfExprs n α (Symbol.nums xs) := Enter.deriveEnter xs
     match t with
     | Hedge.Node.mk label children =>
-      -- enters is one of our two new memoizable functions.
-      let ifExprs: IfExprs n α (Symbol.nums xs) := Enter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
       let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifExprs label
       -- dchildxs = derivatives of children.
       let dchildxs: Rules n (Pred α) (Symbol.nums xs) := List.foldl (derive g) childxs children
+      let ns: List.Vector Bool (Symbol.nums xs) := List.Vector.map Rule.nullable dchildxs
       -- leaves is the other one of our two new memoizable functions.
-      let lchildxs: Rules n (Pred α) l := Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
+      let lchildxs: Rules n (Pred α) l := Leave.deriveLeaves xs ns
       lchildxs
 
 def derivs {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=

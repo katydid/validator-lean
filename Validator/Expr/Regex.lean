@@ -1,4 +1,5 @@
 import Validator.Std.Hedge
+import Validator.Std.Vec
 
 import Validator.Expr.Pred
 import Validator.Expr.Language
@@ -585,3 +586,12 @@ def Regex.smartDerive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
       smartConcat (derive2 r1) (first r2)
   | star r1 =>
       smartConcat (derive2 r1) (smartStar (first r1))
+
+def Regex.derives (p: σ -> α -> Bool) (rs: List.Vector (Regex σ) l) (a: α): List.Vector (Regex σ) l :=
+  List.Vector.map (fun r => derive p r a) rs
+
+def Regex.derives2 (rs: List.Vector (Regex (σ × Bool)) l): List.Vector (Regex σ) l :=
+  List.Vector.map (fun r => derive2 r) rs
+
+def Regex.smartDerives2 (rs: List.Vector (Regex (σ × Bool)) l): List.Vector (Regex σ) l :=
+  List.Vector.map (fun r => smartDerive2 r) rs
