@@ -46,11 +46,34 @@ def nums (xs: List.Vector (Regex σ) l): Nat :=
   | ⟨[], _⟩ => 0
   | ⟨x::xs, h⟩ => nums ⟨xs, congrArg Nat.pred h⟩ + num x
 
+theorem nums_nil {σ: Type}:
+  nums (@List.Vector.nil (Regex σ)) = 0 := by
+  unfold nums
+  rfl
+
 def nums_list (xs: List (Regex σ)): Nat :=
-  nums (Vec.fromList xs)
+  match xs with
+  | [] => 0
+  | x::xs => nums_list xs + num x
+
+theorem nums_is_nums_list (xs: List.Vector (Regex σ) l):
+  nums xs = nums_list xs.toList := by
+  cases xs with
+  | mk xs hxs =>
+  simp only [List.Vector.toList]
+  induction xs generalizing l with
+  | nil =>
+    simp [nums, nums_list]
+  | cons x xs ih =>
+    simp only [List.length] at hxs
+    have hxs' : xs.length = l - 1 := by
+      omega
+    have ih := @ih (l - 1) hxs'
+    simp only [nums, nums_list]
+    rw [ih]
 
 abbrev RegexID n := Regex (Fin n)
-abbrev Symbols σ l := List.Vector σ l
+abbrev Symbols σ n := List.Vector σ n
 
 def RegexID.add {n: Nat} (m: Nat) (r: RegexID n): RegexID (n + m) :=
   Regex.map r (fun s => (Fin.mk s.val (by omega)))
@@ -58,6 +81,23 @@ def RegexID.add {n: Nat} (m: Nat) (r: RegexID n): RegexID (n + m) :=
 def RegexID.cast (r: RegexID n) (h: n = m): RegexID m :=
   match h with
   | Eq.refl _ => r
+
+theorem RegexID.cast_rfl (r: RegexID n): RegexID.cast r rfl = r := by
+  rfl
+
+def RegexID.cast_map (r: RegexID n) (h: n = m): RegexID m :=
+  Regex.map r (fun s => Fin.cast h s)
+
+theorem RegexID.cast_map_rfl (r: RegexID n): RegexID.cast_map r rfl = r := by
+  unfold RegexID.cast_map
+  simp [Fin.cast]
+  rw [Regex.map_id]
+
+theorem RegexID.cast_is_cast_map (r: RegexID n) (h: n = m):
+  RegexID.cast r h = RegexID.cast_map r h := by
+  subst h
+  rw [RegexID.cast_rfl]
+  rw [RegexID.cast_map_rfl]
 
 def RegexID.casts (rs: List.Vector (RegexID n) l) (h: n = m): List.Vector (RegexID m) l :=
   List.Vector.map (fun r => RegexID.cast r h) rs
@@ -74,15 +114,14 @@ def RegexID.add_concat (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Reg
   RegexID.add_assoc r
 
 def Symbols.cast (xs: Symbols σ n) (h: n = m): Symbols σ m :=
-  match h with
-  | Eq.refl _ => xs
+  List.Vector.congr h xs
 
 theorem List.Vector.toList_cast_is_toList (xs: List.Vector σ n):
   List.Vector.toList xs = List.Vector.toList (Symbols.cast xs h) := by
   rcases xs with ⟨xs, hxs⟩
   simp [Symbols.cast, List.Vector.toList]
   subst h hxs
-  simp only
+  simp only [List.Vector.congr]
 
 abbrev Symbols.take {α: Type} (i: Nat) (xs: List.Vector α l) := List.Vector.take i xs
 abbrev Symbols.get {α: Type} (xs: List.Vector α l) (i: Fin l) := List.Vector.get xs i
@@ -102,7 +141,11 @@ def Symbols.add_concat (xs: Symbols σ (n + num r1 + num r2)): Symbols σ (n + n
     rw [<- Nat.add_assoc]
   Symbols.cast xs h
 
-theorem Symbols.cast_rfl {xs : Symbols α n} : Symbols.cast xs rfl = xs := by
+theorem Symbols.cast_rfl {α n} {xs : Symbols α n} : Symbols.cast xs rfl = xs := by
+  rcases xs with ⟨xs, rfl⟩
+  rfl
+
+theorem Symbols.cast_eq {α n} {xs : Symbols α n} (h: n = n): Symbols.cast xs h = xs := by
   rcases xs with ⟨xs, rfl⟩
   rfl
 
@@ -635,21 +678,16 @@ def extracts (xs: List.Vector (Regex σ) nregex) (acc: Symbols σ nacc):
       symbols'
     )
 
-def extractsSymbols (xs: List.Vector (Regex σ) l1) (acc: Symbols σ l2):
-  Symbols σ (l2 + Symbol.nums xs) :=
-  match xs with
-  | ⟨[], h⟩ => ⟨acc.val, by simp only [List.Vector.length_val, Symbol.nums, add_zero]⟩
-  | ⟨x::xs, h⟩ =>
-      (Symbol.Symbols.cast
-        (extractsSymbols ⟨xs, congrArg Nat.pred h⟩ (Symbol.extract x acc).2)
-        (by simp only [Symbol.nums]; ac_rfl)
-      )
-
-def extracts_list (xs: List (Regex σ)) (acc: List σ):
-  (List (RegexID (acc.length + nums_list xs))) × (List σ) :=
-  let (r1, r2) := extracts (Vec.fromList xs) (Vec.fromList acc)
-  let r2List: List σ := List.Vector.toList r2
-  (r1.toList, r2List)
+theorem extracts_nil (acc: Symbols σ nacc):
+  extracts (@List.Vector.nil (Regex σ)) acc = (RegexID.casts List.Vector.nil (by
+    simp only [nums_nil]
+    rfl
+  ), List.Vector.congr (by
+    simp only [nums_nil]
+    simp only [add_zero]
+  ) acc) := by
+  unfold extracts
+  congr
 
 theorem snoc_fmap:
   (List.Vector.map f (Symbols.snoc acc s))
@@ -821,20 +859,541 @@ def derives {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: List.Vector (Regex 
   let replaced: List.Vector (Regex (σ × Bool)) l := replacesFrom rs' replaces
   Regex.derives2 replaced
 
+theorem RegexID.casts_rfl {n} {xs : List.Vector (RegexID n) l} {h : n = n} : RegexID.casts xs h = xs := by
+  rcases xs with ⟨xs, rfl⟩
+  generalize_proofs h1 h2
+  unfold RegexID.casts
+  -- aesop?
+  ext m : 1
+  simp only [List.Vector.get_map]
+  rfl
+
 theorem replacesFrom_cast_both (rs: List.Vector (RegexID n) l) (ss: Symbols σ n) (h: n = m):
   replacesFrom rs ss =
   replacesFrom (RegexID.casts rs h) (Symbols.cast ss h) := by
-  sorry
+  subst h
+  simp only [Symbols.cast_rfl]
+  simp only [RegexID.casts_rfl]
+
+theorem num_map (r: Regex α) (f: α -> β):
+  num (Regex.map r f) = num r := by
+  fun_induction num with
+  | case1 =>
+    simp only [Regex.map, num]
+  | case2 =>
+    simp only [Regex.map, num]
+  | case3 =>
+    simp only [Regex.map, num]
+  | case4 r1 r2 hr1 hr2 =>
+    simp only [Regex.map, num, hr1, hr2]
+  | case5 r1 r2 hr1 hr2 =>
+    simp only [Regex.map, num, hr1, hr2]
+  | case6 r1 hr1 =>
+    simp only [Regex.map, hr1]
+
+theorem nums_map (rs: List.Vector (Regex α) l) (f: α -> β):
+  nums (Regexes.map rs f) = nums rs := by
+  simp only [Regexes.map]
+  simp only [List.Vector.map]
+  cases rs with
+  | mk rs hrs =>
+  simp only
+  rw [nums_is_nums_list]
+  rw [nums_is_nums_list]
+  simp only [List.Vector.toList]
+  induction rs generalizing l with
+  | nil =>
+    simp only [List.map]
+    rfl
+  | cons r rs ih =>
+    simp only [List.map]
+    simp only [List.length] at hrs
+    have hrs' : rs.length = l - 1 := by
+      omega
+    have ih := ih hrs'
+    simp only [nums_list]
+    rw [ih]
+    rw [num_map]
+
+theorem toList_cast (xs: Symbols σ l) (h: l = n):
+  List.Vector.toList (Symbols.cast xs h) = List.Vector.toList xs := by
+  cases xs with
+  | mk xs hxs =>
+  subst hxs h
+  simp only [List.Vector.toList_mk]
+  rfl
+
+theorem extract_lift_cast (r: Regex α) (acc: List.Vector α n) (h1: n + num r = l + num r) (h2: n = l):
+  (Symbols.cast (extract r acc).2 h1) = (extract r (Symbols.cast acc h2)).2 := by
+  subst h2
+  rfl
+
+theorem extract_lift_cast_1 (r: Regex α) (acc: List.Vector α n) (h1: n + num r = l + num r) (h2: n = l):
+  RegexID.cast (extract r acc).1 h1 = (extract r (Symbols.cast acc h2)).1 := by
+  subst h2
+  rfl
+
+theorem extract_is_fmap_2 (r: Regex α) (acc: List.Vector α n) (f: α -> β):
+  (extract (Regex.map r f) (List.Vector.map f acc)).2 = Symbols.cast (List.Vector.map f (extract r acc).2) (by rw [num_map]) := by
+  generalize_proofs hr
+  fun_induction extract with
+  | case1 =>
+    apply List.Vector.eq
+    repeat rw [toList_cast]
+    simp only [extract, Regex.map]
+  | case2 =>
+    apply List.Vector.eq
+    repeat rw [toList_cast]
+    simp only [extract, Regex.map]
+  | case3 =>
+    apply List.Vector.eq
+    repeat rw [toList_cast]
+    simp only [extract, Regex.map, num]
+    -- aesop?
+    simp_all only [num, Nat.add_left_cancel_iff, List.Vector.map_snoc]
+  | case4 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 => -- or
+    rename_i n
+    simp [Regex.map] at *
+    have hacc1 : acc1 = (extract r1 acc).2 := by
+      rw [he1]
+    have hacc2 : acc2 = (extract r2 (extract r1 acc).2).2 := by
+      rw [<- hacc1]
+      rw [he2]
+    rw [hacc2]
+    rw [hacc1] at ih2
+    have ih1' := ih1 (by rw [num_map])
+    clear ih1
+    have ih2' := ih2 (by rw [num_map])
+    clear ih2
+    simp only [extract]
+    simp [Symbols.add_or]
+    rw [ih1']
+    have hh: n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
+      repeat rw [num_map]
+    rw [<- extract_lift_cast (h1 := hh)]
+    rw [ih2']
+    apply List.Vector.eq
+    repeat rw [toList_cast]
+    rw [map_cast]
+    repeat rw [toList_cast]
+  | case5 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 => -- concat
+    rename_i n
+    simp [Regex.map] at *
+    have hacc1 : acc1 = (extract r1 acc).2 := by
+      rw [he1]
+    have hacc2 : acc2 = (extract r2 (extract r1 acc).2).2 := by
+      rw [<- hacc1]
+      rw [he2]
+    rw [hacc2]
+    rw [hacc1] at ih2
+    have ih1' := ih1 (by rw [num_map])
+    clear ih1
+    have ih2' := ih2 (by rw [num_map])
+    clear ih2
+    simp only [extract]
+    simp [Symbols.add_concat]
+    rw [ih1']
+    have hh: n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
+      repeat rw [num_map]
+    rw [<- extract_lift_cast (h1 := hh)]
+    rw [ih2']
+    apply List.Vector.eq
+    repeat rw [toList_cast]
+    rw [map_cast]
+    repeat rw [toList_cast]
+  | case6 acc r1 er1 acc1 he ih1 => -- star
+    simp [Regex.map] at *
+    have hacc1 : acc1 = (extract r1 acc).2 := by
+      rw [he]
+    rw [hacc1]
+    rw [<- ih1]
+    rfl
+    rw [num_map]
+
+theorem extract_is_fmap_1 (r: Regex α) (acc: List.Vector α n) (f: α -> β):
+  (extract (Regex.map r f) (List.Vector.map f acc)).1 = RegexID.cast (extract r acc).1 (by simp only [num_map]) := by
+  generalize_proofs hr
+  fun_induction extract with
+  | case1 =>
+    simp only [Regex.map, extract, RegexID.cast]
+  | case2 =>
+    simp only [Regex.map, extract, RegexID.cast]
+  | case3 =>
+    simp only [Regex.map, extract, RegexID.cast]
+  | case4 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 =>
+    rename_i n
+
+    have hacc1 : acc1 = (extract r1 acc).2 := by
+      rw [he1]
+    have hacc2 : acc2 = (extract r2 (extract r1 acc).2).2 := by
+      rw [<- hacc1]
+      rw [he2]
+    have her1 : er1 = (extract r1 acc).1 := by
+      rw [he1]
+    have her2 : er2 = (extract r2 (extract r1 acc).2).1 := by
+      rw [<- hacc1]
+      rw [he2]
+    rw [hacc1] at ih2
+    clear he1
+    clear he2
+
+    subst_vars
+
+    have hr1: n + num r1 = n + num (r1.map f) := by
+      rw [num_map]
+    have ih1' := ih1 hr1
+    clear ih1
+    have hr2: n + num r1 + num r2 = n + num r1 + num (r2.map f) := by
+      rw [num_map]
+    have ih2' := ih2 hr2
+    clear ih2
+
+    simp only [Regex.map]
+    simp only [extract]
+
+    rw [ih1']
+    rw [extract_is_fmap_2]
+    generalize_proofs
+    have hhlift : n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
+      repeat rw [num_map]
+    have hlift := extract_lift_cast_1 (r := r2.map f) (acc := List.Vector.map f (extract r1 acc).2) (h2 := hr1) (h1 := hhlift)
+    rw [<- hlift]
+    clear hlift
+    rw [ih2']
+    clear ih1'
+    clear ih2'
+
+    simp only [RegexID.add]
+    simp only [RegexID.add_or]
+    simp only [RegexID.add_assoc]
+    repeat rw [RegexID.cast_is_cast_map]
+    unfold RegexID.cast_map
+    simp [Regex.map_map]
+    congr 1
+    · simp [Regex.map_map]
+    · simp [Regex.map_map]
+  | case5 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 =>
+    rename_i n
+
+    have hacc1 : acc1 = (extract r1 acc).2 := by
+      rw [he1]
+    have hacc2 : acc2 = (extract r2 (extract r1 acc).2).2 := by
+      rw [<- hacc1]
+      rw [he2]
+    have her1 : er1 = (extract r1 acc).1 := by
+      rw [he1]
+    have her2 : er2 = (extract r2 (extract r1 acc).2).1 := by
+      rw [<- hacc1]
+      rw [he2]
+    rw [hacc1] at ih2
+    clear he1
+    clear he2
+
+    subst_vars
+
+    have hr1: n + num r1 = n + num (r1.map f) := by
+      rw [num_map]
+    have ih1' := ih1 hr1
+    clear ih1
+    have hr2: n + num r1 + num r2 = n + num r1 + num (r2.map f) := by
+      rw [num_map]
+    have ih2' := ih2 hr2
+    clear ih2
+
+    simp only [Regex.map]
+    simp only [extract]
+
+    rw [ih1']
+    rw [extract_is_fmap_2]
+    generalize_proofs
+    have hhlift : n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
+      repeat rw [num_map]
+    have hlift := extract_lift_cast_1 (r := r2.map f) (acc := List.Vector.map f (extract r1 acc).2) (h2 := hr1) (h1 := hhlift)
+    rw [<- hlift]
+    rw [ih2']
+
+    simp only [RegexID.add]
+    simp only [RegexID.add_concat]
+    simp only [RegexID.add_assoc]
+    repeat rw [RegexID.cast_is_cast_map]
+    unfold RegexID.cast_map
+    simp [Regex.map_map]
+    congr 1
+    · simp [Regex.map_map]
+    · simp [Regex.map_map]
+  | case6 acc r1 er1 acc1 he1 ih1 =>
+    rename_i n
+
+    have hacc1 : acc1 = (extract r1 acc).2 := by
+      rw [he1]
+    have her1 : er1 = (extract r1 acc).1 := by
+      rw [he1]
+    clear he1
+
+    subst_vars
+
+    have hr1: n + num r1 = n + num (r1.map f) := by
+      rw [num_map]
+    have ih1' := ih1 hr1
+    clear ih1
+
+    simp only [Regex.map]
+    simp only [extract]
+
+    rw [ih1']
+    generalize (extract r1 acc).1 = rid
+
+    repeat rw [RegexID.cast_is_cast_map]
+    unfold RegexID.cast_map
+    simp [Regex.map]
+
+theorem extracts_lift_cast (rs: List.Vector (Regex α) m) (acc: List.Vector α n) (h1: n + nums rs = l + nums rs) (h2: n = l):
+  (Symbols.cast (extracts rs acc).2 h1) = (extracts rs (Symbols.cast acc h2)).2 := by
+  subst h2
+  rfl
+
+theorem extracts_fmap2 (rs: List.Vector (Regex α) l) (acc: Symbols α n) (f: α -> β):
+  (List.Vector.map f (extracts rs acc).2)
+  = (Symbols.cast (extracts (Regexes.map rs f) (List.Vector.map f acc)).2 (by
+    rw [Nat.add_right_inj]
+    apply nums_map
+  )) := by
+  generalize_proofs h
+  generalize_proofs hrs0 hmap0
+  apply List.Vector.eq
+  simp only [List.Vector.toList_map]
+  repeat rw [toList_cast]
+  simp only [Regexes.map]
+  cases rs with
+  | mk rs hrs =>
+  induction rs generalizing n l acc with
+  | nil =>
+    simp only [extracts, List.Vector.map, List.map, List.Vector.toList]
+    rfl
+  | cons r rs ih =>
+    simp only [extracts]
+    repeat rw [toList_cast]
+    simp only [List.length] at hrs
+    have hrs': rs.length = l - 1 := by omega
+    have hrs'': rs.length = l.pred := by
+      simp [Nat.pred]
+      rw [hrs']
+      cases l
+      · simp
+      · simp
+    have hh: n + num r + nums (Regexes.map ⟨rs, hrs'⟩ f) = n + num r + nums ⟨rs, hrs'⟩ := by
+      rw [nums_map]
+    have ih' := ih ((extract r acc).2) hrs'' hh
+    rw [ih']
+
+    have h1 : (List.Vector.map (fun r => r.map f) ⟨rs, hrs''⟩).length = l.pred := by
+      simp only [Nat.pred_eq_sub_one]
+    have h2: n + num (r.map f) + nums (List.Vector.map (fun r => r.map f) ⟨rs, hrs'⟩) =
+      n + nums (List.Vector.map (fun r => r.map f) ⟨r :: rs, hrs⟩) := by
+      repeat rw [nums_is_nums_list]
+      simp only [List.Vector.toList_map, List.Vector.toList_mk, List.map_cons]
+      simp only [nums_list]
+      ac_rfl
+
+    have hh :
+      (extracts
+        (List.Vector.map (fun r => r.map f) ⟨r :: rs, hrs⟩)
+        (List.Vector.map f acc)
+      ).2
+      = (Symbols.cast (extracts
+          (List.Vector.map (fun r => r.map f) ⟨rs, hrs''⟩)
+          (extract (r.map f) (List.Vector.map f acc)).2
+        ).2 h2) := by
+      simp only [List.Vector.map, List.map, extracts]
+    rw [hh]
+    rw [toList_cast]
+
+    have hextract := extract_is_fmap_2 (f := f) (r := r) (n := n)
+    rw [hextract]
+
+    have hhh :
+      n + num r + nums (List.Vector.map (fun r => r.map f) ⟨rs, hrs''⟩) =
+      n + num (r.map f) + nums (List.Vector.map (fun r => r.map f) ⟨rs, hrs''⟩) := by
+      rw [num_map]
+
+    rw [<- (extracts_lift_cast (h1 := hhh))]
+    rw [toList_cast]
+
+theorem Vec.map_cons (f : α → β) (x : α) (xs: List.Vector α n):
+  List.Vector.map f (List.Vector.cons x xs) = (List.Vector.cons (f x) (List.Vector.map f xs)) := by
+  simp only [List.Vector.map]
+  -- aesop?
+  simp_all only [Nat.succ_eq_add_one]
+  rfl
+
+theorem map_cons (f : α → β) (x : α) (xs: List α) (h: (x :: xs).length = n):
+  List.Vector.map f ⟨List.cons x xs, h⟩ = List.Vector.congr (by
+    simp only [List.length] at h
+    subst h
+    simp_all only [add_tsub_cancel_right, Nat.succ_eq_add_one]
+  ) (List.Vector.cons (f x) ((List.Vector.map f ⟨xs, by
+    simp only [List.length] at h
+    rw [<- h]
+    simp only [add_tsub_cancel_right]
+  ⟩) : List.Vector β (n - 1)): List.Vector β ((n - 1).succ)) := by
+  simp only [List.Vector.map, List.map]
+  -- aesop?
+  subst h
+  simp_all only [Nat.succ_eq_add_one]
+  rfl
+
+theorem Vec.map_id {n : ℕ} (xs : List.Vector α n) : List.Vector.map (fun x => x) xs = xs :=
+  List.Vector.eq _ _ (by simp_all only [List.Vector.toList_map, List.map_id_fun', id_eq])
+
+theorem RegexID.casts_symm:
+  RegexID.casts rs1 h = rs2
+  <->
+  RegexID.casts rs2 (Eq.symm h) = rs1 := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    rw [<- h]
+    unfold RegexID.casts
+    rw [List.Vector.map_map]
+    simp only [RegexID.cast_is_cast_map]
+    unfold RegexID.cast_map
+    simp only [Regex.map_map]
+    simp only [Fin.cast_trans, Fin.cast_eq_self]
+    simp only [Regex.map_id]
+    simp only [Vec.map_id]
+  case mpr =>
+    intro h
+    rw [<- h]
+    unfold RegexID.casts
+    rw [List.Vector.map_map]
+    simp only [RegexID.cast_is_cast_map]
+    unfold RegexID.cast_map
+    simp only [Regex.map_map]
+    simp only [Fin.cast_trans, Fin.cast_eq_self]
+    simp only [Regex.map_id]
+    simp only [Vec.map_id]
+
+theorem extracts_fmap1 (rs: List.Vector (Regex α) l) (acc: Symbols α n) (f: α -> β):
+  (extracts rs acc).1
+  = (RegexID.casts (extracts (Regexes.map rs f) (List.Vector.map f acc)).1
+      (by simp only [nums_map])
+    ) := by
+  repeat rw [toList_cast]
+  simp only [Regexes.map]
+
+  induction rs generalizing n acc with
+  | nil =>
+    simp only [List.Vector.map_nil]
+    repeat rw [extracts_nil]
+    simp only
+    unfold RegexID.casts
+    simp only [RegexID.cast_is_cast_map]
+    simp only [Nat.add_zero, List.Vector.map_nil]
+  | cons ih =>
+    rename_i l r rs
+    rw [RegexID.casts_symm.mpr]
+
+
+    -- generalize_proofs h1 h2 at *
+    -- (extract (r.map f) (List.Vector.map f acc)).1
+    have hfmap1 := extract_is_fmap_1 (f := f) (r := r) (n := n)
+    -- generalize_proofs hhfamp1 at hfmap1
+    -- rw [hfmap1]
+
+    -- (List.Vector.map (fun r => r.map f) ⟨r :: rs, hrs⟩)
+    have hmapcons := Vec.map_cons (f := fun r => r.map f) (x := r) (xs := rs)
+    -- simp only [hmapcons]
+    -- generalize_proofs hmapcons1 hmapcons2 at hmapcons
+    -- rw [hmapcons]
+
+    -- have hhcastsrfl : (n + nums ⟨r :: rs, hrs⟩) = (n + nums ⟨r :: rs, hrs⟩) := by rfl
+    -- have hcastsrfl := RegexID.casts_rfl (xs := (extracts ⟨r :: rs, hrs⟩ acc).1) (h := rfl)
+    -- rw [<- hcastsrfl]
+
+    -- congr 1
+    -- · simp [nums_map]
+    --   sorry
+    -- · sorry
+    -- · rw [show Regexes.map ⟨r :: rs, hrs⟩ f = List.Vector.map (fun r => r.map f) ⟨r :: rs, hrs⟩ from
+    --       rfl] at h
+
+
+    -- have hpred: rs.length = l.pred := by
+    --   simp only [List.length] at hrs
+    --   simp only [Nat.pred]
+    --   rw [<- hrs]
+
+    -- have ih' := ih (l := l.pred) ((extract r acc).2) hpred
+    clear ih
+
+    simp only [extracts]
+    rw [ih']
+    clear ih'
+
+    unfold Symbols.cast
+
+
+
+
+
+
+
+
+
+
+
+    apply List.Vector.eq
+    rw [toList_cast]
+
+
+    -- rw [hmapcons]
+    -- rw [hfmap1]
+
+
+    simp only [List.Vector.map, List.map, extracts]
+
+    sorry
+
+
+
+
+
+
+
+
+
+theorem extracts_replacesFrom_is_id (rs: List.Vector (Regex α) l) (acc: Symbols α n):
+  rs = replacesFrom (extracts rs acc).1 (extracts rs acc).2 := by
+  cases rs with
+  | mk rs hrs =>
+  induction rs generalizing n l acc with
+  | nil =>
+    apply List.Vector.eq
+    simp [extracts, replacesFrom]
+  | cons r rs ih =>
+    simp only [extracts]
+    simp only [replacesFrom] at *
+    simp only [map_cast]
+    generalize_proofs h1 h2 h3 h4
+
+    sorry
+
+
+theorem extracts_replacesFrom_is_fmap (rs: List.Vector (Regex α) l) (f: α -> β):
+  Regexes.map rs f = replacesFrom (extracts rs acc).1 (List.Vector.map f (extracts rs acc).2) := by
+  rw [extracts_fmap2]
+  have hh := extracts_replacesFrom_is_id (rs := Regexes.map rs f) (acc := List.Vector.map f acc)
+  simp_all only
+  nth_rewrite 2 [extracts_fmap1]
+  rw [<- replacesFrom_cast_both]
 
 theorem extractsFrom_replacesFrom_is_fmap (rs: List.Vector (Regex α) l) (f: α -> β):
   Regexes.map rs f = replacesFrom (extractsFrom rs).1 (List.Vector.map f (extractsFrom rs).2) := by
-  unfold extractsFrom
-  simp only
-  unfold Regexes.map
-  generalize_proofs hnumrs
-  rw [map_cast]
-  rw [<- replacesFrom_cast_both]
-  sorry
+  simp only [extractsFrom]
+  generalize_proofs h
+  rw [extracts_replacesFrom_is_fmap (acc := List.Vector.nil) (f := f)]
+  rw [replacesFrom_cast_both (h := h)]
+  simp only [map_cast]
 
 theorem Symbol_derives_is_fmap
   {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: List.Vector (Regex σ) l) (a: α):
