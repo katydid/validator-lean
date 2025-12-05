@@ -494,6 +494,48 @@ def Regex.derive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   | star r1 =>
       concat (derive2 r1) (star (first r1))
 
+theorem Regex.map_id (r: Regex α):
+  Regex.map r (fun s => s) = r := by
+  induction r with
+  | emptyset =>
+    simp only [Regex.map]
+  | emptystr =>
+    simp only [Regex.map]
+  | symbol =>
+    simp only [Regex.map]
+  | or r1 r2 ih1 ih2 =>
+    simp only [Regex.map]
+    rw [ih1]
+    rw [ih2]
+  | concat r1 r2 ih1 ih2 =>
+    simp only [Regex.map]
+    rw [ih1]
+    rw [ih2]
+  | star r1 ih1 =>
+    simp only [Regex.map]
+    rw [ih1]
+
+theorem Regex.map_map (r: Regex α) (f: α -> β) (g: β -> σ):
+  Regex.map (Regex.map r f) g = Regex.map r (fun r' => g (f r')) := by
+  induction r with
+  | emptyset =>
+    simp only [Regex.map]
+  | emptystr =>
+    simp only [Regex.map]
+  | symbol =>
+    simp only [Regex.map]
+  | or r1 r2 ih1 ih2 =>
+    simp only [Regex.map]
+    rw [ih1]
+    rw [ih2]
+  | concat r1 r2 ih1 ih2 =>
+    simp only [Regex.map]
+    rw [ih1]
+    rw [ih2]
+  | star r1 ih1 =>
+    simp only [Regex.map]
+    rw [ih1]
+
 theorem map_first (p: σ -> α -> Bool) (r: Regex σ) (a: α):
   (r.map (fun s => (s, p s a))).first = r := by
   induction r with
