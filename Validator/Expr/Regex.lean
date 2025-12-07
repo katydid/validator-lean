@@ -631,14 +631,14 @@ def Regex.smartDerive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   | star r1 =>
       smartConcat (derive2 r1) (smartStar (first r1))
 
-def Regexes.map (rs: List.Vector (Regex α) l) (f: α -> β): List.Vector (Regex β) l :=
-  List.Vector.map (fun r => Regex.map r f) rs
+def Regexes.map (rs: Vec (Regex α) l) (f: α -> β): Vec (Regex β) l :=
+  Vec.map rs (fun r => Regex.map r f)
 
-def Regex.derives (p: σ -> α -> Bool) (rs: List.Vector (Regex σ) l) (a: α): List.Vector (Regex σ) l :=
-  List.Vector.map (fun r => derive p r a) rs
+def Regex.derives (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
+  Vec.map rs (fun r => derive p r a)
 
-def Regex.derives2 (rs: List.Vector (Regex (σ × Bool)) l): List.Vector (Regex σ) l :=
-  List.Vector.map (fun r => derive2 r) rs
+def Regex.derives2 (rs: Vec (Regex (σ × Bool)) l): Vec (Regex σ) l :=
+  Vec.map rs (fun r => derive2 r)
 
-def Regex.smartDerives2 (rs: List.Vector (Regex (σ × Bool)) l): List.Vector (Regex σ) l :=
-  List.Vector.map (fun r => smartDerive2 r) rs
+def Regex.smartDerives2 (rs: Vec (Regex (σ × Bool)) l): Vec (Regex σ) l :=
+  Vec.map rs (fun r => smartDerive2 r)
