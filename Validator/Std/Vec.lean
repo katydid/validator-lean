@@ -589,3 +589,13 @@ def smallest [DecidableEq α] [LT α] [DecidableLT α] (xs: Vec α l) (y: α): O
       | Option.some n => Option.some ⟨n + 1, by
           simp only [Nat.add_lt_add_iff_right, Fin.is_lt]
         ⟩
+
+theorem zip_map {α: Type} {β: Type} (f: α -> β) (xs: Vec α l):
+  (Vec.map xs (fun x => (x, f x))) =
+  (Vec.zip xs (Vec.map xs f)) := by
+  induction xs with
+  | nil =>
+    simp only [Vec.zip, Vec.map]
+  | @cons l x xs ih =>
+    simp only [Vec.zip, Vec.map]
+    rw [ih]
