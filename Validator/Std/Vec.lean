@@ -1,10 +1,43 @@
-import Mathlib.Data.Vector.Basic
-import Mathlib.Data.Vector.Snoc
-import Mathlib.Data.Vector.MapLemmas
+import Init.Data.Nat
+
+import Mathlib.Tactic.GeneralizeProofs
+import Mathlib.Tactic.NthRewrite
 
 inductive Vec (α: Type): Nat -> Type where
   | nil : Vec α 0
   | cons {n: Nat} (x: α) (xs: Vec α n): Vec α (n + 1)
+  deriving DecidableEq, Ord, Repr, Hashable
+
+instance [Ord α]: Ord (Vec α n) := inferInstance
+
+instance [Repr α]: Repr (Vec α n) := inferInstance
+
+instance [DecidableEq α]: DecidableEq (Vec α n) := inferInstance
+
+instance [DecidableEq α]: BEq (Vec α n) := inferInstance
+
+instance [Hashable α]: Hashable (Vec α n) := inferInstance
+
+def Vec.fromList (xs: List α): Vec α (xs.length) :=
+  match xs with
+  | [] => Vec.nil
+  | (x::xs) => Vec.cons x (Vec.fromList xs)
+
+/-- Syntax for `Vec α n` -/
+syntax (name := «term#vec[_,]») "#vec[" withoutPosition(term,*,?) "]" : term
+
+open Lean in
+macro_rules
+  | `(#vec[ $elems,* ]) => `(Vec.fromList [ $elems,* ])
+
+inductive Vec.Mem (x : α) : {n: Nat} -> Vec α n → Prop
+  /-- The head of a list is a member: `x ∈ x :: xs`. -/
+  | head {n: Nat} (xs : Vec α (n - 1)) : Mem x (Vec.cons x xs)
+  /-- A member of the tail of a list is a member of the list: `x ∈ xs → x ∈ x' :: xs`. -/
+  | tail {n: Nat} (x' : α) {xs : Vec α (n - 1)} : Mem x xs → Mem x (Vec.cons x' xs)
+
+instance : Membership α (Vec α n) where
+  mem xs x := Vec.Mem x xs
 
 namespace Vec
 
@@ -18,11 +51,6 @@ def append (xs: Vec α nxs) (ys: Vec α nys): (Vec α (nxs + nys)) :=
 
 def singleton (x: α): Vec α 1 :=
   Vec.cons x Vec.nil
-
-def fromList (xs: List α): Vec α (xs.length) :=
-  match xs with
-  | [] => Vec.nil
-  | (x::xs) => Vec.cons x (fromList xs)
 
 def toList (xs: Vec α n): List α :=
   match xs with
@@ -247,9 +275,15 @@ theorem append_cons (xs: Vec α n1) (ys: Vec α n2):
   Vec.append (Vec.cons x xs) ys = Vec.cast (Vec.cons x (Vec.append xs ys)) (by omega) := by
   simp only [Vec.append]
 
-theorem append_cast (xs: Vec α n1) (ys: Vec α n2):
-  Vec.append xs (Vec.cast ys h1) = Vec.cast (Vec.append xs ys) h2 := by
-  subst h1
+theorem append_cast_r {h: n2 = n3} (xs: Vec α n1) (ys: Vec α n2):
+  Vec.append xs (Vec.cast ys h) = Vec.cast (Vec.append xs ys) (by subst h; rfl) := by
+  subst h
+  rw [cast_rfl]
+  rw [cast_rfl]
+
+theorem append_cast_l {h: n1 = n3} (xs: Vec α n1) (ys: Vec α n2):
+  Vec.append (Vec.cast xs h) ys = Vec.cast (Vec.append xs ys) (by subst h; rfl) := by
+  subst h
   rw [cast_rfl]
   rw [cast_rfl]
 
@@ -260,22 +294,21 @@ theorem take_append_drop (i : Nat) (xs : Vec α l): (Vec.append (xs.take i) (xs.
     rw [cast_append]
     rw [nil_append]
     rw [cast_cast]
-    simp only [Nat.sub_zero, zero_add, Nat.zero_le, inf_of_le_left]
+    simp only [Nat.sub_zero, Nat.zero_add, Nat.zero_le, Nat.min_eq_left]
   | succ i ih =>
     cases xs with
     | nil =>
       simp only [take_nil, drop_nil]
-      rw [append_cast]
+      rw [append_cast_r]
       rw [cast_append]
       simp only [nil_append]
       rw [cast_cast]
       rw [cast_cast]
-      simp only [add_zero, Nat.le_add_left, inf_of_le_right]
-      simp only [Nat.le_add_left, inf_of_le_right, add_zero, Nat.sub_eq_zero_of_le]
+      simp only [Nat.add_zero, Nat.le_add_left, Nat.min_eq_right]
     | cons x xs =>
       simp only [Vec.take]
       simp only [Vec.drop]
-      rw [append_cast]
+      rw [append_cast_r]
       rw [cast_append]
       rw [cast_cast]
       rw [append_cons]
@@ -284,7 +317,6 @@ theorem take_append_drop (i : Nat) (xs : Vec α l): (Vec.append (xs.take i) (xs.
       rw [cons_cast]
       rw [cast_cast]
       simp only [Nat.add_min_add_right]
-      simp only [Nat.add_min_add_right, Nat.reduceSubDiff]
 
 theorem take_append_drop_cast (i : Nat) (xs : Vec α l): Vec.cast (Vec.append (xs.take i) (xs.drop i)) (by omega) = xs := by
   rw [take_append_drop]
@@ -381,7 +413,7 @@ theorem get_map {β : Type} (xs : Vec α n) (f : α → β) (i : Fin n) :
         simp only [Vec.get]
         rw [ih]
 
-theorem toList_append {n m : ℕ} (xs : Vec α n) (ys : Vec α m) :
+theorem toList_append {n m : Nat} (xs : Vec α n) (ys : Vec α m) :
   Vec.toList (Vec.append xs ys) = Vec.toList xs ++ Vec.toList ys := by
   induction xs with
   | nil =>
@@ -410,7 +442,7 @@ theorem map_map (xs: Vec α l) (g : β → σ) (f : α → β) :
     simp only [Vec.map]
     rw [ih]
 
-theorem map_id {n : ℕ} (xs : Vec α n):
+theorem map_id {n : Nat} (xs : Vec α n):
   Vec.map xs (fun x => x) = xs :=
   Vec.eq _ _ (by simp_all only [Vec.toList_map, List.map_id_fun', id_eq])
 
@@ -433,3 +465,127 @@ theorem map_cast (xs : Vec α l) (f: α -> β) (h: l = n):
   rw [map_toList]
   repeat rw [cast_toList]
   rw [map_toList]
+
+theorem take_cast
+  (xs: Vec α l):
+  Vec.take n (xs.cast h) = Vec.take n xs := by
+  simp only [cast]
+
+theorem take_lift_cast
+  (xs: Vec α l):
+  Vec.take n (xs.cast h1) = Vec.cast (Vec.take n xs) (by rw [h1]) := by
+  subst h1
+  rfl
+
+theorem take_n (xs: Vec α n):
+  Vec.take n xs = Vec.cast xs (by simp only [Nat.min_self]) := by
+  induction xs with
+  | nil =>
+    simp only [cast, take]
+  | @cons l x xs ih =>
+    simp only [take]
+    rw [ih]
+    rw [cons_cast]
+    rw [cast_cast]
+
+theorem append_assoc_r (xs: Vec α n1) (ys: Vec α n2) (zs: Vec α n3):
+  append xs (append ys zs)
+  = Vec.cast (append (append xs ys) zs) (by ac_rfl) := by
+  induction xs with
+  | nil =>
+    simp only [nil_append]
+    simp only [append_cast_l]
+    simp only [cast_cast]
+  | @cons n1 x xs ih =>
+    simp only [append]
+    rw [ih]
+    rw [cons_cast]
+    rw [cast_cast]
+    rw [append_cast_l]
+    rw [cast_cast]
+    simp only [append]
+    rw [cast_cast]
+
+theorem append_assoc_l (xs: Vec α n1) (ys: Vec α n2) (zs: Vec α n3):
+  (append (append xs ys) zs)
+  = Vec.cast (append xs (append ys zs)) (by ac_rfl) := by
+  induction xs with
+  | nil =>
+    simp only [nil_append]
+    simp only [append_cast_l]
+    simp only [cast_cast]
+  | @cons n1 x xs ih =>
+    simp only [append]
+    rw [append_cast_l]
+    rw [cast_cast]
+    simp only [append]
+    rw [ih]
+    rw [cons_cast]
+    rw [cast_cast]
+    rw [cast_cast]
+
+theorem take_append (xs: Vec α n1) (ys: Vec α n2):
+  Vec.take n1 (Vec.append xs ys) = Vec.cast xs (by simp) := by
+  induction xs with
+  | nil =>
+    rw [nil_append]
+    rw [take_zero]
+  | @cons n1 x xs ih =>
+    simp only [append_cons]
+    simp only [take_lift_cast]
+    simp only [take]
+    rw [ih]
+    simp only [cons_cast]
+    rw [cast_cast]
+    rw [cast_cast]
+
+theorem mem_nil (h : y ∈ #vec[]): False := by
+  rw [show (y ∈ Vec.fromList []) = Vec.Mem y (Vec.fromList []) from rfl] at h
+  nomatch h
+
+theorem mem_cons (xs: Vec α l)
+  (h : Vec.Mem y (Vec.cons x xs))
+  (hnxy : x ≠ y): Vec.Mem y xs := by
+  cases h with
+  | head h =>
+    contradiction
+  | tail _ h =>
+    exact h
+
+def indexOf [DecidableEq α] (xs: Vec α l) (y: α) (h: y ∈ xs): Fin l :=
+  match xs with
+  | nil => by
+    exfalso
+    apply Vec.mem_nil h
+  | cons x xs =>
+    if hxy: x == y
+    then
+      Fin.mk 0 (by simp only [Nat.zero_lt_succ])
+    else
+      let i := indexOf xs y (by
+        simp only [beq_iff_eq] at hxy
+        cases h
+        · contradiction
+        · assumption
+      )
+      Fin.mk (i.val + 1) (by omega)
+
+def smallest [DecidableEq α] [LT α] [DecidableLT α] (xs: Vec α l) (y: α): Option (Fin l) :=
+  match xs with
+  | nil => Option.none
+  | cons x xs =>
+    if x < y
+    then
+      match smallest xs x with
+      | Option.none => Option.some ⟨0, by
+          simp only [Nat.zero_lt_succ]
+        ⟩
+      | Option.some n => Option.some ⟨n + 1, by
+          simp only [Nat.add_lt_add_iff_right, Fin.is_lt]
+        ⟩
+    else
+      match smallest xs y with
+      | Option.none => Option.none
+      | Option.some n => Option.some ⟨n + 1, by
+          simp only [Nat.add_lt_add_iff_right, Fin.is_lt]
+        ⟩

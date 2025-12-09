@@ -19,12 +19,12 @@ abbrev Rule (n: Nat) (Φ: Type) :=
   Regex (Φ × Ref n)
 
 abbrev Rules (n: Nat) (Φ: Type) (l: Nat) :=
-  List.Vector (Rule n Φ) l
+  Vec (Rule n Φ) l
 
-def hashVector [Hashable α] (xs: List.Vector α n): UInt64 :=
+def hashVector [Hashable α] (xs: Vec α n): UInt64 :=
   hash xs.toList
 
-instance (α: Type) (n: Nat) [Hashable α] : Hashable (List.Vector α n) where
+instance (α: Type) (n: Nat) [Hashable α] : Hashable (Vec α n) where
   hash := hashVector
 
 def hashRules {n: Nat} {Φ: Type} {l: Nat} [Hashable Φ] (xs: Rules n Φ l): UInt64 :=
@@ -35,26 +35,26 @@ instance (n: Nat) (Φ: Type) (l: Nat) [Hashable Φ] : Hashable (Rules n Φ l) wh
 
 structure Grammar (n: Nat) (Φ: Type) where
   start: Rule n Φ
-  prods: Vector (Rule n Φ) n
+  prods: Vec (Rule n Φ) n
 
 def Grammar.lookup {n: Nat} {Φ: Type}
   (g: Grammar n Φ) (ref: Fin n): Rule n Φ :=
-  Vector.get g.prods ref
+  Vec.get g.prods ref
 
 def Grammar.singleton (x: Rule 0 Φ): Grammar 0 Φ  :=
-  Grammar.mk x #v[]
+  Grammar.mk x #vec[]
 
 def Grammar.emptyset: Grammar 0 Φ :=
-  Grammar.mk Regex.emptyset #v[]
+  Grammar.mk Regex.emptyset #vec[]
 
 def Grammar.emptystr: Grammar 0 Φ :=
-  Grammar.mk Regex.emptystr #v[]
+  Grammar.mk Regex.emptystr #vec[]
 
 example : Grammar 5 (Pred String) := Grammar.mk
   -- start := ("html", Html)
   (start := Regex.symbol (Pred.eq "html", 0))
   -- production rules
-  (prods := #v[
+  (prods := #vec[
     -- Html -> ("head", Head) · ("body", Body)
     Regex.concat
       (Regex.symbol (Pred.eq "head", 1))
@@ -74,7 +74,7 @@ example : Grammar 5 (Pred String) := Grammar.mk
 def example_grammar: Grammar 1 (Pred Char) :=
   Grammar.mk
     (Regex.or Regex.emptystr (Regex.symbol (Pred.eq 'a', 0)))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
 
 #guard
   example_grammar.lookup (Fin.mk 0 (by omega))

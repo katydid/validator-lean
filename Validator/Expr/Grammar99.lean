@@ -1,4 +1,5 @@
 import Validator.Std.Hedge
+import Validator.Std.Vec
 
 import Validator.Expr.Grammar
 import Validator.Expr.Pred
@@ -17,10 +18,10 @@ import Validator.Expr.Language
 
 structure Grammar99 (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
   start: Regex (Ref n)
-  prods: Vector (Φ α × Regex (Ref n)) n
+  prods: Vec (Φ α × Regex (Ref n)) n
 
 def Grammar99.lookup (g: Grammar99 n α Φ) (ref: Fin n): Φ α × Regex (Ref n) :=
-  Vector.get g.prods ref
+  Vec.get g.prods ref
 
 def Grammar99.denote_prod {α: Type} [BEq α] (g: Grammar99 n α Pred) (pred: Pred α) (r: Regex (Ref n)) (xs: Hedge α): Prop :=
   match xs with
@@ -64,7 +65,7 @@ def convert99' (g99: Grammar99 n α Φ) (r: Regex (Ref n)): Rule n α Φ :=
 def convert99 (g99: Grammar99 n α Φ): Grammar n α Φ :=
   match g99 with
   | Grammar99.mk start prods =>
-    Grammar.mk (convert99' g99 start) (Vector.map (fun (_, rref) => convert99' g99 rref) prods)
+    Grammar.mk (convert99' g99 start) (Vec.map (fun (_, rref) => convert99' g99 rref) prods)
 
 def convert' (g: Grammar n α Φ) (r: Regex (Φ α × Ref n)): Regex (Ref n) :=
   match r with

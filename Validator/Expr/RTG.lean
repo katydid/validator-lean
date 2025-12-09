@@ -1,5 +1,7 @@
 import Std
 
+import Validator.Std.Vec
+
 import Validator.Expr.Regex
 
 namespace RegularTreeGrammar
@@ -20,8 +22,8 @@ abbrev Rules (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := { xs: List (Rule n 
 
 structure RTG (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
   start: { s: List (Ref n) // s.length > 0 }
-  prods: Vector (Rules n α Φ) n
+  prods: Vec (Rules n α Φ) n
 
 def RTG.lookup (n: Nat) (α: Type) (Φ: (α: Type) -> Type)
   (g: RTG n α Φ) (ref: Fin n): Rules n α Φ :=
-  Vector.get g.prods ref
+  Vec.get g.prods ref

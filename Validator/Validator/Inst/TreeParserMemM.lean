@@ -1,6 +1,7 @@
 import Validator.Std.Debug
-
 import Validator.Std.Hedge
+import Validator.Std.Vec
+
 import Validator.Parser.TreeParser
 
 import Validator.Memoize.MemEnter
@@ -74,7 +75,7 @@ instance [DecidableEq α] [Hashable α]: MemLeave (Impl n α) n α where
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl n α) n α where
-  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): Impl n α (Rules n (Pred α) l) := MemLeave.deriveLeaveM xs ns
+  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: Vec Bool (Symbol.nums xs)): Impl n α (Rules n (Pred α) l) := MemLeave.deriveLeaveM xs ns
 
 instance [DecidableEq α] [Hashable α]: ValidateM (Impl n α) n α where
   -- all instances have been created, so no implementations are required here

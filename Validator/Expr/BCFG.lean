@@ -1,5 +1,7 @@
 import Std
 
+import Validator.Std.Vec
+
 import Validator.Expr.Regex
 import Validator.Expr.Pred
 
@@ -30,7 +32,7 @@ abbrev Rules (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := { xs: List (Rule n 
 
 structure BCFG (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
   start: { s: List (Ref n) // s.length > 0 }
-  prods: Vector (Rules n α Φ) n
+  prods: Vec (Rules n α Φ) n
 
 def union_rules {n: Nat} {α: Type} {Φ: (α: Type) -> Type}
   (xs: Rules n α Φ): RegexRule n α Φ :=
@@ -54,7 +56,7 @@ def BCFG.getStart
 
 def BCFG.lookup {n: Nat} {α: Type} {Φ: (α: Type) -> Type}
   (g: BCFG n α Φ) (ref: Fin n): RegexRule n α Φ :=
-  union_rules (Vector.get g.prods ref)
+  union_rules (Vec.get g.prods ref)
 
 def nullable {n: Nat} {α: Type} {Φ: (α: Type) -> Type} (r: RegexRule n α Φ): Bool :=
   Regex.nullable r

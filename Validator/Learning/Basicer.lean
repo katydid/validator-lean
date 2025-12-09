@@ -15,24 +15,69 @@ import Validator.Expr.Language
 import Validator.Derive.Enter
 import Validator.Derive.Leave
 
-namespace Basic
+namespace Basicer
+
+-- TODO: prove termination
+partial def derives_preds {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (rs: Rules n (Pred α) l) (t: Hedge.Node α): Rules n (Pred α) l :=
+  Symbol.derives_preds (fun {l': Nat} (preds: Vec (Pred α × Ref n) l') (a: Hedge.Node α) =>
+    match a with
+    | Hedge.Node.mk label children =>
+      let ifExprs: IfExprs n α l' := Vec.map
+        (fun (pred, ref) => IfExpr.mk pred ref)
+        preds
+      let childxs: Rules n (Pred α) l' := IfExpr.evals g ifExprs label
+      let dchildxs: Rules n (Pred α) l' := List.foldl (derives_preds g) childxs children
+      Vec.map Rule.nullable dchildxs
+  ) rs t
 
 def derive {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l) (t: Hedge.Node α): Rules n (Pred α) l :=
-  if List.all xs.toList Regex.unescapable
-  then xs
-  else
+  match t with
+  | Hedge.Node.mk label children =>
     -- enters is one of our two new memoizable functions.
     let ifExprs: IfExprs n α (Symbol.nums xs) := Enter.deriveEnter xs
-    match t with
-    | Hedge.Node.mk label children =>
-      -- childxs = expressions to evaluate on children.
-      let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifExprs label
-      -- dchildxs = derivatives of children.
-      let dchildxs: Rules n (Pred α) (Symbol.nums xs) := List.foldl (derive g) childxs children
-      let ns: Vec Bool (Symbol.nums xs) := Vec.map dchildxs Rule.nullable
-      -- leaves is the other one of our two new memoizable functions.
-      let lchildxs: Rules n (Pred α) l := Leave.deriveLeaves xs ns
-      lchildxs
+    -- childxs = expressions to evaluate on children.
+    let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifExprs label
+    -- dchildxs = derivatives of children.
+    let dchildxs: Rules n (Pred α) (Symbol.nums xs) := List.foldl (derive g) childxs children
+    -- leaves is the other one of our two new memoizable functions.
+    let lchildxs: Rules n (Pred α) l := Leave.deriveLeaves xs (Vec.map Rule.nullable dchildxs)
+    lchildxs
+
+theorem derive_commutes {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (x: Hedge.Node α):
+  Rule.denote g (derive g (Vec.singleton r) x).head = Language.derive (Rule.denote g r) x := by
+  induction r with
+  | emptyset =>
+    rw [Rule.denote_emptyset]
+    rw [Language.derive_emptyset]
+    unfold derive
+    cases x with
+    | mk label children =>
+    simp only
+    sorry
+  | emptystr =>
+    rw [Rule.denote_emptystr]
+    rw [Language.derive_emptystr]
+    unfold derive
+    cases x with
+    | mk label children =>
+    simp only
+    sorry
+  | symbol s =>
+    cases x with
+    | mk label children =>
+    rw [Rule.denote_symbol]
+    rw [Language.derive_tree]
+    unfold derive
+
+
+    simp only
+    sorry
+  | or r1 r2 ih1 ih2 =>
+    sorry
+  | concat r1 r2 ih1 ih2 =>
+    sorry
+  | star r1 ih1 =>
+    sorry
 
 def derivs {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=
   let dxs := List.foldl (derive g) (Vec.singleton x) hedge
@@ -57,7 +102,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #vec[Regex.emptystr]
+    #v[Regex.emptystr]
   )
   (node "a" [])
   = true
@@ -65,7 +110,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #vec[Regex.emptystr]
+    #v[Regex.emptystr]
   )
   (node "a" [node "b" []])
   = false
@@ -73,7 +118,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #vec[
+    #v[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
@@ -84,7 +129,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #vec[
+    #v[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 1))
@@ -98,7 +143,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #vec[
+    #v[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))
