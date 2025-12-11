@@ -1104,10 +1104,6 @@ theorem RegexID.castLE_id {h: n ≤ n}:
   simp_all only [le_refl]
   rw [Regex.map_id]
 
--- x_n = n + num r
--- xs_n = (n + num r + nums (rs.map fun r => r.map f))
--- h1: n + num r ≤ n + num (r.map f) + nums (rs.map fun r => r.map f)
--- h2: n + num r + nums (rs.map fun r => r.map f) = n + num (r.map f) + nums (rs.map fun r => r.map f)
 theorem RegexID.castLE_casts_lift_cons {x: RegexID n1} {h1: n1 ≤ k} {h2: n2 = k} {xs: Vec (RegexID n2) l}:
   Vec.cons (RegexID.castLE x h1) (RegexID.casts xs h2)
   = RegexID.castsLE (Vec.cons (RegexID.castLE x (by omega)) xs) (by omega) := by
