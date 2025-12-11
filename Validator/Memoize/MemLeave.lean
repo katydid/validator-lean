@@ -1,6 +1,7 @@
 import Std
 
 import Validator.Std.Debug
+import Validator.Std.Vec
 
 import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
@@ -9,10 +10,10 @@ import Validator.Expr.Symbol
 
 import Validator.Derive.Leave
 
-def hashRulesAndNulls {n: Nat} {Φ: Type} {l: Nat} [Hashable Φ] (x: (xs: Rules n Φ l) × (List.Vector Bool (Symbol.nums xs))): UInt64 :=
+def hashRulesAndNulls {n: Nat} {Φ: Type} {l: Nat} [Hashable Φ] (x: (xs: Rules n Φ l) × (Vec Bool (Symbol.nums xs))): UInt64 :=
   mixHash (hash x.1) (hash x.2)
 
-instance (n: Nat) (Φ: Type) (l: Nat) [Hashable Φ] : Hashable ((xs: Rules n Φ l) × (List.Vector Bool (Symbol.nums xs))) where
+instance (n: Nat) (Φ: Type) (l: Nat) [Hashable Φ] : Hashable ((xs: Rules n Φ l) × (Vec Bool (Symbol.nums xs))) where
   hash := hashRulesAndNulls
 
 abbrev MemLeave.LeaveMap n α [DecidableEq α] [Hashable α] :=
@@ -20,7 +21,7 @@ abbrev MemLeave.LeaveMap n α [DecidableEq α] [Hashable α] :=
     Nat
     (fun l =>
       Std.ExtHashMap
-        ((xs: Rules n (Pred α) l) × (List.Vector Bool (Symbol.nums xs)))
+        ((xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs)))
         (Rules n (Pred α) l)
     )
 
@@ -34,7 +35,7 @@ namespace MemLeave
 
 def get? [DecidableEq α] [Hashable α]
   (m: MemLeave.LeaveMap n α)
-  (key: (xs: Rules n (Pred α) l) × (List.Vector Bool (Symbol.nums xs)))
+  (key: (xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs)))
   : Option (Rules n (Pred α) l) :=
   match m.get? l with
   | Option.none => Option.none
@@ -42,7 +43,7 @@ def get? [DecidableEq α] [Hashable α]
 
 def insert [DecidableEq α] [Hashable α]
   (m: MemLeave.LeaveMap n α)
-  (key: (xs: Rules n (Pred α) l) × (List.Vector Bool (Symbol.nums xs)))
+  (key: (xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs)))
   (value: Rules n (Pred α) l) :=
   match m.get? l with
   | Option.none =>
@@ -53,9 +54,9 @@ def insert [DecidableEq α] [Hashable α]
 def deriveLeaveM
   [DecidableEq α] [Hashable α]
   [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n α]
-  (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := do
+  (xs: Rules n (Pred α) l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := do
   let memoized <- MemLeave.getLeave
-  let key: ((xs: Rules n (Pred α) l) × (List.Vector Bool (Symbol.nums xs))) := Sigma.mk xs ns
+  let key: ((xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs))) := Sigma.mk xs ns
   match get? memoized key with
   | Option.none =>
     Debug.debug "cache miss"
@@ -67,4 +68,4 @@ def deriveLeaveM
     return value
 
 instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n α] : Leave.DeriveLeaveM m n α where
-  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := deriveLeaveM xs ns
+  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := deriveLeaveM xs ns

@@ -13,7 +13,7 @@ inductive Index n where
 -- that resulted from compressing a list of expressions.
 -- This can be used to expanded to a list of expressions.
 abbrev Indices (compressed: Nat) (expanded: Nat) :=
-  List.Vector (Index compressed) expanded
+  Vec (Index compressed) expanded
 
 def eraseReps' [DecidableEq α] (x: α) (xs: List α): List α :=
   match xs with
@@ -127,9 +127,9 @@ theorem idxOf?_eq_none_iff [DecidableEq α] {xs : List α} {y : α} :
   idxOf? xs y = none ↔ y ∉ xs := by
   apply idxOf?_eq_none_iff' (i := 0)
 
-def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, x ∈ ys' }): List.Vector (Fin (List.length ys.val)) (List.length xs) :=
+def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, x ∈ ys' }): Vec (Fin (List.length ys.val)) (List.length xs) :=
   match xs with
-  | [] => List.Vector.nil
+  | [] => Vec.nil
   | (x::xs) =>
     match hi: idxOf? ys.val x with
     | Option.none => by
@@ -140,7 +140,7 @@ def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, 
       simp only at hi
       simp_all only [idxOf?_eq_none_iff, List.mem_cons, true_or, not_true_eq_false]
     | Option.some i =>
-      List.Vector.cons
+      Vec.cons
         (
           Fin.mk
             i
@@ -169,14 +169,10 @@ def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, 
           )
         )
 
-def vector_cast (h: n = m) (xs: List.Vector α n): List.Vector α m := by
-  subst h
-  exact xs
-
 def compress [DecidableEq α] (xs: Rules n (Pred α) l1): Σ l2, ((Rules n (Pred α) l2) × (Indices l2 l1)) :=
   let xs_list: List (Rule n (Pred α)) := xs.toList
   have hn : xs_list.length = l1 := by
-    simp_all only [List.Vector.toList_length, xs_list]
+    simp_all only [Vec.toList_length, xs_list]
 
   -- sort to increase chance of cache hit
   -- TODO: let sxs := List.mergeSort xs
@@ -185,77 +181,28 @@ def compress [DecidableEq α] (xs: Rules n (Pred α) l1): Σ l2, ((Rules n (Pred
   let xs_noreps: { ys: List (Rule n (Pred α)) // ∀ x ∈ xs_list, x ∈ ys } := eraseReps_sub xs_list
 
   -- get indices
-  let xs_idxs: List.Vector (Fin (xs_noreps.val).length) (List.length xs_list) := indices xs_noreps
+  let xs_idxs: Vec (Fin (xs_noreps.val).length) (List.length xs_list) := indices xs_noreps
 
   -- remove unescapable expressions, currently only emptyset
   -- TODO: let xs_compressed_list := erase xs_noreps Regex.emptyset
 
   -- find all indexes of the original expressions in the compressed expressions
-  let indices: Indices (xs_noreps.val).length (List.length xs_list) := List.Vector.map (fun x => Index.val x) xs_idxs
-  let indices': Indices (xs_noreps.val).length l1 := vector_cast hn indices
+  let indices: Indices (xs_noreps.val).length (List.length xs_list) := Vec.map xs_idxs (fun x => Index.val x)
+  let indices': Indices (xs_noreps.val).length l1 := Vec.cast indices hn
 
   Sigma.mk (List.length (xs_noreps.val)) (
-    Subtype.mk xs_noreps rfl,
+    Vec.fromList xs_noreps.val,
     indices'
   )
-
-def memVector (xs: List.Vector α l) (y: α): Prop :=
-  match xs with
-  | ⟨[], _⟩ => False
-  | ⟨x::xs, h⟩ => x = y \/ memVector ⟨xs, congrArg Nat.pred h⟩ y
-
-instance [DecidableEq α]: Membership α (List.Vector α l) where
-  mem := memVector
-
-theorem memVector_nil {n: Nat} {hxs: [].length = n}
-  (h : memVector (Subtype.mk [] hxs) y): False := by
-  unfold memVector at h
-  exact h
 
 theorem length_cons
   (h: (x::xs).length = n): xs.length = n - 1 := by
   simp at h
   omega
 
-theorem memVector_cons {n: Nat} {hxs: (x::xs).length = n}
-  (h : memVector (Subtype.mk (x::xs) hxs) y)
-  (hnxy : x ≠ y): memVector (Subtype.mk xs (length_cons hxs)) y := by
-  simp [memVector] at h
-  cases h with
-  | inl h =>
-    subst_vars
-    contradiction
-  | inr h =>
-    generalize_proofs at h
-    exact h
-
-def indexOf' [DecidableEq α] (xs: List.Vector α l) (y: α) (h: y ∈ xs): Fin (xs.length) :=
-  match xs with
-  | ⟨[], hxs⟩ => by
-    exfalso
-    apply memVector_nil h
-  | ⟨x::xs, hxs⟩ =>
-    if hxy: x == y
-    then
-      Fin.mk 0 (by
-        simp [List.Vector.length]
-        subst hxs
-        simp [List.length]
-      )
-    else
-      let i := indexOf' ⟨xs, congrArg Nat.pred hxs⟩ y (by
-        simp only [beq_iff_eq] at hxy
-        exact memVector_cons (hxs := hxs) h hxy
-      )
-      Fin.mk (i.val + 1) (by
-        simp [List.Vector.length]
-        subst_vars
-        omega
-      )
-
-theorem memVector_emptyset [DecidableEq α] {y: Regex α}
-  (h1 : memVector (Subtype.mk xs hxs) y ∨ y = Regex.emptyset)
-  (h2 : ¬y == Regex.emptyset): memVector (Subtype.mk xs hxs) y := by
+theorem mem_emptyset [DecidableEq α] {y: Regex α} {xs: Vec (Regex α) l}
+  (h1 : y ∈ xs ∨ y = Regex.emptyset)
+  (h2 : ¬y == Regex.emptyset): y ∈ xs := by
   cases h1 with
   | inl h =>
     exact h
@@ -263,10 +210,10 @@ theorem memVector_emptyset [DecidableEq α] {y: Regex α}
     simp only [beq_iff_eq] at h2
     contradiction
 
-def indexOf [DecidableEq α] (xs: List.Vector (Regex α) l) (y: Regex α) (h: y ∈ xs \/ y = Regex.emptyset): Index (xs.length) :=
+def indexOf [DecidableEq α] (xs: Vec (Regex α) l) (y: Regex α) (h: y ∈ xs \/ y = Regex.emptyset): Index l :=
   if hy: y == Regex.emptyset
   then Index.emptyset
-  else Index.val (indexOf' xs y (memVector_emptyset h hy))
+  else Index.val (Vec.indexOf xs y (mem_emptyset h hy))
 
 def ofIndex' (xs: Rules n (Pred α) l) (index: Fin l): Rule n (Pred α) :=
   xs.get index
@@ -276,122 +223,15 @@ def ofIndex (xs: Rules n (Pred α) l) (index: Index l): Rule n (Pred α) :=
   | Index.emptyset => Regex.emptyset
   | Index.val n => ofIndex' xs n
 
-def compressed [DecidableEq σ] (xs: List.Vector (Regex σ) l): Nat :=
+def compressed [DecidableEq σ] (xs: Vec (Regex σ) l): Nat :=
   (List.erase (List.eraseReps xs.toList) Regex.emptyset).length
-
-def numReps [DecidableEq α] (xs: List.Vector α l) (x: Option α := Option.none): Nat :=
-  match x with
-  | Option.none =>
-    match xs with
-    | ⟨[], _⟩ => 0
-    | ⟨x::xs, h⟩ => numReps ⟨xs, congrArg Nat.pred h⟩ (Option.some x)
-  | Option.some x =>
-    match xs with
-    | ⟨[], _⟩ => 0
-    | ⟨x'::xs, h⟩ =>
-      if x == x'
-      then 1 + numReps ⟨xs, congrArg Nat.pred h⟩ (Option.some x')
-      else numReps ⟨xs, congrArg Nat.pred h⟩ (Option.some x')
-
-theorem numReps_none_le_length [DecidableEq α] (xs: List.Vector α l):
-  numReps xs Option.none <= xs.length := by
-  induction xs with
-  | nil =>
-    simp only [List.Vector.nil, numReps, le_refl]
-  | cons ih =>
-    rename_i n x xs
-    simp [List.Vector.cons]
-    split
-    simp [numReps]
-    unfold numReps
-    split
-    · omega
-    · split_ifs
-      case pos h =>
-        simp [List.Vector.length]
-        rename_i h_2 heq
-        subst h_2
-        simp_all only [List.length_cons, Subtype.mk.injEq, Nat.add_one_sub_one]
-        subst heq
-        simp_all only [List.length_cons]
-        simp [numReps] at ih
-        simp [List.Vector.length] at ih
-        omega
-      case neg h =>
-        rename_i h_2 heq
-        subst h_2
-        simp_all only [Bool.not_eq_true, List.length_cons, Subtype.mk.injEq, Nat.pred_eq_sub_one, Nat.add_one_sub_one]
-        subst heq
-        simp_all only [List.length_cons]
-        simp [numReps] at ih
-        simp [List.Vector.length]
-        simp [List.Vector.length] at ih
-        omega
-
-theorem numReps_some_le_length [DecidableEq α] (xs: List.Vector α l):
-  numReps xs (Option.some y) <= xs.length := by
-  induction xs generalizing y with
-  | nil =>
-    simp only [List.Vector.nil, List.Vector.length]
-    unfold numReps
-    split
-    · omega
-    · contradiction
-  | cons ih =>
-    rename_i n x xs
-    simp only [Nat.succ_eq_add_one, List.Vector.cons]
-    split
-    simp only [List.Vector.length] at *
-    rename_i xs xs' hxs'
-    simp [numReps]
-    split_ifs
-    case pos h =>
-      simp only at h
-      subst_vars
-      have ih' := ih (y := y)
-      omega
-    case neg h =>
-      generalize_proofs
-      have ih' := ih (y := x)
-      omega
-
-theorem numReps_le_length [DecidableEq α] (xs: List.Vector α l) (y: Option α):
-  numReps xs y <= xs.length := by
-  cases y with
-  | none =>
-    apply numReps_none_le_length
-  | some y =>
-    apply numReps_some_le_length
-
-def smallest [DecidableEq α] [LT α] [DecidableLT α] (xs: List.Vector α l) (y: α): Option (Fin l) :=
-  match xs with
-  | ⟨[], h⟩ => Option.none
-  | ⟨x::xs, h⟩ =>
-    if x < y
-    then
-      match smallest ⟨xs, congrArg Nat.pred h⟩ x with
-      | Option.none => Option.some ⟨0, by
-          subst h
-          simp
-        ⟩
-      | Option.some n => Option.some ⟨n + 1, by
-          subst h
-          simp
-        ⟩
-    else
-      match smallest ⟨xs, congrArg Nat.pred h⟩ y with
-      | Option.none => Option.none
-      | Option.some n => Option.some ⟨n + 1, by
-          subst h
-          simp
-        ⟩
 
 def compressM [DecidableEq α] [Monad m] (xs: Rules n (Pred α) l1): m (Σ l2, (Rules n (Pred α) l2) × Indices l2 l1) := do
   return compress xs
 
 -- expand expands a list of expressions.
 def expand (indices: Indices l1 l2) (xs: Rules n (Pred α) l1): (Rules n (Pred α) l2) :=
-  List.Vector.map (ofIndex xs) indices
+  Vec.map indices (ofIndex xs)
 
 def expandM [Monad m] (indices: Indices l1 l2) (xs: Rules n (Pred α) l1): m (Rules n (Pred α) l2) :=
   return (expand indices xs)

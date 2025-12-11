@@ -4,8 +4,9 @@
 -- This version of the algorithm uses Monads to create a more concisely readible version of the algorithm.
 
 import Validator.Std.Except
-
 import Validator.Std.Hedge
+import Validator.Std.Vec
+
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
@@ -33,10 +34,10 @@ def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l) (
       let cdchildxs := List.foldl (derive g) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs := Compress.expand indices cdchildxs
-      Leave.deriveLeaves xs (List.Vector.map Rule.nullable dchildxs)
+      Leave.deriveLeaves xs (Vec.map dchildxs Rule.nullable)
 
 def derivs [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=
-  let dxs := List.foldl (derive g) (List.Vector.cons x List.Vector.nil) hedge
+  let dxs := List.foldl (derive g) (Vec.cons x Vec.nil) hedge
   dxs.head
 
 def validate [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Bool :=
@@ -58,7 +59,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" [])
   = true
@@ -66,7 +67,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" [node "b" []])
   = false
@@ -74,7 +75,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
@@ -85,7 +86,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 1))
@@ -99,7 +100,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))

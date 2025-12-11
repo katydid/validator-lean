@@ -3,6 +3,9 @@
 -- It is intended to be used for explanation purposes. This means that it gives up speed for readability. Thus it has no memoization implemented.
 -- It does add compression for a small optimization, see lines marked with NEW
 
+import Validator.Std.Hedge
+import Validator.Std.Vec
+
 import Validator.Expr.Compress
 import Validator.Expr.Grammar
 import Validator.Expr.IfExpr
@@ -11,7 +14,6 @@ import Validator.Expr.Regex
 import Validator.Derive.Enter
 import Validator.Derive.Leave
 
-import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 import Validator.Parser.Parser
 import Validator.Parser.Hint
@@ -27,7 +29,7 @@ def deriveEnter [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs
   return IfExpr.evals g enters token
 
 def deriveLeaveM [ValidateM m n α] (xs: Rules n (Pred α) l) (cs: Rules n (Pred α) (Symbol.nums xs)): m (Rules n (Pred α) l) :=
-  Leave.DeriveLeaveM.deriveLeaveM xs (List.Vector.map Rule.nullable cs)
+  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.nullable)
 
 def deriveValue [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l): m (Rules n (Pred α) l) := do
   deriveLeaveM xs (<- deriveEnter g xs)
@@ -58,7 +60,7 @@ partial def derive [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) 
   | Hint.eof => return xs -- only happens at the top
 
 def validate {m} {n: Nat} {α: Type} [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)): m Bool := do
-  let dxs <- derive g (List.Vector.cons x List.Vector.nil)
+  let dxs <- derive g (Vec.cons x Vec.nil)
   return Rule.nullable dxs.head
 
 def run {α: Type} [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
@@ -76,7 +78,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" []) =
   Except.ok true
@@ -84,7 +86,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
   Except.ok false
@@ -92,7 +94,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
@@ -103,7 +105,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 1))
@@ -117,7 +119,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))
@@ -133,7 +135,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptyset]
+    #vec[Regex.emptyset]
   )
   (node "a" [node "b" []])
   = Except.ok false
@@ -141,7 +143,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 4)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 3))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))
@@ -157,7 +159,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         Regex.emptyset
@@ -171,7 +173,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))
@@ -186,7 +188,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 4)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 0))
         (Regex.symbol (Pred.eq (Token.string "c"), 1))

@@ -64,7 +64,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" []) =
   Except.ok true
@@ -72,7 +72,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
   Except.ok false
@@ -80,7 +80,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
@@ -91,7 +91,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 1))
@@ -105,7 +105,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))

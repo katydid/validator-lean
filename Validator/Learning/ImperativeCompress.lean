@@ -4,8 +4,9 @@
 -- This version of the algorithm also avoids using any Monads, so it is verbose compared to a version that would use monads.
 
 import Validator.Std.Except
-
 import Validator.Std.Hedge
+import Validator.Std.Vec
+
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Compress
@@ -91,7 +92,7 @@ def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: List (Rule n (Pred α)
     match t with
     | Hedge.Node.mk label children =>
       let ifexprs: List (IfExpr n α) := ImperativeEnter.deriveEnter xs
-      -- List.Vector.map (fun x => eval g x t) ifExprs
+      -- Vec.map (fun x => eval g x t) ifExprs
       let childxs: List (Rule n (Pred α)) := List.map (fun x => IfExpr.eval g x label) ifexprs
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
       let cchildxs' : Except String ((List (Rule n (Pred α))) × Indices) := compress childxs
@@ -141,7 +142,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" []) =
   Except.ok true
@@ -149,7 +150,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
   Except.ok false
@@ -157,7 +158,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
@@ -168,7 +169,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 1))
@@ -182,7 +183,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))

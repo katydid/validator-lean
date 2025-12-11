@@ -1,4 +1,5 @@
 import Validator.Std.Debug
+import Validator.Std.Vec
 
 import Validator.Memoize.MemEnter
 import Validator.Memoize.MemLeave
@@ -83,7 +84,7 @@ instance [DecidableEq α] [Hashable α]: MemLeave (Impl n α) n α where
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
 instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl n α) n α where
-  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: List.Vector Bool (Symbol.nums xs)): Impl n α (Rules n (Pred α) l) := do
+  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: Vec Bool (Symbol.nums xs)): Impl n α (Rules n (Pred α) l) := do
     let memoized <- MemLeave.getLeave
     match MemLeave.get? memoized ⟨xs, ns⟩ with
     | Option.none =>

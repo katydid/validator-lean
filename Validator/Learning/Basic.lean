@@ -3,8 +3,9 @@
 -- This version of the algorithm uses Monads to create a more concisely readible version of the algorithm.
 
 import Validator.Std.Except
-
 import Validator.Std.Hedge
+import Validator.Std.Vec
+
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Grammar
@@ -28,7 +29,7 @@ def derive {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pr
       let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifExprs label
       -- dchildxs = derivatives of children.
       let dchildxs: Rules n (Pred α) (Symbol.nums xs) := List.foldl (derive g) childxs children
-      let ns: List.Vector Bool (Symbol.nums xs) := List.Vector.map Rule.nullable dchildxs
+      let ns: Vec Bool (Symbol.nums xs) := Vec.map dchildxs Rule.nullable
       -- leaves is the other one of our two new memoizable functions.
       let lchildxs: Rules n (Pred α) l := Leave.deriveLeaves xs ns
       lchildxs
@@ -56,7 +57,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" [])
   = true
@@ -64,7 +65,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 1)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[Regex.emptystr]
+    #vec[Regex.emptystr]
   )
   (node "a" [node "b" []])
   = false
@@ -72,7 +73,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.symbol (Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
@@ -83,7 +84,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 2)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 1))
@@ -97,7 +98,7 @@ open TokenTree (node)
 #guard run
   (Grammar.mk (n := 3)
     (Regex.symbol (Pred.eq (Token.string "a"), 0))
-    #v[
+    #vec[
       (Regex.concat
         (Regex.symbol (Pred.eq (Token.string "b"), 1))
         (Regex.symbol (Pred.eq (Token.string "c"), 2))
