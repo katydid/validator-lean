@@ -1219,9 +1219,7 @@ theorem RegexID.casts_is_casts_rw:
 
 theorem extracts_fmap1 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
   (extracts rs acc).1
-  = (RegexID.casts (extracts (Regexes.map rs f) (Vec.map acc f)).1
-      (by simp only [nums_map])
-    ) := by
+  = (RegexID.casts (extracts (Regexes.map rs f) (Vec.map acc f)).1 (by simp only [nums_map])) := by
   simp only [Regexes.map]
   generalize_proofs h
   rw [RegexID.casts_symm.mpr]
@@ -1237,7 +1235,6 @@ theorem extracts_fmap1 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
   | @cons l r rs ih =>
     simp only [Vec.map]
     simp only [extracts]
-    -- rw [Vec.cast_rfl]
     generalize_proofs h1 h2 h3 h4
     simp only [RegexID.cast_lift_cons]
     rw [Vec.cast_rfl]
