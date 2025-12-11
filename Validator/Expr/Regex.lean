@@ -638,7 +638,7 @@ def Regex.derives (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Reg
   Vec.map rs (fun r => derive p r a)
 
 def Regex.derives2 (rs: Vec (Regex (σ × Bool)) l): Vec (Regex σ) l :=
-  Vec.map rs (fun r => derive2 r)
+  Vec.map rs derive2
 
 def Regex.smartDerives2 (rs: Vec (Regex (σ × Bool)) l): Vec (Regex σ) l :=
   Vec.map rs (fun r => smartDerive2 r)

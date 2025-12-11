@@ -2,6 +2,7 @@ import Init.Data.Nat
 
 import Mathlib.Tactic.GeneralizeProofs
 import Mathlib.Tactic.NthRewrite
+import Mathlib.Tactic.RewriteSearch
 
 inductive Vec (α: Type): Nat -> Type where
   | nil : Vec α 0
@@ -172,16 +173,17 @@ theorem take_zero (xs : Vec α n):
   simp only [take]
 
 theorem drop_zero (xs : Vec α n):
+  -- Vec.drop 0 xs = xs
   Vec.drop 0 xs = Vec.cast xs (by omega) := by
   simp only [drop]
   simp only [cast_rfl]
 
 theorem take_nil (i: Nat):
   Vec.take i Vec.nil = Vec.cast (@Vec.nil α) (Eq.symm (Nat.min_zero i)) := by
-  cases i with
+  induction i with
   | zero =>
     rw [take_zero]
-  | succ i =>
+  | succ i ih =>
     simp only [take]
     congr
 
@@ -212,7 +214,7 @@ theorem toList_cons {xs: Vec α n}:
   List.cons x xs.toList = (Vec.cons x xs).toList := by
   simp only [toList]
 
-theorem map_nil:
+theorem map_nil {f: α -> β}:
   Vec.map Vec.nil f = Vec.nil := by
   simp only [Vec.map]
 
@@ -225,11 +227,13 @@ theorem toList_map (xs: Vec α n) (f: α -> β):
   induction xs with
   | nil =>
     simp only [map_nil]
-    rfl
+    simp only [toList]
+    simp only [List.map_nil]
   | cons x xs ih =>
-    simp only [map_cons]
+    rw [map_cons]
     simp only [toList]
     rw [ih]
+    rewrite [List.map]
     rfl
 
 theorem cons_cast {α: Type} {l n: Nat} (x: α) (xs: Vec α l) (h: l = n):
