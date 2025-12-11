@@ -263,32 +263,32 @@ theorem replace_nil_is_map_id (r: Regex (Fin 0)):
   replace r Vec.nil (by simp) = Regex.map r id := by
   induction r with
   | emptyset =>
-    simp [replace, Regex.map]
+    simp only [replace, Regex.map]
   | emptystr =>
-    simp [replace, Regex.map]
+    simp only [replace, Regex.map]
   | symbol s =>
     nomatch s
   | or r1 r2 ih1 ih2 =>
-    simp [replace, Regex.map]
+    simp only [replace, Regex.map, Regex.or.injEq]
     rw [ih1]
     rw [ih2]
     apply And.intro rfl rfl
   | concat r1 r2 ih1 ih2 =>
-    simp [replace, Regex.map]
+    simp only [replace, Regex.map, Regex.concat.injEq]
     rw [ih1]
     rw [ih2]
     apply And.intro rfl rfl
   | star r1 ih1 =>
-    simp [replace, Regex.map]
+    simp only [replace, Regex.map]
     rw [ih1]
 
 theorem replace_take (r: RegexID n) (xs: Vec σ (n + l)):
   replace r (Vec.take n xs) (by omega) = replace r xs (by omega):= by
   induction r with
   | emptyset =>
-    simp [replace]
+    simp only [replace]
   | emptystr =>
-    simp [replace]
+    simp only [replace]
   | symbol s =>
     generalize_proofs h1 h2 at *
     simp only [replace]
@@ -298,13 +298,13 @@ theorem replace_take (r: RegexID n) (xs: Vec σ (n + l)):
     rw [Vec.take_get]
     omega
   | or r1 r2 ih1 ih2 =>
-    simp [replace]
+    simp only [replace, Regex.or.injEq]
     generalize_proofs h1 h2 at *
     rw [<- ih1]
     rw [<- ih2]
     apply And.intro rfl rfl
   | concat r1 r2 ih1 ih2 =>
-    simp [replace]
+    simp only [replace, Regex.concat.injEq]
     generalize_proofs h1 h2 at *
     rw [<- ih1]
     rw [<- ih2]
@@ -319,26 +319,26 @@ theorem replace_regexid_add (r: RegexID n) (xs: Vec σ (n + l)):
   generalize_proofs h1 h2
   induction r with
   | emptyset =>
-    simp [replace, RegexID.add, Regex.map]
+    simp only [replace, RegexID.add, Regex.map]
   | emptystr =>
-    simp [replace, RegexID.add, Regex.map]
+    simp only [replace, RegexID.add, Regex.map]
   | symbol s =>
     generalize_proofs h1 h2 at *
-    simp [replace, RegexID.add, Regex.map]
+    simp only [replace, RegexID.add, Regex.map, Fin.coe_castLE]
   | or r1 r2 ih1 ih2 =>
-    simp [replace, RegexID.add, Regex.map]
+    simp only [replace, RegexID.add, Regex.map, Regex.or.injEq]
     generalize_proofs h1 h2 at *
     rw [ih1]
     rw [ih2]
     apply And.intro rfl rfl
   | concat r1 r2 ih1 ih2 =>
-    simp [replace, RegexID.add, Regex.map]
+    simp only [replace, RegexID.add, Regex.map, Regex.concat.injEq]
     generalize_proofs h1 h2 at *
     rw [ih1]
     rw [ih2]
     apply And.intro rfl rfl
   | star r1 ih1 =>
-    simp [replace, RegexID.add, Regex.map]
+    simp only [replace, RegexID.add, Regex.map, Regex.star.injEq]
     generalize_proofs h1 h2 at *
     rw [ih1]
     rfl
@@ -569,7 +569,7 @@ theorem extractFrom_replaceFrom_is_id (r: Regex σ):
 theorem nums_cons_is_add:
   nums (Vec.cons x xs) = num x + nums xs
   := by
-  simp [nums]
+  simp only [nums]
   ac_rfl
 
 theorem RegexID.cons_cast:
@@ -803,7 +803,7 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
     have ih2' := ih2 (by rw [num_map])
     clear ih2
     simp only [extract]
-    simp [Vec.cast_or]
+    simp only [Vec.cast_or]
     rw [ih1']
     have hh: n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
       repeat rw [num_map]
@@ -814,7 +814,7 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
     repeat rw [Vec.cast_cast]
   | case5 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 => -- concat
     rename_i n
-    simp [Regex.map] at *
+    simp only [Regex.map] at *
     have hacc1 : acc1 = (extract r1 acc).2 := by
       rw [he1]
     have hacc2 : acc2 = (extract r2 (extract r1 acc).2).2 := by
@@ -827,7 +827,7 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
     have ih2' := ih2 (by rw [num_map])
     clear ih2
     simp only [extract]
-    simp [Vec.cast_concat]
+    simp only [Vec.cast_concat]
     rw [ih1']
     have hh: n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
       repeat rw [num_map]
@@ -838,7 +838,7 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
     congr 1
     simp only [Vec.cast_cast]
   | case6 acc r1 er1 acc1 he ih1 => -- star
-    simp [Regex.map] at *
+    simp only [Nat.add_left_cancel_iff, Regex.map, num] at *
     have hacc1 : acc1 = (extract r1 acc).2 := by
       rw [he]
     rw [hacc1]
@@ -904,10 +904,10 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
     simp only [RegexID.add_assoc]
     repeat rw [RegexID.cast_is_cast_map]
     unfold RegexID.cast_map
-    simp [Regex.map_map]
+    simp only [Regex.map_map]
     congr 1
-    · simp [Regex.map_map]
-    · simp [Regex.map_map]
+    · simp only [num, Fin.castLE_castLE, Regex.map_map]
+    · simp only [num, Fin.castLE_castLE, Regex.map_map]
   | case5 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 =>
     rename_i n
 
@@ -953,10 +953,10 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
     simp only [RegexID.add_assoc]
     repeat rw [RegexID.cast_is_cast_map]
     unfold RegexID.cast_map
-    simp [Regex.map_map]
+    simp only [Regex.map_map]
     congr 1
-    · simp [Regex.map_map]
-    · simp [Regex.map_map]
+    · simp only [num, Fin.castLE_castLE, Regex.map_map]
+    · simp only [num, Fin.castLE_castLE, Regex.map_map]
   | case6 acc r1 er1 acc1 he1 ih1 =>
     rename_i n
 
@@ -981,7 +981,7 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
 
     repeat rw [RegexID.cast_is_cast_map]
     unfold RegexID.cast_map
-    simp [Regex.map]
+    simp only [Regex.map]
 
 theorem extracts_lift_cast (rs: Vec (Regex α) m) (acc: Vec α n) (h1: n + nums rs = l + nums rs) (h2: n = l):
   (Vec.cast (extracts rs acc).2 h1) = (extracts rs (Vec.cast acc h2)).2 := by
@@ -1079,7 +1079,7 @@ theorem extracts_append (acc: Vec α n) (xs: Vec (Regex α) l):
 
 theorem extracts_take (r: Regex α) (acc: Vec α n) (rs: Vec (Regex α) l):
   (Vec.take (n + num r) (extracts rs (extract r acc).2).2)
-    = Vec.cast (extract r acc).2 (by simp) := by
+    = Vec.cast (extract r acc).2 (by omega) := by
   rw [extracts_append]
   rw [Vec.take_lift_cast]
   rw [Vec.take_append]
@@ -1160,7 +1160,7 @@ theorem extracts_replacesFrom_is_id (rs: Vec (Regex α) l) (acc: Vec α n):
   induction rs generalizing n acc with
   | nil =>
     apply Vec.eq
-    simp [extracts, replacesFrom]
+    simp only [extracts, replacesFrom]
     simp only [Vec.map_nil]
   | @cons l r rs ih =>
     simp only [extracts]
@@ -1195,7 +1195,7 @@ theorem nums_map_map:
 
 theorem RegexID.add_cast_is_castLE (r: RegexID n) (h: n = m):
   (RegexID.add k (RegexID.cast r h)) = RegexID.castLE r (by omega) := by
-  simp [RegexID.add, RegexID.cast]
+  simp only [RegexID.add, RegexID.cast]
   subst h
   simp_all only
   rfl
@@ -1263,23 +1263,23 @@ theorem extracts_fmap1 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
     generalize_proofs h11
 
     congr 1
-    · aesop
+    · simp_all only [Nat.add_left_cancel_iff, add_le_add_iff_left] -- aesop
     · congr 1
-      · aesop
+      · simp_all only [Nat.add_left_cancel_iff, add_le_add_iff_left] -- aesop
       · congr 1
-        · aesop
-        · aesop
+        · simp_all only [Nat.add_left_cancel_iff, add_le_add_iff_left] -- aesop
+        · simp_all only [Nat.add_left_cancel_iff, add_le_add_iff_left, heq_eq_eq] -- aesop
       · simp only [RegexID.casts_is_casts_rw]
         simp only [RegexID.casts_rw]
         simp only [Vec.cast]
         simp_all only [add_le_add_iff_left, heq_eqRec_iff_heq]
-        simp_all
+        simp_all only
         congr 1
-        · aesop
-        · aesop
+        · simp_all only [Nat.add_left_cancel_iff] -- aesop
+        · simp_all only [Nat.add_left_cancel_iff] -- aesop
         · congr 1
-          · aesop
-    · aesop
+          · simp_all only [heq_eqRec_iff_heq, heq_eq_eq] -- aesop
+    · simp_all only [Nat.add_left_cancel_iff, add_le_add_iff_left, heq_eq_eq] -- aesop
 
 theorem extracts_replacesFrom_is_fmap (rs: Vec (Regex α) l) (f: α -> β):
   Regexes.map rs f = replacesFrom (extracts rs acc).1 (Vec.map (extracts rs acc).2 f) := by

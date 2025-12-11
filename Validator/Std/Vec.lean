@@ -529,7 +529,7 @@ theorem append_assoc_l (xs: Vec α n1) (ys: Vec α n2) (zs: Vec α n3):
     rw [cast_cast]
 
 theorem take_append (xs: Vec α n1) (ys: Vec α n2):
-  Vec.take n1 (Vec.append xs ys) = Vec.cast xs (by simp) := by
+  Vec.take n1 (Vec.append xs ys) = Vec.cast xs (by omega) := by
   induction xs with
   | nil =>
     rw [nil_append]
