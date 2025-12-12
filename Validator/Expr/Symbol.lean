@@ -212,6 +212,12 @@ def derives_preds {σ: Type} {α: Type}
   let pred_results: Vec Bool (nums rs) := ps symbols a
   leave rs pred_results
 
+def derives_preds_noinput {σ: Type}
+  (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
+  let symbols: Vec σ (nums rs) := enter rs
+  let pred_results: Vec Bool (nums rs) := ps symbols
+  leave rs pred_results
+
 theorem nums_nil {σ: Type}:
   nums (@Vec.nil (Regex σ)) = 0 := by
   unfold nums
@@ -1325,7 +1331,7 @@ theorem Symbol_derives_is_Regex_derives
   rw [<- extractFrom_replaceFrom_is_fmap]
   rw [Regex.derive_is_derive2]
 
-theorem Symbol_derive_is_derive_preds
+theorem Symbol_derives_is_derives_preds
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α)
   (h: ∀ {n': Nat} (xs: Vec σ n') (a: α), ps xs a = Vec.map xs (fun x => (ps (Vec.singleton x) a).head)):
   Symbol.derives (fun s a => (ps (Vec.singleton s) a).head) rs a = Symbol.derives_preds ps rs a := by
@@ -1336,3 +1342,13 @@ theorem Symbol_derive_is_derive_preds
   unfold leave
   unfold enter
   simp only
+
+theorem Symbol_derives_preds_is_derives_preds_noinput
+  {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α):
+  Symbol.derives_preds ps rs a = Symbol.derives_preds_noinput (fun ss => ps ss a) rs := by
+  rfl
+
+theorem Symbol_derives_preds_noinput_is_derives_preds
+  {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α):
+  Symbol.derives_preds_noinput ps rs = Symbol.derives_preds (fun ss _ => ps ss) rs a := by
+  rfl
