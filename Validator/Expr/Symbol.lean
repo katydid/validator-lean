@@ -223,6 +223,14 @@ theorem nums_nil {σ: Type}:
   unfold nums
   rfl
 
+theorem nums_zero {σ: Type} (xs: Vec (Regex σ) 0):
+  nums xs = 0 := by
+  unfold nums
+  -- aesop?
+  split
+  next l xs heq => simp_all only
+  next l xs_1 n x xs_2 heq heq_1 => simp_all only [Nat.right_eq_add, Nat.add_eq_zero, one_ne_zero, and_false]
+
 theorem nums_is_nums_list (xs: Vec (Regex σ) l):
   nums xs = nums_list xs.toList := by
   induction xs with
@@ -594,6 +602,12 @@ theorem extracts_nil (acc: Vec σ nacc):
   )) := by
   simp only [extracts]
   rfl
+
+theorem extracts_zero_nil (xs: Vec (Regex σ) 0):
+  extracts xs Vec.nil = (Vec.nil (α := RegexID (0 + nums xs)), Vec.cast (Vec.nil (α := σ)) (by simp only [nums_zero])) := by
+  cases xs
+  simp only [extracts_nil]
+  congr
 
 theorem map_cast (xs: Vec α l1) (f: α -> β) (h: l1 = l2):
   Vec.map (Vec.cast xs h) f = Vec.cast (Vec.map xs f) h := by
@@ -1333,8 +1347,8 @@ theorem Symbol_derives_is_Regex_derives
 
 theorem Symbol_derives_is_derives_preds
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α)
-  (h: ∀ {n': Nat} (xs: Vec σ n') (a: α), ps xs a = Vec.map xs (fun x => (ps (Vec.singleton x) a).head)):
-  Symbol.derives (fun s a => (ps (Vec.singleton s) a).head) rs a = Symbol.derives_preds ps rs a := by
+  (h: ∀ {n': Nat} (xs: Vec σ n') (a: α), ps xs a = Vec.map xs (fun x => (ps (#vec[x]) a).head)):
+  Symbol.derives (fun s a => (ps (#vec[s]) a).head) rs a = Symbol.derives_preds ps rs a := by
   unfold derives
   simp only
   rw [<- h]
@@ -1351,4 +1365,8 @@ theorem Symbol_derives_preds_is_derives_preds_noinput
 theorem Symbol_derives_preds_noinput_is_derives_preds
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α):
   Symbol.derives_preds_noinput ps rs = Symbol.derives_preds (fun ss _ => ps ss) rs a := by
+  rfl
+
+theorem Symbol_derives_preds_noinput_nil:
+  Symbol.derives_preds_noinput ps Vec.nil = Vec.nil := by
   rfl

@@ -35,7 +35,7 @@ def derive {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pr
       lchildxs
 
 def derivs {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=
-  let dxs := List.foldl (derive g) (Vec.singleton x) hedge
+  let dxs := List.foldl (derive g) (#vec[x]) hedge
   dxs.head
 
 def validate {α: Type} [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Bool :=

@@ -1,6 +1,5 @@
 import Validator.Std
 
-import Validator.Capturer
 import Validator.Derive
 import Validator.Expr
 import Validator.Learning

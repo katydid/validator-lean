@@ -50,9 +50,6 @@ def append (xs: Vec α nxs) (ys: Vec α nys): (Vec α (nxs + nys)) :=
   | Vec.nil => Vec.cast ys (Eq.symm (Nat.zero_add nys))
   | Vec.cons x xs => Vec.cast (Vec.cons x (append xs ys)) (by ac_rfl)
 
-def singleton (x: α): Vec α 1 :=
-  Vec.cons x Vec.nil
-
 def toList (xs: Vec α n): List α :=
   match xs with
   | Vec.nil => []
@@ -603,3 +600,10 @@ theorem zip_map {α: Type} {β: Type} (f: α -> β) (xs: Vec α l):
   | @cons l x xs ih =>
     simp only [Vec.zip, Vec.map]
     rw [ih]
+
+theorem head_map (xs: Vec α (n + 1)) (f: α -> β):
+  (Vec.map xs f).head = f xs.head := by
+  cases xs with
+  | @cons n x xs =>
+    simp only [Vec.map]
+    simp only [Vec.head]
