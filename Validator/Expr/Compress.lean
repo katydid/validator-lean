@@ -169,8 +169,8 @@ def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, 
           )
         )
 
-def compress [DecidableEq α] (xs: Rules n (Pred α) l1): Σ l2, ((Rules n (Pred α) l2) × (Indices l2 l1)) :=
-  let xs_list: List (Rule n (Pred α)) := xs.toList
+def compress [DecidableEq φ] (xs: Rules n φ l1): Σ l2, ((Rules n φ l2) × (Indices l2 l1)) :=
+  let xs_list: List (Rule n φ) := xs.toList
   have hn : xs_list.length = l1 := by
     simp_all only [Vec.toList_length, xs_list]
 
@@ -178,7 +178,7 @@ def compress [DecidableEq α] (xs: Rules n (Pred α) l1): Σ l2, ((Rules n (Pred
   -- TODO: let sxs := List.mergeSort xs
 
   -- remove duplicates
-  let xs_noreps: { ys: List (Rule n (Pred α)) // ∀ x ∈ xs_list, x ∈ ys } := eraseReps_sub xs_list
+  let xs_noreps: { ys: List (Rule n φ) // ∀ x ∈ xs_list, x ∈ ys } := eraseReps_sub xs_list
 
   -- get indices
   let xs_idxs: Vec (Fin (xs_noreps.val).length) (List.length xs_list) := indices xs_noreps
@@ -215,10 +215,10 @@ def indexOf [DecidableEq α] (xs: Vec (Regex α) l) (y: Regex α) (h: y ∈ xs \
   then Index.emptyset
   else Index.val (Vec.indexOf xs y (mem_emptyset h hy))
 
-def ofIndex' (xs: Rules n (Pred α) l) (index: Fin l): Rule n (Pred α) :=
+def ofIndex' (xs: Rules n φ l) (index: Fin l): Rule n φ :=
   xs.get index
 
-def ofIndex (xs: Rules n (Pred α) l) (index: Index l): Rule n (Pred α) :=
+def ofIndex (xs: Rules n φ l) (index: Index l): Rule n φ :=
   match index with
   | Index.emptyset => Regex.emptyset
   | Index.val n => ofIndex' xs n
@@ -226,12 +226,12 @@ def ofIndex (xs: Rules n (Pred α) l) (index: Index l): Rule n (Pred α) :=
 def compressed [DecidableEq σ] (xs: Vec (Regex σ) l): Nat :=
   (List.erase (List.eraseReps xs.toList) Regex.emptyset).length
 
-def compressM [DecidableEq α] [Monad m] (xs: Rules n (Pred α) l1): m (Σ l2, (Rules n (Pred α) l2) × Indices l2 l1) := do
+def compressM [DecidableEq φ] [Monad m] (xs: Rules n φ l1): m (Σ l2, (Rules n φ l2) × Indices l2 l1) := do
   return compress xs
 
 -- expand expands a list of expressions.
-def expand (indices: Indices l1 l2) (xs: Rules n (Pred α) l1): (Rules n (Pred α) l2) :=
+def expand (indices: Indices l1 l2) (xs: Rules n φ l1): (Rules n φ l2) :=
   Vec.map indices (ofIndex xs)
 
-def expandM [Monad m] (indices: Indices l1 l2) (xs: Rules n (Pred α) l1): m (Rules n (Pred α) l2) :=
+def expandM [Monad m] (indices: Indices l1 l2) (xs: Rules n φ l1): m (Rules n φ l2) :=
   return (expand indices xs)

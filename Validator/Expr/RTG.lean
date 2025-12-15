@@ -17,13 +17,13 @@ namespace RegularTreeGrammar
 --   r is a regular expression over N
 
 abbrev Ref n := Fin n
-abbrev Rule (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := Φ α × Regex (Ref n)
-abbrev Rules (n: Nat) (α: Type) (Φ: (α: Type) -> Type) := { xs: List (Rule n α Φ) // xs.length > 0 }
+abbrev Rule (n: Nat) (α: Type) (φ: (α: Type) -> Type) := φ α × Regex (Ref n)
+abbrev Rules (n: Nat) (α: Type) (φ: (α: Type) -> Type) := { xs: List (Rule n α φ) // xs.length > 0 }
 
-structure RTG (n: Nat) (α: Type) (Φ: (α: Type) -> Type) where
+structure RTG (n: Nat) (α: Type) (φ: (α: Type) -> Type) where
   start: { s: List (Ref n) // s.length > 0 }
-  prods: Vec (Rules n α Φ) n
+  prods: Vec (Rules n α φ) n
 
-def RTG.lookup (n: Nat) (α: Type) (Φ: (α: Type) -> Type)
-  (g: RTG n α Φ) (ref: Fin n): Rules n α Φ :=
+def RTG.lookup (n: Nat) (α: Type) (φ: (α: Type) -> Type)
+  (g: RTG n α φ) (ref: Fin n): Rules n α φ :=
   Vec.get g.prods ref

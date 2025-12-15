@@ -12,12 +12,12 @@ import Validator.Derive.Leave
 --   the possibility of returning an error.
 --   a debug line printer (implementations should print nothing when not debugging).
 -- Tagless final class inspired by https://jproyo.github.io/posts/2019-03-17-tagless-final-haskell/
-class ValidateM (m: Type -> Type u) (n: Nat) (α: Type) extends
+class ValidateM (m: Type -> Type u) (n: Nat) (φ: Type) (α: Type) extends
   Monad m,
   Debug m,
   MonadExcept String m,
   Parser m α,
-  Enter.DeriveEnter m n α,
-  Leave.DeriveLeaveM m n α
+  Enter.DeriveEnter m n φ,
+  Leave.DeriveLeaveM m n φ
 
 namespace ValidateM

@@ -16,13 +16,15 @@ import Validator.Learning.ImperativeLeave
 namespace ImperativeBasic
 
 -- foldLoop is a more readable version of List.foldlM for imperative programmers:
-private def foldLoop (deriv: List (Rule n (Pred α)) -> Hedge.Node α -> List (Rule n (Pred α))) (start: List (Rule n (Pred α))) (hedge: Hedge α): Id (List (Rule n (Pred α))) := do
+private def foldLoop (deriv: List (Rule n φ) -> Hedge.Node α -> List (Rule n φ)) (start: List (Rule n φ)) (hedge: Hedge α): Id (List (Rule n φ)) := do
   let mut res := start
   for tree in hedge do
     res := deriv res tree
   return res
 
-def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: List (Rule n (Pred α))) (tree: Hedge.Node α): List (Rule n (Pred α)) :=
+def derive
+  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (xs: List (Rule n φ)) (tree: Hedge.Node α): List (Rule n φ) :=
   -- If all expressions are unescapable, then simply return without look at the input tree.
   -- An example of an unescapable expression is emptyset, since its derivative is always emptyset, no matter the input.
   if List.all xs Regex.unescapable
@@ -32,31 +34,36 @@ def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: List (Rule n (Pred α)
     match tree with
     | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifexprs: List (IfExpr n α) := ImperativeEnter.deriveEnter xs
+      let ifexprs: List (IfExpr n φ) := ImperativeEnter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: List (Rule n (Pred α)) := List.map (fun x => IfExpr.eval g x label) ifexprs
+      let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval g Φ x label) ifexprs
       -- dchildxs = derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let dchildxs: List (Rule n (Pred α)) := List.foldl (derive g) childxs children
+      let dchildxs: List (Rule n φ) := List.foldl (derive g Φ) childxs children
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
       -- leaves is the other one of our two new memoizable functions.
-      let dxs: List (Rule n (Pred α)) := ImperativeLeave.deriveLeave xs (List.map Regex.nullable dchildxs)
+      let dxs: List (Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Regex.nullable dchildxs)
       dxs
 
-def derivs [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Except String (Rule n (Pred α)) :=
+def derivs
+  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (x: Rule n φ) (hedge: Hedge α): Except String (Rule n φ) :=
   -- see foldLoop for an explanation of what List.foldM does.
-  let dxs := List.foldl (derive g) [x] hedge
+  let dxs := List.foldl (derive g Φ) [x] hedge
   match dxs with
   | [dx] => Except.ok dx
   | _ => Except.error "expected one expression"
 
-def validate [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Except String Bool :=
-  match derivs g x hedge with
+def validate
+  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
+  match derivs g Φ x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Rule.nullable x')
 
-def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  validate g g.start [t]
+def run [DecidableEq α]
+  (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  validate g Pred.eval g.start [t]
 
 -- Tests
 

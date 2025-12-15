@@ -20,32 +20,38 @@ import Validator.Derive.Leave
 namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
-def derive [DecidableEq α] (g: Grammar n (Pred α)) (xs: Rules n (Pred α) l) (t: Hedge.Node α): Rules n (Pred α) l :=
+def derive [DecidableEq φ]
+  (g: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (xs: Rules n φ l) (t: Hedge.Node α): Rules n φ l :=
   if List.all xs.toList Regex.unescapable
   then xs
   else
     match t with
     | Hedge.Node.mk label children =>
-      let ifexprs: IfExprs n α (Symbol.nums xs) := Enter.deriveEnter xs
-      let childxs: Rules n (Pred α) (Symbol.nums xs) := IfExpr.evals g ifexprs label
+      let ifexprs: IfExprs n φ (Symbol.nums xs) := Enter.deriveEnter xs
+      let childxs: Rules n φ (Symbol.nums xs) := IfExpr.evals g Φ ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
       let ⟨n, cchildxs, indices⟩ := Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.
-      let cdchildxs := List.foldl (derive g) cchildxs children
+      let cdchildxs := List.foldl (derive g Φ) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs := Compress.expand indices cdchildxs
       Leave.deriveLeaves xs (Vec.map dchildxs Rule.nullable)
 
-def derivs [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Rule n (Pred α) :=
-  let dxs := List.foldl (derive g) (Vec.cons x Vec.nil) hedge
+def derivs [DecidableEq φ]
+  (g: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (x: Rule n φ) (hedge: Hedge α): Rule n φ :=
+  let dxs := List.foldl (derive g Φ) (Vec.cons x Vec.nil) hedge
   dxs.head
 
-def validate [DecidableEq α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)) (hedge: Hedge α): Bool :=
-  let dx := derivs g x hedge
+def validate [DecidableEq φ]
+  (g: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (x: Rule n φ) (hedge: Hedge α): Bool :=
+  let dx := derivs g Φ x hedge
   Rule.nullable dx
 
 def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Bool :=
-  validate g g.start [t]
+  validate g Pred.eval g.start [t]
 
 -- Tests
 

@@ -24,20 +24,23 @@ def Pred.eval {α: Type} [BEq α] (p: Pred α) (x: α): Prop :=
   | Pred.eq y => x = y
   | Pred.any => True
 
-def Pred.pred_is_decpred {α : Type} [d: DecidableEq α] [o: BEq α] (p: Pred α): (a: α) -> Decidable (Pred.eval p a) :=
+def Pred.pred_is_decpred {α : Type} [d: DecidableEq α] (p: Pred α): (a: α) -> Decidable (Pred.eval p a) :=
   fun x =>
     match p with
     | Pred.eq y => d x y
     | Pred.any => Decidable.isTrue True.intro
 
-def Pred.decidableEval {α: Type} [BEq α] [d: DecidableEq α] (p: Pred α) : DecidablePred p.eval :=
+def Pred.decidablePredEval {α: Type} [BEq α] [d: DecidableEq α] (p: Pred α) : DecidablePred p.eval :=
   Pred.pred_is_decpred p
 
-instance inst_pred_decpred {α: Type} [d: DecidableEq α] [o: BEq α] (p: Pred α): DecidablePred p.eval :=
-  p.decidableEval
+instance inst_pred_decrel {α: Type} [d: DecidableEq α]: DecidableRel (Pred.eval (α := α)) :=
+  Pred.decidablePredEval
 
-instance inst_pred_dec {α: Type} [d: DecidableEq α] [o: BEq α] (p: Pred α) (a: α): Decidable (p.eval a) :=
-  p.decidableEval a
+instance inst_pred_decpred {α: Type} [d: DecidableEq α] (p: Pred α): DecidablePred p.eval :=
+  p.decidablePredEval
+
+instance inst_pred_dec {α: Type} [d: DecidableEq α] (p: Pred α) (a: α): Decidable (p.eval a) :=
+  p.decidablePredEval a
 
 -- Test that LawfulBEq is inferred for our specific inductive type
 instance inst_pred_lbeq {α: Type} [DecidableEq (Pred α)]: LawfulBEq (Pred α) := inferInstance
@@ -56,3 +59,6 @@ def Pred.rfl {α: Type} {a : Pred α} [d: DecidableEq (Pred α)]: a == a := of_d
 instance inst_deq_lbeq {α: Type} [DecidableEq (Pred α)]: LawfulBEq (Pred α) where
   eq_of_beq : {a b : Pred α} → a == b → a = b := Pred.eq_of_beq
   rfl : {a : Pred α} → a == a := Pred.rfl
+
+def Pred.evalb {α: Type} [DecidableEq α] (p: Pred α) (x: α): Bool :=
+  Pred.eval p x

@@ -11,28 +11,28 @@ import Validator.Validator.ValidateM
 
 namespace TreeParserMemM
 
-structure State (n: Nat) (α: Type) [DecidableEq α] [Hashable α] where
+structure State (n: Nat) (φ: Type) (α: Type) [DecidableEq φ] [Hashable φ] where
   parser: TreeParser.ParserState α
-  enter : MemEnter.EnterMap n α
-  leave : MemLeave.LeaveMap n α
+  enter : MemEnter.EnterMap n φ
+  leave : MemLeave.LeaveMap n φ
 
-abbrev Impl n α [DecidableEq α] [Hashable α] β := EStateM String (State n α) β
+abbrev Impl n φ α [DecidableEq φ] [Hashable φ] β := EStateM String (State n φ α) β
 
-def Impl.mk [DecidableEq α] [Hashable α] (p: TreeParser.ParserState α): State n α :=
+def Impl.mk [DecidableEq φ] [Hashable φ] (p: TreeParser.ParserState α): State n φ α :=
   State.mk p MemEnter.EnterMap.mk MemLeave.LeaveMap.mk
 
-instance [DecidableEq α] [Hashable α] : Debug (Impl n α) where
+instance [DecidableEq φ] [Hashable φ] : Debug (Impl n φ α) where
   debug (_line: String) := return ()
 
-instance [DecidableEq α] [Hashable α] : MonadStateOf (TreeParser.ParserState α) (Impl n α) where
-  get : Impl n α (TreeParser.ParserState α) := do
+instance [DecidableEq φ] [Hashable φ] : MonadStateOf (TreeParser.ParserState α) (Impl n φ α) where
+  get : Impl n φ α (TreeParser.ParserState α) := do
     let s <- EStateM.get
     return s.parser
-  set : TreeParser.ParserState α → Impl n α PUnit :=
+  set : TreeParser.ParserState α → Impl n φ α PUnit :=
     fun parser => do
       let s <- EStateM.get
       EStateM.set (State.mk parser s.enter s.leave)
-  modifyGet {β: Type}: (TreeParser.ParserState α → Prod β (TreeParser.ParserState α)) → Impl n α β :=
+  modifyGet {β: Type}: (TreeParser.ParserState α → Prod β (TreeParser.ParserState α)) → Impl n φ α β :=
     fun f => do
       let s <- EStateM.get
       let (res, parser) := f s.parser
@@ -40,50 +40,50 @@ instance [DecidableEq α] [Hashable α] : MonadStateOf (TreeParser.ParserState �
       return res
 
 instance
-  [DecidableEq α]
-  [Hashable α]
-  [Monad (Impl n α)] -- EStateM is monad
-  [Debug (Impl n α)] -- Debug instance is declared above
-  [MonadExcept String (Impl n α)] -- EStateM String is MonadExcept String
-  [MonadStateOf (TreeParser.ParserState α) (Impl n α)] -- MonadStateOf Hedge.Node.TreeParser is declared above
-  : Parser (Impl n α) α where -- This should just follow, but apparently we need to spell it out
+  [DecidableEq φ]
+  [Hashable φ]
+  [Monad (Impl n φ α)] -- EStateM is monad
+  [Debug (Impl n φ α)] -- Debug instance is declared above
+  [MonadExcept String (Impl n φ α)] -- EStateM String is MonadExcept String
+  [MonadStateOf (TreeParser.ParserState α) (Impl n φ α)] -- MonadStateOf Hedge.Node.TreeParser is declared above
+  : Parser (Impl n φ α) α where -- This should just follow, but apparently we need to spell it out
   next := Parser.next
   skip := Parser.skip
   token := Parser.token
 
-instance [DecidableEq α] [Hashable α] : MemEnter (Impl n α) n α where
-  getEnter : Impl n α (MemEnter.EnterMap n α) := do
+instance [DecidableEq φ] [Hashable φ] : MemEnter (Impl n φ α) n φ where
+  getEnter : Impl n φ α (MemEnter.EnterMap n φ) := do
     let s <- EStateM.get
     return s.enter
-  setEnter : (MemEnter.EnterMap n α) → Impl n α PUnit :=
+  setEnter : (MemEnter.EnterMap n φ) → Impl n φ α PUnit :=
     fun enter => do
       let s <- EStateM.get
       set (State.mk s.parser enter s.leave)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Enter.DeriveEnter (Impl n α) n α where
-  deriveEnter {l: Nat} (xs: Rules n (Pred α) l): Impl n α (IfExprs n α (Symbol.nums xs)) := MemEnter.deriveEnter xs
+instance [DecidableEq φ] [Hashable φ]: Enter.DeriveEnter (Impl n φ α) n φ where
+  deriveEnter {l: Nat} (xs: Rules n φ l): Impl n φ α (IfExprs n φ (Symbol.nums xs)) := MemEnter.deriveEnter xs
 
-instance [DecidableEq α] [Hashable α]: MemLeave (Impl n α) n α where
-  getLeave : Impl n α (MemLeave.LeaveMap n α) := do
+instance [DecidableEq φ] [Hashable φ]: MemLeave (Impl n φ α) n φ where
+  getLeave : Impl n φ α (MemLeave.LeaveMap n φ) := do
     let s <- EStateM.get
     return s.leave
-  setLeave : MemLeave.LeaveMap n α → Impl n α PUnit :=
+  setLeave : MemLeave.LeaveMap n φ → Impl n φ α PUnit :=
     fun leave => do
       let s <- EStateM.get
       set (State.mk s.parser s.enter leave)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance [DecidableEq α] [Hashable α]: Leave.DeriveLeaveM (Impl n α) n α where
-  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: Vec Bool (Symbol.nums xs)): Impl n α (Rules n (Pred α) l) := MemLeave.deriveLeaveM xs ns
+instance [DecidableEq φ] [Hashable φ]: Leave.DeriveLeaveM (Impl n φ α) n φ where
+  deriveLeaveM {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): Impl n φ α (Rules n φ l) := MemLeave.deriveLeaveM xs ns
 
-instance [DecidableEq α] [Hashable α]: ValidateM (Impl n α) n α where
+instance [DecidableEq φ] [Hashable φ]: ValidateM (Impl n φ α) n φ α where
   -- all instances have been created, so no implementations are required here
 
-def run [DecidableEq α] [Hashable α] (f: Impl n α β) (t: Hedge.Node α): EStateM.Result String (State n α) β :=
+def run [DecidableEq φ] [Hashable φ] (f: Impl n φ α β) (t: Hedge.Node α): EStateM.Result String (State n φ α) β :=
   EStateM.run f (Impl.mk (TreeParser.ParserState.mk' t))
 
-def run' [DecidableEq α] [Hashable α] (f: Impl n α β) (t: Hedge.Node α): Except String β :=
+def run' [DecidableEq φ] [Hashable φ] (f: Impl n φ α β) (t: Hedge.Node α): Except String β :=
   match EStateM.run f (Impl.mk (TreeParser.ParserState.mk' t)) with
   | EStateM.Result.ok k _ => Except.ok k
   | EStateM.Result.error err _ => Except.error err

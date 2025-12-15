@@ -7,11 +7,11 @@ import Validator.Expr.Symbol
 
 namespace ImperativeEnter
 
-def enter (x: Rule n (Pred α)) (res: List (IfExpr n α) := []): List (IfExpr n α) :=
+def enter (x: Rule n φ) (res: List (IfExpr n φ) := []): List (IfExpr n φ) :=
   match x with
   | Regex.emptyset => res
   | Regex.emptystr => res
-  | Regex.symbol (pred, childRef) => (IfExpr.mk pred childRef) :: res
+  | Regex.symbol s => s :: res
   | Regex.or y z => enter y (enter z res)
   | Regex.concat y z =>
     if Regex.nullable y
@@ -19,5 +19,5 @@ def enter (x: Rule n (Pred α)) (res: List (IfExpr n α) := []): List (IfExpr n 
     else enter y res
   | Regex.star y => enter y res
 
-def deriveEnter (xs: List (Rule n (Pred α))): List (IfExpr n α) :=
-    List.flatten (List.map ImperativeEnter.enter xs)
+def deriveEnter (xs: List (Rule n φ)): List (IfExpr n φ) :=
+  List.flatten (List.map ImperativeEnter.enter xs)

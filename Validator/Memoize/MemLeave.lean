@@ -10,41 +10,41 @@ import Validator.Expr.Symbol
 
 import Validator.Derive.Leave
 
-def hashRulesAndNulls {n: Nat} {Φ: Type} {l: Nat} [Hashable Φ] (x: (xs: Rules n Φ l) × (Vec Bool (Symbol.nums xs))): UInt64 :=
+def hashRulesAndNulls {n: Nat} {φ: Type} {l: Nat} [Hashable φ] (x: (xs: Rules n φ l) × (Vec Bool (Symbol.nums xs))): UInt64 :=
   mixHash (hash x.1) (hash x.2)
 
-instance (n: Nat) (Φ: Type) (l: Nat) [Hashable Φ] : Hashable ((xs: Rules n Φ l) × (Vec Bool (Symbol.nums xs))) where
+instance (n: Nat) (φ: Type) (l: Nat) [Hashable φ] : Hashable ((xs: Rules n φ l) × (Vec Bool (Symbol.nums xs))) where
   hash := hashRulesAndNulls
 
-abbrev MemLeave.LeaveMap n α [DecidableEq α] [Hashable α] :=
+abbrev MemLeave.LeaveMap n φ [DecidableEq φ] [Hashable φ] :=
   Std.ExtDHashMap
     Nat
     (fun l =>
       Std.ExtHashMap
-        ((xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs)))
-        (Rules n (Pred α) l)
+        ((xs: Rules n φ l) × (Vec Bool (Symbol.nums xs)))
+        (Rules n φ l)
     )
 
 def MemLeave.LeaveMap.mk [DecidableEq α] [Hashable α]: LeaveMap n α := Std.ExtDHashMap.emptyWithCapacity
 
-class MemLeave (m: Type -> Type u) (n: outParam Nat) (α: outParam Type) [DecidableEq α] [Hashable α] where
-  getLeave : m (MemLeave.LeaveMap n α)
-  setLeave : MemLeave.LeaveMap n α → m Unit
+class MemLeave (m: Type -> Type u) (n: Nat) (φ: Type) [DecidableEq φ] [Hashable φ] where
+  getLeave : m (MemLeave.LeaveMap n φ)
+  setLeave : MemLeave.LeaveMap n φ → m Unit
 
 namespace MemLeave
 
-def get? [DecidableEq α] [Hashable α]
-  (m: MemLeave.LeaveMap n α)
-  (key: (xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs)))
-  : Option (Rules n (Pred α) l) :=
+def get? [DecidableEq φ] [Hashable φ]
+  (m: MemLeave.LeaveMap n φ)
+  (key: (xs: Rules n φ l) × (Vec Bool (Symbol.nums xs)))
+  : Option (Rules n φ l) :=
   match m.get? l with
   | Option.none => Option.none
   | Option.some mkey => mkey.get? key
 
-def insert [DecidableEq α] [Hashable α]
-  (m: MemLeave.LeaveMap n α)
-  (key: (xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs)))
-  (value: Rules n (Pred α) l) :=
+def insert [DecidableEq φ] [Hashable φ]
+  (m: MemLeave.LeaveMap n φ)
+  (key: (xs: Rules n φ l) × (Vec Bool (Symbol.nums xs)))
+  (value: Rules n φ l) :=
   match m.get? l with
   | Option.none =>
     m.insert l (Std.ExtHashMap.emptyWithCapacity.insert key value)
@@ -52,11 +52,11 @@ def insert [DecidableEq α] [Hashable α]
     m.insert l (mxs.insert key value)
 
 def deriveLeaveM
-  [DecidableEq α] [Hashable α]
-  [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n α]
-  (xs: Rules n (Pred α) l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := do
+  [DecidableEq φ] [Hashable φ]
+  [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n φ]
+  (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n φ l) := do
   let memoized <- MemLeave.getLeave
-  let key: ((xs: Rules n (Pred α) l) × (Vec Bool (Symbol.nums xs))) := Sigma.mk xs ns
+  let key: ((xs: Rules n φ l) × (Vec Bool (Symbol.nums xs))) := Sigma.mk xs ns
   match get? memoized key with
   | Option.none =>
     Debug.debug "cache miss"
@@ -67,5 +67,5 @@ def deriveLeaveM
     Debug.debug "cache hit"
     return value
 
-instance [DecidableEq α] [Hashable α] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n α] : Leave.DeriveLeaveM m n α where
-  deriveLeaveM {l: Nat} (xs: Rules n (Pred α) l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n (Pred α) l) := deriveLeaveM xs ns
+instance [DecidableEq φ] [Hashable φ] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n φ] : Leave.DeriveLeaveM m n φ where
+  deriveLeaveM {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n φ l) := deriveLeaveM xs ns

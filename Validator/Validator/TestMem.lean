@@ -10,21 +10,23 @@ import Validator.Validator.Inst.TreeParserMemTestM
 
 namespace TestMem
 
-def validate {m} [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)): m Bool :=
-  Validate.validate g x
+def validate {m} [DecidableEq φ] [ValidateM m n φ α]
+  (g: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (x: Rule n φ): m Bool :=
+  Validate.validate g Φ x
 
 def run [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemM.run' (n := n) (validate g g.start) t
+  TreeParserMemM.run' (n := n) (φ := Pred α) (validate g Pred.eval g.start) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
   (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  match TreeParserMemM.run (n := n) (validate g g.start) t with
+  match TreeParserMemM.run (n := n) (φ := Pred α) (validate g Pred.eval g.start) t with
   | EStateM.Result.error err _ => Except.error err
   | EStateM.Result.ok res1 state =>
-    match TreeParserMemTestM.runPopulatedMem (n := n) (validate g g.start) t state.enter state.leave with
+    match TreeParserMemTestM.runPopulatedMem (n := n) (validate g Pred.eval g.start) t state.enter state.leave with
     | EStateM.Result.error err _ => Except.error err
     | EStateM.Result.ok res2 _ =>
       if res1 ≠ res2
@@ -36,7 +38,7 @@ def testCacheIsHitOnSecondRun
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
   (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemTestM.run' (n := n) (validate g g.start) t
+  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate g Pred.eval g.start) t
 
 open TokenTree (node)
 

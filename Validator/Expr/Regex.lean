@@ -1,7 +1,6 @@
 import Validator.Std.Hedge
 import Validator.Std.Vec
 
-import Validator.Expr.Pred
 import Validator.Expr.Language
 
 -- A regular expression is defined over a generic symbol

@@ -8,14 +8,20 @@ import Validator.Validator.ValidateM
 
 namespace TestIO
 
-def validate {m} [DecidableEq α] [ValidateM m n α] (g: Grammar n (Pred α)) (x: Rule n (Pred α)): m Bool :=
-  Validate.validate g x
+def validate {m}
+  [DecidableEq φ] [ValidateM m n φ α]
+  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (x: Rule n φ): m Bool :=
+  Validate.validate g Φ x
 
-unsafe def run [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (TreeParserIO.run' (n := n) (validate g g.start) t)
+unsafe def run [DecidableEq φ] [Hashable φ]
+  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (t: Hedge.Node α): Except String Bool :=
+  unsafeEIO (TreeParserIO.run' (n := n) (φ := φ) (validate g Φ g.start) t)
 
 -- runTwice is used to check if the cache was hit on the second run
-def runTwice [DecidableEq α] [Hashable α] [DecidableEq β] (f: TreeParserIO.Impl n α β) (t: Hedge.Node α): EIO String β := do
+def runTwice [DecidableEq α] [Hashable α] [DecidableEq β]
+  (f: TreeParserIO.Impl n (Pred α) α β) (t: Hedge.Node α): EIO String β := do
   let initial := TreeParserIO.Impl.mk (TreeParser.ParserState.mk' t)
   let (res1, updated) <- StateT.run f initial
   _ <- TreeParserIO.EIO.println "start second run"
@@ -25,8 +31,10 @@ def runTwice [DecidableEq α] [Hashable α] [DecidableEq β] (f: TreeParserIO.Im
   else return res1
 
 -- runTwice is used to check if the cache was hit on the second run
-unsafe def runTwice' [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (runTwice (n := n) (validate g g.start) t)
+unsafe def runTwice'
+  [DecidableEq α] [Hashable α]
+  (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  unsafeEIO (runTwice (n := n) (validate g Pred.eval g.start) t)
 
 open TokenTree (node)
 
