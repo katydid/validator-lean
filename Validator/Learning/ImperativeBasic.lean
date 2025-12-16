@@ -23,7 +23,7 @@ private def foldLoop (deriv: List (Rule n φ) -> Hedge.Node α -> List (Rule n �
   return res
 
 def derive
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (xs: List (Rule n φ)) (tree: Hedge.Node α): List (Rule n φ) :=
   -- If all expressions are unescapable, then simply return without look at the input tree.
   -- An example of an unescapable expression is emptyset, since its derivative is always emptyset, no matter the input.
@@ -36,34 +36,34 @@ def derive
       -- enters is one of our two new memoizable functions.
       let ifexprs: List (IfExpr n φ) := ImperativeEnter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
-      let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval g Φ x label) ifexprs
+      let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval G Φ x label) ifexprs
       -- dchildxs = derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let dchildxs: List (Rule n φ) := List.foldl (derive g Φ) childxs children
+      let dchildxs: List (Rule n φ) := List.foldl (derive G Φ) childxs children
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
       -- leaves is the other one of our two new memoizable functions.
       let dxs: List (Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Regex.nullable dchildxs)
       dxs
 
 def derivs
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (x: Rule n φ) (hedge: Hedge α): Except String (Rule n φ) :=
   -- see foldLoop for an explanation of what List.foldM does.
-  let dxs := List.foldl (derive g Φ) [x] hedge
+  let dxs := List.foldl (derive G Φ) [x] hedge
   match dxs with
   | [dx] => Except.ok dx
   | _ => Except.error "expected one expression"
 
 def validate
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
-  match derivs g Φ x hedge with
+  match derivs G Φ x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Rule.nullable x')
 
 def run [DecidableEq α]
-  (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  validate g Pred.eval g.start [t]
+  (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  validate G Pred.eval G.start [t]
 
 -- Tests
 

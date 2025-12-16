@@ -11,22 +11,22 @@ import Validator.Validator.Inst.TreeParserMemTestM
 namespace TestMem
 
 def validate {m} [DecidableEq φ] [ValidateM m n φ α]
-  (g: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
   (x: Rule n φ): m Bool :=
-  Validate.validate g Φ x
+  Validate.validate G Φ x
 
-def run [DecidableEq α] [Hashable α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemM.run' (n := n) (φ := Pred α) (validate g Pred.eval g.start) t
+def run [DecidableEq α] [Hashable α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  TreeParserMemM.run' (n := n) (φ := Pred α) (validate G Pred.eval G.start) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
-  (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  match TreeParserMemM.run (n := n) (φ := Pred α) (validate g Pred.eval g.start) t with
+  (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  match TreeParserMemM.run (n := n) (φ := Pred α) (validate G Pred.eval G.start) t with
   | EStateM.Result.error err _ => Except.error err
   | EStateM.Result.ok res1 state =>
-    match TreeParserMemTestM.runPopulatedMem (n := n) (validate g Pred.eval g.start) t state.enter state.leave with
+    match TreeParserMemTestM.runPopulatedMem (n := n) (validate G Pred.eval G.start) t state.enter state.leave with
     | EStateM.Result.error err _ => Except.error err
     | EStateM.Result.ok res2 _ =>
       if res1 ≠ res2
@@ -37,8 +37,8 @@ def testCacheIsHitOnSecondRun
 -- This tests that given an empty cache the test does actually fail.
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
-  (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate g Pred.eval g.start) t
+  (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate G Pred.eval G.start) t
 
 open TokenTree (node)
 

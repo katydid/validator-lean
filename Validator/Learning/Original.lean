@@ -27,7 +27,7 @@ private def foldLoop (deriv: Rule n φ -> Hedge.Node α -> Rule n φ) (start: Ru
 -- Note we need to use `partial`, since Lean cannot automatically figure out that the derive function terminates.
 -- In OriginalTotal we show how to remove this, by manually proving that it in fact does terminate.
 partial def derive
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (x: Rule n φ) (tree: Hedge.Node α): Rule n φ :=
   match x with
   | Regex.emptyset => Regex.emptyset
@@ -37,24 +37,24 @@ partial def derive
     -- Although if we view this as a complicated predicate, then actually there is no difference.
     if Φ labelPred (Hedge.Node.getLabel tree)
     -- This is exactly the same as: validate childrenExpr (Hedge.Node.getChildren tree)
-    && Regex.nullable (List.foldl (derive g Φ) (g.lookup childRef) (Hedge.Node.getChildren tree))
+    && Regex.nullable (List.foldl (derive G Φ) (G.lookup childRef) (Hedge.Node.getChildren tree))
     -- Just like with char, if the predicate matches we return emptystr and if it doesn't we return emptyset
     then Regex.emptystr
     else Regex.emptyset
-  | Regex.or y z => Regex.or (derive g Φ y tree) (derive g Φ z tree)
+  | Regex.or y z => Regex.or (derive G Φ y tree) (derive G Φ z tree)
   | Regex.concat y z =>
     if Regex.nullable y
-    then Regex.or (Regex.concat (derive g Φ y tree) z) (derive g Φ z tree)
-    else Regex.concat (derive g Φ y tree) z
-  | Regex.star y => Regex.concat (derive g Φ y tree) (Regex.star y)
+    then Regex.or (Regex.concat (derive G Φ y tree) z) (derive G Φ z tree)
+    else Regex.concat (derive G Φ y tree) z
+  | Regex.star y => Regex.concat (derive G Φ y tree) (Regex.star y)
 
 partial def validate
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (x: Rule n φ) (hedge: Hedge α): Bool :=
-  Rule.nullable (List.foldl (derive g Φ) x hedge)
+  Rule.nullable (List.foldl (derive G Φ) x hedge)
 
-def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  Except.ok (validate g Pred.eval g.start [t])
+def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  Except.ok (validate G Pred.eval G.start [t])
 
 -- Tests
 

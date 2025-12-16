@@ -11,24 +11,24 @@ import Validator.Validator.Inst.TreeParserMemTestM
 namespace TestMemLog
 
 def validate {m} [DecidableEq φ] [ValidateM m n φ α]
-  (g: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
   (x: Rule n φ): m Bool :=
-  Validate.validate g Φ x
+  Validate.validate G Φ x
 
 def run
   [DecidableEq α] [Hashable α]
-  (g: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
-  TreeParserMemLogM.run' (n := n) (φ := Pred α) (validate g Pred.eval g.start) t
+  (G: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
+  TreeParserMemLogM.run' (n := n) (φ := Pred α) (validate G Pred.eval G.start) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
-  (g: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
-  match TreeParserMemLogM.run (n := n) (φ := Pred α) (validate g Pred.eval g.start) t with
+  (G: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
+  match TreeParserMemLogM.run (n := n) (φ := Pred α) (validate G Pred.eval G.start) t with
   | EStateM.Result.error err state1 => (state1.logs, Except.error err)
   | EStateM.Result.ok res1 state1 =>
-    match TreeParserMemLogM.runPopulatedMem (n := n) (φ := Pred α) (validate g Pred.eval g.start) t state1.enter state1.leave with
+    match TreeParserMemLogM.runPopulatedMem (n := n) (φ := Pred α) (validate G Pred.eval G.start) t state1.enter state1.leave with
     | EStateM.Result.error err state2 => (state1.logs ++ state2.logs, Except.error err)
     | EStateM.Result.ok res2 state2 =>
       if res1 ≠ res2
@@ -39,8 +39,8 @@ def testCacheIsHitOnSecondRun
 -- This tests that given an empty cache the test does actually fail.
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
-  (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate g Pred.eval g.start) t
+  (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate G Pred.eval G.start) t
 
 open TokenTree (node)
 

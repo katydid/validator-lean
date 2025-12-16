@@ -86,7 +86,7 @@ def expand (indices: Indices) (xs: List (Rule n φ)): Except String (List (Rule 
 
 -- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
 def derive [DecidableEq φ]
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (xs: List (Rule n φ)) (t: Hedge.Node α): Except String (List (Rule n φ)) :=
   if List.all xs Regex.unescapable
   then Except.ok xs
@@ -95,7 +95,7 @@ def derive [DecidableEq φ]
     | Hedge.Node.mk label children =>
       let ifexprs: List (IfExpr n φ) := ImperativeEnter.deriveEnter xs
       -- Vec.map (fun x => eval g x t) ifExprs
-      let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval g Φ x label) ifexprs
+      let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval G Φ x label) ifexprs
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
       let cchildxs' : Except String ((List (Rule n φ)) × Indices) := compress childxs
       match cchildxs' with
@@ -103,7 +103,7 @@ def derive [DecidableEq φ]
       | Except.ok (cchildxs, indices) =>
       -- cdchildxs = compressed derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let cdchildxs' : Except String (List (Rule n φ)) := List.foldlM (derive g Φ) cchildxs children
+      let cdchildxs' : Except String (List (Rule n φ)) := List.foldlM (derive G Φ) cchildxs children
       match cdchildxs' with
       | Except.error err => Except.error err
       | Except.ok cdchildxs =>
@@ -117,24 +117,24 @@ def derive [DecidableEq φ]
       Except.ok dxs
 
 def derivs [DecidableEq φ]
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (x: Rule n φ) (hedge: Hedge α): Except String (Rule n φ) :=
   -- see foldLoop for an explanation of what List.foldM does.
-  let dxs := List.foldlM (derive g Φ) [x] hedge
+  let dxs := List.foldlM (derive G Φ) [x] hedge
   match dxs with
   | Except.error err => Except.error err
   | Except.ok [dx] => Except.ok dx
   | Except.ok _ => Except.error "expected one expression"
 
 def validate [DecidableEq φ]
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
-  match derivs g Φ x hedge with
+  match derivs G Φ x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Regex.nullable x')
 
-def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  validate g Pred.eval g.start [t]
+def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  validate G Pred.eval G.start [t]
 
 -- Tests
 

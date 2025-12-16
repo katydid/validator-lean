@@ -6,7 +6,7 @@
 * eq (equal)
 * ε (epsilon or empty string for regular expression or regular hedge grammar)
 * f (function)
-* g (grammar)
+* G (grammar)
 * ge (greater than or equal)
 * gt (greater than)
 * Γ (environment)

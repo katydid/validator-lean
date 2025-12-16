@@ -45,7 +45,7 @@ def union_rules {n: Nat} {φ: Type}
 def BCFG.getStart
   {n: Nat} {φ: Type}
   (g: BCFG n φ): RegexRule n φ :=
-  match g.start with
+  match G.start with
   | Subtype.mk s hs =>
   match s with
   | [] => by contradiction
@@ -71,15 +71,15 @@ partial def derive {n: Nat}
     then Regex.emptystr
     else Regex.emptyset
   | Regex.symbol (Sum.inr ref) =>
-    derive g Φ (g.lookup ref) a
+    derive G Φ (G.lookup ref) a
   | Regex.or r1 r2 =>
-    Regex.or (derive g Φ r1 a) (derive g Φ r2 a)
+    Regex.or (derive G Φ r1 a) (derive G Φ r2 a)
   | Regex.concat r1 r2 =>
     if nullable r1
     then Regex.or
-      (Regex.concat (derive g Φ r1 a) r2)
-      (derive g Φ r2 a)
+      (Regex.concat (derive G Φ r1 a) r2)
+      (derive G Φ r2 a)
     else
-      (Regex.concat (derive g Φ r1 a) r2)
+      (Regex.concat (derive G Φ r1 a) r2)
   | Regex.star r1 =>
-    Regex.concat (derive g Φ r1 a) (Regex.star r1)
+    Regex.concat (derive G Φ r1 a) (Regex.star r1)

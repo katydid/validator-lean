@@ -70,7 +70,7 @@ theorem decreasing_symbol {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (l
   omega
 
 def Rule.derive
-  (g: Grammar n φ) (Φ: φ -> α -> Bool)
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (x: Hedge.Node α): Rule n φ :=
   match r with
   | Regex.emptyset => Regex.emptyset
@@ -81,17 +81,17 @@ def Rule.derive
       Regex.onlyif
         (
           Φ p label
-          /\ Rule.nullable (List.foldl (Rule.derive g Φ) (g.lookup ref) children)
+          /\ Rule.nullable (List.foldl (Rule.derive G Φ) (G.lookup ref) children)
         )
         Regex.emptystr
   | Regex.or r1 r2 =>
-    Regex.or (Rule.derive g Φ r1 x) (Rule.derive g Φ r2 x)
+    Regex.or (Rule.derive G Φ r1 x) (Rule.derive G Φ r2 x)
   | Regex.concat r1 r2 =>
     Regex.or
-      (Regex.concat (Rule.derive g Φ r1 x) r2)
-      (Regex.onlyif (Rule.nullable r1) (Rule.derive g Φ r2 x))
+      (Regex.concat (Rule.derive G Φ r1 x) r2)
+      (Regex.onlyif (Rule.nullable r1) (Rule.derive G Φ r2 x))
   | Regex.star r1 =>
-    Regex.concat (Rule.derive g Φ r1 x) (Regex.star r1)
+    Regex.concat (Rule.derive G Φ r1 x) (Regex.star r1)
   -- Lean cannot guess how the recursive function terminates,
   -- so we have to tell it how the arguments decrease in size.
   -- The arguments decrease in the tree case first
@@ -114,11 +114,11 @@ def Rule.derive
     · apply decreasing_concat_r
     · apply decreasing_star
 
-def validate [DecidableEq α] (g: Grammar n (Pred α)) (r: Rule n (Pred α)) (hedge: Hedge α): Bool :=
-  Rule.nullable (List.foldl (Rule.derive g Pred.evalb) r hedge)
+def validate [DecidableEq α] (G: Grammar n (Pred α)) (r: Rule n (Pred α)) (hedge: Hedge α): Bool :=
+  Rule.nullable (List.foldl (Rule.derive G Pred.evalb) r hedge)
 
-def run [DecidableEq α] (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  Except.ok (validate g g.start [t])
+def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  Except.ok (validate G G.start [t])
 
 -- Tests
 
@@ -186,10 +186,10 @@ open TokenTree (node)
   Except.ok true
 
 theorem derive_commutes {α: Type} {φ: Type} [DecidableEq φ]
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (r: Rule n φ) (x: Hedge.Node α):
-  Rule.denote g Φ (Rule.derive g ((fun p a => Φ p a)) r x) = Language.derive (Rule.denote g Φ r) x := by
-  fun_induction (Rule.derive g (fun p a => Φ p a)) r x with
+  Rule.denote G Φ (Rule.derive G ((fun p a => Φ p a)) r x) = Language.derive (Rule.denote G Φ r) x := by
+  fun_induction (Rule.derive G (fun p a => Φ p a)) r x with
   | case1 => -- emptyset
     rw [Rule.denote_emptyset]
     rw [Language.derive_emptyset]
@@ -205,7 +205,7 @@ theorem derive_commutes {α: Type} {φ: Type} [DecidableEq φ]
     apply (congrArg fun x => Language.onlyif x Language.emptystr)
     congr
     · simp only [decide_eq_true_eq]
-    generalize (g.lookup childRef) = childExpr
+    generalize (G.lookup childRef) = childExpr
     rw [Rule.null_commutes]
     unfold Language.null
     induction children generalizing childExpr with
@@ -240,7 +240,7 @@ theorem derive_commutes {α: Type} {φ: Type} [DecidableEq φ]
     rw [Language.derive_concat]
     rw [<- ihp]
     rw [<- ihq]
-    congrm (Language.or (Language.concat (Rule.denote g Φ (Rule.derive g (fun p a => Φ p a) p x)) (Rule.denote g Φ q)) ?_)
+    congrm (Language.or (Language.concat (Rule.denote G Φ (Rule.derive G (fun p a => Φ p a) p x)) (Rule.denote G Φ q)) ?_)
     rw [Rule.null_commutes]
   | case6 x r ih => -- star
     rw [Rule.denote_star]

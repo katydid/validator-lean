@@ -20,19 +20,19 @@ structure Grammar99 (n: Nat) (φ: Type) where
   start: Regex (Ref n)
   prods: Vec (φ × Regex (Ref n)) n
 
-def Grammar99.lookup (g: Grammar99 n φ) (ref: Fin n): φ × Regex (Ref n) :=
+def Grammar99.lookup (G: Grammar99 n φ) (ref: Fin n): φ × Regex (Ref n) :=
   Vec.get g.prods ref
 
 def Grammar99.denote_prod {α: Type}
-  (g: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (pred: φ) (r: Regex (Ref n)) (xs: Hedge α): Prop :=
   match xs with
   | [Hedge.Node.mk label children] =>
     Φ pred label /\
     Regex.denote_infix r children (fun ref xs' =>
-      match (g.lookup ref) with
+      match (G.lookup ref) with
       | (pred', r') =>
-        Grammar99.denote_prod g Φ pred' r' xs'
+        Grammar99.denote_prod G Φ pred' r' xs'
     )
   | _ => False
   termination_by xs
@@ -44,18 +44,18 @@ def Grammar99.denote_prod {α: Type}
     omega
 
 def Grammar99.denote_start {α: Type}
-  (g: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (r: Regex (Ref n)) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun ref xs' =>
-    match (g.lookup ref) with
+    match (G.lookup ref) with
     | (pred', r') =>
-      Grammar99.denote_prod g Φ pred' r' xs'
+      Grammar99.denote_prod G Φ pred' r' xs'
   )
 
 def Grammar99.denote {α: Type}
-  (g: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (xs: Hedge α): Prop :=
-  Grammar99.denote_start g Φ g.start xs
+  Grammar99.denote_start G Φ G.start xs
 
 namespace Grammar99
 
@@ -75,7 +75,7 @@ def convert99 (g99: Grammar99 n φ): Grammar n φ :=
   | Grammar99.mk start prods =>
     Grammar.mk (convert99' g99 start) (Vec.map prods (fun (_, rref) => convert99' g99 rref))
 
-def convert' (g: Grammar n φ) (r: Regex (φ × Ref n)): Regex (Ref n) :=
+def convert' (G: Grammar n φ) (r: Regex (φ × Ref n)): Regex (Ref n) :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptystr

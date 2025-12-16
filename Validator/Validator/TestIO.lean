@@ -10,14 +10,14 @@ namespace TestIO
 
 def validate {m}
   [DecidableEq φ] [ValidateM m n φ α]
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (x: Rule n φ): m Bool :=
-  Validate.validate g Φ x
+  Validate.validate G Φ x
 
 unsafe def run [DecidableEq φ] [Hashable φ]
-  (g: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (TreeParserIO.run' (n := n) (φ := φ) (validate g Φ g.start) t)
+  unsafeEIO (TreeParserIO.run' (n := n) (φ := φ) (validate G Φ G.start) t)
 
 -- runTwice is used to check if the cache was hit on the second run
 def runTwice [DecidableEq α] [Hashable α] [DecidableEq β]
@@ -33,8 +33,8 @@ def runTwice [DecidableEq α] [Hashable α] [DecidableEq β]
 -- runTwice is used to check if the cache was hit on the second run
 unsafe def runTwice'
   [DecidableEq α] [Hashable α]
-  (g: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (runTwice (n := n) (validate g Pred.eval g.start) t)
+  (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
+  unsafeEIO (runTwice (n := n) (validate G Pred.eval G.start) t)
 
 open TokenTree (node)
 
