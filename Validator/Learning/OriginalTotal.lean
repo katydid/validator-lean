@@ -221,9 +221,7 @@ theorem derive_commutes {α: Type} {φ: Type} [DecidableEq φ]
         rw [List.mem_cons]
         apply Or.inl
         rfl
-      · intro x
-        intro child
-        intro hchild
+      · intro x child hchild
         apply ih
         rw [List.mem_cons]
         apply Or.inr hchild

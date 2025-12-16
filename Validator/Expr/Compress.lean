@@ -66,8 +66,7 @@ def eraseReps_sub [DecidableEq α] (xs: List α): { ys: List α // ∀ x ∈ xs,
   let ys := eraseReps xs
   Subtype.mk ys (by
     subst ys
-    intro x
-    intro hxs
+    intro x hxs
     apply eraseReps_member hxs
   )
 
@@ -158,8 +157,7 @@ def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, 
           (Subtype.mk
             ys.val
             (by
-              intro x'
-              intro hxs
+              intro x' hxs
               cases ys with
               | mk ys hys =>
               simp only

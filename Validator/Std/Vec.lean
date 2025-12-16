@@ -1,6 +1,6 @@
 import Init.Data.Nat
 
-import Mathlib.Tactic.GeneralizeProofs
+import Batteries.Tactic.GeneralizeProofs
 import Mathlib.Tactic.NthRewrite
 import Mathlib.Tactic.RewriteSearch
 

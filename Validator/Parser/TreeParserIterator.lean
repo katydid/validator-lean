@@ -37,19 +37,25 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
       let ⟨ ⟨ current, stack ⟩ ⟩ := it
       cases current with
       | unknown children =>
-        refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+        refine pure ?_
+        refine Std.Shrink.deflate ?_
+        refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
         · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.opened children) stack)
         · exact Hint.enter
         · simp
           rw [<- TreeParser.next_unknown_gt_opened]
       | field f children =>
-        refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+        refine pure ?_
+        refine Std.Shrink.deflate ?_
+        refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
         · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.opened children) stack)
         · exact Hint.enter
         · simp
           rw [<- TreeParser.next_field_gt_opened]
       | pair f v children =>
-        refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+        refine pure ?_
+        refine Std.Shrink.deflate ?_
+        refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
         · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.value v children) stack)
         · exact Hint.value
         · simp
@@ -59,13 +65,17 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
         | nil =>
           cases stack with
           | nil =>
-            refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+            refine pure ?_
+            refine Std.Shrink.deflate ?_
+            refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
             · exact (TreeParser.ParserState.mk TreeParser.CurrentState.eof [])
             · exact Hint.leave
             · simp
               rw [TreeParser.next_opened_gt_popped_opened_eof]
           | cons s ss =>
-            refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+            refine pure ?_
+            refine Std.Shrink.deflate ?_
+            refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
             · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.opened s) ss)
             · exact Hint.leave
             · simp
@@ -75,7 +85,9 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
           | mk f fchildren =>
             cases fchildren with
             | nil =>
-              refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+              refine pure ?_
+              refine Std.Shrink.deflate ?_
+              refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
               · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.value f siblings) stack)
               · exact Hint.value
               · simp
@@ -87,13 +99,17 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
                 | mk v vchildren =>
                 cases vchildren with
                 | nil =>
-                  refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+                  refine pure ?_
+                  refine Std.Shrink.deflate ?_
+                  refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
                   · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.pair f v siblings) stack)
                   · exact Hint.field
                   · simp
                     rw [TreeParser.next_opened_pair_gt_pair]
                 | cons vchild vchildren =>
-                  refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+                  refine pure ?_
+                  refine Std.Shrink.deflate ?_
+                  refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
                   · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f [Hedge.Node.mk v (vchild::vchildren)]) (siblings::stack))
                   · exact Hint.field
                   · simp
@@ -103,7 +119,9 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
                     exists vchild
                     exists vchildren
               | cons fchild2 fchildren =>
-                refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+                refine pure ?_
+                refine Std.Shrink.deflate ?_
+                refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
                 · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f (fchild1::fchild2::fchildren)) (siblings::stack))
                 · exact Hint.field
                 · simp
@@ -117,13 +135,17 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
         | nil =>
           cases stack with
           | nil =>
-            refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+            refine pure ?_
+            refine Std.Shrink.deflate ?_
+            refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
             · exact (TreeParser.ParserState.mk TreeParser.CurrentState.eof [])
             · exact Hint.leave
             · simp
               rw [TreeParser.next_value_gt_popped_value_eof]
           | cons s ss =>
-            refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+            refine pure ?_
+            refine Std.Shrink.deflate ?_
+            refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
             · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.opened s) ss)
             · exact Hint.leave
             · simp
@@ -133,7 +155,9 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
           | mk f fchildren =>
             cases fchildren with
             | nil =>
-              refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+              refine pure ?_
+              refine Std.Shrink.deflate ?_
+              refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
               · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.value f siblings) stack)
               · exact Hint.value
               · simp
@@ -145,13 +169,17 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
                 | mk v vchildren =>
                 cases vchildren with
                 | nil =>
-                  refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+                  refine pure ?_
+                  refine Std.Shrink.deflate ?_
+                  refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
                   · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.pair f v siblings) stack)
                   · exact Hint.field
                   · simp
                     rw [TreeParser.next_value_pair_gt_pair]
                 | cons vchild vchildren =>
-                  refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+                  refine pure ?_
+                  refine Std.Shrink.deflate ?_
+                  refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
                   · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f [Hedge.Node.mk v (vchild::vchildren)]) (siblings::stack))
                   · exact Hint.field
                   · simp
@@ -161,7 +189,9 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
                     exists vchild
                     exists vchildren
               | cons fchild2 fchildren =>
-                refine (pure ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩ )
+                refine pure ?_
+                refine Std.Shrink.deflate ?_
+                refine ⟨ Std.Iterators.IterStep.yield ⟨TreeParserIterator.mk ?_⟩ ?_, ?_ ⟩
                 · exact (TreeParser.ParserState.mk (TreeParser.CurrentState.field f (fchild1::fchild2::fchildren)) (siblings::stack))
                 · exact Hint.field
                 · simp
@@ -171,7 +201,9 @@ instance {α : Type} [Pure m] : Std.Iterators.Iterator (TreeParserIterator α) m
                   exists fchild2
                   exists fchildren
       | eof =>
-        refine (pure ⟨ Std.Iterators.IterStep.done, ?_ ⟩ )
+        refine pure ?_
+        refine Std.Shrink.deflate ?_
+        refine ⟨ Std.Iterators.IterStep.done, ?_ ⟩
         simp
 
 private def finitenessRelation [Pure m] :
@@ -216,12 +248,4 @@ instance {α : Type} [Monad m] {n : Type → Type x'} [Monad n] :
 @[always_inline, inline]
 instance {α : Type} [Monad m] {n : Type → Type x'} [Monad n] :
     Std.Iterators.IteratorLoopPartial (TreeParserIterator α) m n :=
-  .defaultImplementation
-
-@[always_inline, inline]
-instance {α : Type} [Monad m] : Std.Iterators.IteratorSize (TreeParserIterator α) m :=
-  .defaultImplementation
-
-@[always_inline, inline]
-instance {α : Type} [Monad m] : Std.Iterators.IteratorSizePartial (TreeParserIterator α) m :=
   .defaultImplementation

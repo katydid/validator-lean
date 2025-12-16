@@ -234,3 +234,6 @@ theorem list_infix_is_leq_sizeOf {α: Type} [SizeOf α] {xs ys: List α}:
   have hh2 := List.list_sizeOf_append (xs1 ++ xs) xs2
   have hh1 := List.list_sizeOf_prepend xs xs1
   apply Nat.le_trans hh1 hh2
+
+theorem list_take_eq_self_iff (x : List α) {n : Nat} : x.take n = x ↔ x.length ≤ n :=
+  ⟨fun h ↦ by rw [← h]; simp; omega, take_of_length_le⟩

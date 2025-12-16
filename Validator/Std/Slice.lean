@@ -1,6 +1,8 @@
 import Validator.Std.List
 import Validator.Std.Nat
 
+import Mathlib.Data.Quot
+import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.NthRewrite
 import Mathlib.Tactic.RewriteSearch
 
@@ -16,7 +18,7 @@ def LawfulSlice.mk (data: List α) (off: Nat) (len: Nat) (p: off + len <= data.l
 
 def LawfulSlice.fromList (xs: List α): LawfulSlice α :=
   Subtype.mk (Slice.mk xs 0 xs.length) (by
-    simp only [zero_add, le_refl]
+    simp only [Nat.zero_add, Nat.le_refl]
   )
 
 def LawfulSlice.isEmpty (s: LawfulSlice α): Bool :=
@@ -74,16 +76,17 @@ def LawfulSlice.drop (n: Nat) (s: LawfulSlice α): LawfulSlice α :=
 theorem LawfulSlice.take_is_List.take {xs: List α}:
   (LawfulSlice.take n (LawfulSlice.fromList xs)).toList = List.take n xs := by
   simp only [toList, LawfulSlice.take, mk, data, fromList, offset, length, List.drop_zero,
-    List.take_eq_take_iff, inf_le_right, inf_of_le_left]
+    List.take_eq_take_iff, Nat.min_assoc, Nat.le_refl, Nat.min_eq_left]
 
 theorem LawfulSlice.drop_is_List.drop {xs: List α}:
   (LawfulSlice.drop n (LawfulSlice.fromList xs)).toList = List.drop n xs := by
-  simp only [toList, LawfulSlice.drop, mk, data, fromList, offset, zero_add, length]
+  simp only [toList, LawfulSlice.drop, mk, data, fromList, offset, Nat.zero_add, length]
   rw [Nat.nat_min]
   split_ifs
   case pos h =>
-    rw [List.take_eq_self_iff]
+    rw [List.list_take_eq_self_iff]
     rw [List.length_drop]
+    omega
   case neg h =>
     simp only [List.drop_length, List.take_nil, List.nil_eq, List.drop_eq_nil_iff]
     omega
@@ -91,7 +94,7 @@ theorem LawfulSlice.drop_is_List.drop {xs: List α}:
 theorem LawfulSlice.take_zero_is_empty {xs: List α}:
   (LawfulSlice.take 0 (LawfulSlice.fromList xs)).nonEmpty = Option.none := by
   simp only [LawfulSlice, length, nonEmpty, fromList, take, data, offset, mk, Nat.succ_eq_add_one,
-    zero_le, inf_of_le_left]
+    Nat.zero_le, Nat.min_eq_left]
   split
   · rfl
   · omega
@@ -99,7 +102,7 @@ theorem LawfulSlice.take_zero_is_empty {xs: List α}:
 theorem LawfulSlice.take_nil_is_empty {α: Type}:
   (LawfulSlice.take n (@LawfulSlice.fromList α [])).nonEmpty = Option.none := by
   simp only [LawfulSlice, length, nonEmpty, fromList, List.length_nil, take, data, offset, mk,
-    Nat.succ_eq_add_one, zero_le, inf_of_le_right]
+    Nat.succ_eq_add_one, Nat.zero_le, Nat.min_eq_right]
   split
   · rfl
   · omega
@@ -115,18 +118,18 @@ example:
   LawfulSlice.fromList [1,2,3] ~ (LawfulSlice.fromList [1,2,3,4]).take 3 := by
   unfold eqv
   rw [LawfulSlice.take_is_List.take]
-  simp only [LawfulSlice.toList, LawfulSlice.fromList, List.length_cons, List.length_nil, zero_add,
+  simp only [LawfulSlice.toList, LawfulSlice.fromList, List.length_cons, List.length_nil, Nat.zero_add,
     Nat.reduceAdd, List.drop_zero, List.take_succ_cons, List.take_nil, List.take_zero]
 
-private lemma eqv.refl {α: Type} (s : LawfulSlice α) : s ~ s := rfl
+private theorem eqv.refl {α: Type} (s : LawfulSlice α) : s ~ s := rfl
 
-private lemma eqv.symm {α: Type} : ∀ {s1 s2 : LawfulSlice α},
+private theorem eqv.symm {α: Type} : ∀ {s1 s2 : LawfulSlice α},
   s1 ~ s2 → s2 ~ s1 := by
   intro r1 r2 h
   unfold eqv at *
   rw [h]
 
-private lemma eqv.trans {α: Type} : ∀ {s1 s2 s3 : LawfulSlice α}, s1 ~ s2 → s2 ~ s3 → s1 ~ s3 := by
+private theorem eqv.trans {α: Type} : ∀ {s1 s2 s3 : LawfulSlice α}, s1 ~ s2 → s2 ~ s3 → s1 ~ s3 := by
   unfold eqv
   intro s1 s2 s3 s1s2 s2s3
   rw [s1s2, s2s3]
@@ -165,8 +168,7 @@ def LawfulSliceQ.fromList {α: Type} (data: List α): LawfulSliceQ α :=
 theorem LawfulSlice.isEmpty_respects_eqv {α: Type}:
   ∀ (x y: LawfulSlice α), x ~ y ->
     (LawfulSlice.isEmpty x) = (LawfulSlice.isEmpty y) := by
-  intro x y
-  intro h
+  intro x y h
   unfold LawfulSlice.isEmpty
   unfold eqv at h
   obtain ⟨⟨xd, xo, xl⟩, xp⟩ := x
@@ -177,7 +179,7 @@ theorem LawfulSlice.isEmpty_respects_eqv {α: Type}:
   case mp =>
     intro hxl
     subst_vars
-    simp only [add_zero] at xp
+    simp only [Nat.add_zero] at xp
     simp only at yp
     simp only [List.take_zero, List.nil_eq, List.take_eq_nil_iff, List.drop_eq_nil_iff] at h
     cases h
@@ -187,7 +189,7 @@ theorem LawfulSlice.isEmpty_respects_eqv {α: Type}:
     intro hyl
     subst_vars
     simp only at xp
-    simp only [add_zero] at yp
+    simp only [Nat.add_zero] at yp
     simp only [List.take_zero, List.take_eq_nil_iff, List.drop_eq_nil_iff] at h
     omega
 
@@ -199,7 +201,7 @@ theorem List.eq_slice_eq_length
   {yo yl: Nat} {yd: List α} (hy : yo + yl ≤ yd.length)
   (h : List.take xl (List.drop xo xd) = List.take yl (List.drop yo yd)):
   xl = yl := by
-  rw [← List.Sublist.length_eq (by rw [h])] at h
+  rw [← List.Sublist.length_eq (by rw [h]; simp only [Sublist.refl])] at h
   simp only [length_take, length_drop] at h
   rw [Nat.min_def] at h
   rw [Nat.min_def] at h
@@ -211,8 +213,7 @@ theorem List.eq_slice_eq_length
 theorem LawfulSlice.length_respects_eqv {α: Type}:
   ∀ (x y: LawfulSlice α), x ~ y ->
     (LawfulSlice.length x) = (LawfulSlice.length y) := by
-  intro x y
-  intro h
+  intro x y h
   unfold LawfulSlice.length
   unfold eqv at h
   obtain ⟨⟨xd, xo, xl⟩, xp⟩ := x
@@ -236,21 +237,24 @@ theorem LawfulSlice.toList_respects_eqv {α: Type}:
 def LawfulSliceQ.toList {α: Type} (s: LawfulSliceQ α): List α :=
   Quotient.lift LawfulSlice.toList LawfulSlice.toList_respects_eqv s
 
+private theorem ite_add (P : Prop) [Decidable P] (a b c : Nat) :
+  (if P then a else b) + c = if P then a + c else b + c := by
+  split_ifs <;> rfl
 
 theorem List.take_min_eq_take_take:
   List.take (min a b) xs = List.take a (List.take b xs) := by
   rw [Nat.min_def]
   fun_induction List.take generalizing a
   case case1 =>
-    simp only [nonpos_iff_eq_zero, take_nil, take_eq_nil_iff, ite_eq_right_iff, imp_self, true_or]
+    simp only [Nat.le_zero_eq, take_nil, take_eq_nil_iff, ite_eq_right_iff, imp_self, true_or]
   case case2 =>
     simp only [Nat.succ_eq_add_one, take_nil]
   case case3 b x xs ih =>
     cases a with
     | zero =>
-      simp only [Nat.succ_eq_add_one, le_add_iff_nonneg_left, zero_le, ↓reduceIte, take_zero]
+      simp only [Nat.succ_eq_add_one, Nat.le_add_left, ↓reduceIte, take_zero]
     | succ a =>
-      simp only [Nat.succ_eq_add_one, add_le_add_iff_right, take_succ_cons]
+      simp only [Nat.succ_eq_add_one, Nat.add_le_add_iff_right, take_succ_cons]
       rw [<- ih]
       rw [← ite_add (a ≤ b) a b 1]
       simp only [take_succ_cons]
@@ -369,7 +373,7 @@ theorem LawfulSliceQ.length_respects_eqv {α: Type}:
   unfold LawfulSliceQ.fromLawfulSlice
   unfold Quotient.mk'
   unfold LawfulSliceQ.length
-  simp only [LawfulSlice.length, LawfulSlice, Quotient.lift_mk]
+  simp only [LawfulSlice.length, LawfulSlice, Quotient.mk]
 
 def Quotient.fromOptionSubtype
   (s: Option {ys: LawfulSlice α // ys.length > 0}):
@@ -391,8 +395,7 @@ theorem LawfulSliceQ.nonEmpty_respects_eqv {α: Type}:
     (Quotient.fromOptionSubtype (LawfulSlice.nonEmpty x)) = (Quotient.fromOptionSubtype (LawfulSlice.nonEmpty y)) := by
   unfold eqv
   simp only [Quotient.fromOptionSubtype]
-  intro x y
-  intro hxy
+  intro x y hxy
   simp only [LawfulSlice.nonEmpty]
   simp only [LawfulSlice, LawfulSlice.length, Nat.succ_eq_add_one, fromLawfulSlice]
   obtain ⟨⟨xd, xo, xl⟩, xp⟩ := x

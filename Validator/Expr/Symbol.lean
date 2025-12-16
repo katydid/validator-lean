@@ -229,7 +229,7 @@ theorem nums_zero {σ: Type} (xs: Vec (Regex σ) 0):
   -- aesop?
   split
   next l xs heq => simp_all only
-  next l xs_1 n x xs_2 heq heq_1 => simp_all only [Nat.right_eq_add, Nat.add_eq_zero, one_ne_zero, and_false]
+  next l xs_1 n x xs_2 heq heq_1 => simp_all only [Nat.right_eq_add, Nat.add_eq_zero_iff, one_ne_zero, and_false]
 
 theorem nums_is_nums_list (xs: Vec (Regex σ) l):
   nums xs = nums_list xs.toList := by
@@ -524,6 +524,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
       generalize_proofs h1 h2
       nth_rewrite 1 [ih1 acc]
       rw [replace_cast_symbols]
+      omega
     rw [<- hh1]
     clear hh1
     clear ih1
@@ -554,6 +555,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
       generalize_proofs h1 h2
       nth_rewrite 1 [ih1 acc]
       rw [replace_cast_symbols]
+      omega
     rw [<- hh1]
     clear hh1
     clear ih1
@@ -656,6 +658,7 @@ theorem extract_replaceFrom_is_fmap (r: Regex α) (acc: Vec α l) (f: α -> β):
       have ih1' := ih1 acc
       nth_rewrite 1 [ih1']
       rw [replace_cast_symbols]
+      omega
     rw [<- hh1]
     clear hh1
     clear ih1
@@ -690,6 +693,7 @@ theorem extract_replaceFrom_is_fmap (r: Regex α) (acc: Vec α l) (f: α -> β):
       have ih1' := ih1 acc
       nth_rewrite 1 [ih1']
       rw [replace_cast_symbols]
+      omega
     rw [<- hh1]
     clear hh1
     clear ih1
