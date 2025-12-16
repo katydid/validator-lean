@@ -91,7 +91,7 @@ theorem Rule.denote_decreasing {x: Hedge.Node α} {xs: Hedge α} (h: List.IsInfi
   omega
 
 def Rule.denote {α: Type}
-  (G: Grammar n φ) (Φ: φ -> α -> Prop)
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
@@ -103,10 +103,10 @@ def Rule.denote {α: Type}
   termination_by xs
   decreasing_by exact (Rule.denote_decreasing _hx)
 
-def Grammar.denote {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Prop) (xs: Hedge α): Prop :=
+def Grammar.denote {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (xs: Hedge α): Prop :=
   Rule.denote G Φ G.start xs
 
-theorem simp_denote_rule' {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Prop) (r: Rule n φ) (xs: Hedge α):
+theorem simp_denote_rule' {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r: Rule n φ) (xs: Hedge α):
   (Regex.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
     | Subtype.mk [x] _hx =>
@@ -134,7 +134,7 @@ theorem simp_denote_rule' {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Prop) (r
     | nil =>
       simp
 
-theorem simp_denote_rule {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Prop) (r: Rule n φ) (xs: Hedge α):
+theorem simp_denote_rule {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r: Rule n φ) (xs: Hedge α):
   Rule.denote G Φ r xs =
   Regex.denote_infix r xs (fun (pred, ref) xs' =>
     ∃ label children, xs'.val = [Hedge.Node.mk label children] /\ Φ pred label /\ Rule.denote G Φ (G.lookup ref) children
@@ -157,14 +157,14 @@ theorem simp_denote_rule {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Prop) (r:
     obtain ⟨label, children, hxs, h⟩ := h
     exists Hedge.Node.mk label children
 
-theorem Rule.denote_emptyset {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Prop}:
+theorem Rule.denote_emptyset {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Bool}:
   Rule.denote G Φ Regex.emptyset = Language.emptyset := by
   unfold Language.emptyset
   funext xs
   unfold Rule.denote
   simp [Regex.denote_infix_emptyset]
 
-theorem Rule.denote_emptystr {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Prop}:
+theorem Rule.denote_emptystr {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Bool}:
   Rule.denote G Φ Regex.emptystr = Language.emptystr := by
   unfold Language.emptystr
   funext xs
@@ -172,7 +172,7 @@ theorem Rule.denote_emptystr {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Prop}
   simp [Regex.denote_infix_emptystr]
 
 theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {p: φ}
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {p: φ}
   {ref: Ref n} {xs: Hedge α}:
   Rule.denote G Φ (Regex.symbol (p, ref)) xs
   <-> Language.tree (Φ p) (Rule.denote G Φ (G.lookup ref)) xs := by
@@ -220,14 +220,14 @@ theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
         apply And.intro hp hg
 
 theorem Rule.denote_symbol {n: Nat} {α: Type} {φ: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {p: φ} {ref: Ref n}:
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {p: φ} {ref: Ref n}:
   Rule.denote G Φ (Regex.symbol (p, ref))
   = Language.tree (Φ p) (Rule.denote G Φ (G.lookup ref)) := by
   funext xs
   rw [denote_rule_symbol']
 
 theorem Rule.denote_or {n: Nat} {α: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {r1 r2: Rule n φ}:
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
   Rule.denote G Φ (Regex.or r1 r2)
   = Language.or (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   funext xs
@@ -236,7 +236,7 @@ theorem Rule.denote_or {n: Nat} {α: Type}
   simp [Regex.denote_infix_or]
 
 theorem Rule.denote_concat_n {n: Nat} {α: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {r1 r2: Rule n φ}:
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
   Rule.denote G Φ (Regex.concat r1 r2)
   = Language.concat_n (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   funext xs
@@ -281,7 +281,7 @@ theorem Rule.denote_concat_n {n: Nat} {α: Type}
         simp
 
 theorem Rule.denote_concat {n: Nat} {α: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {r1 r2: Rule n φ}:
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
   Rule.denote G Φ (Regex.concat r1 r2)
   = Language.concat (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   rw [Rule.denote_concat_n]
@@ -289,7 +289,7 @@ theorem Rule.denote_concat {n: Nat} {α: Type}
   rw [Language.concat_is_concat_n]
 
 theorem denote_rule_star_n' {n: Nat} {α: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {r: Rule n φ} (xs: Hedge α):
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ} (xs: Hedge α):
   Rule.denote G Φ (Regex.star r) xs
   <->
   Language.star_n (Rule.denote G Φ r) xs := by
@@ -351,7 +351,7 @@ theorem denote_rule_star_n' {n: Nat} {α: Type}
     apply List.list_length_drop_lt_cons
 
 theorem Rule.denote_star_n {n: Nat} {α: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {r: Rule n φ}:
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ}:
   Rule.denote G Φ (Regex.star r)
   =
   Language.star_n (Rule.denote G Φ r) := by
@@ -359,7 +359,7 @@ theorem Rule.denote_star_n {n: Nat} {α: Type}
   rw [denote_rule_star_n']
 
 theorem Rule.denote_star {n: Nat} {α: Type}
-  {G: Grammar n φ} {Φ: φ -> α -> Prop} {r: Rule n φ}:
+  {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ}:
   Rule.denote G Φ (Regex.star r)
   =
   Language.star (Rule.denote G Φ r) := by
@@ -369,7 +369,7 @@ theorem Rule.denote_star {n: Nat} {α: Type}
 
 def Rule.denote_onlyif {α: Type}
   (condition: Prop) [dcond: Decidable condition]
-  (G: Grammar n φ) {Φ: φ -> α -> Prop} (x: Rule n φ):
+  (G: Grammar n φ) {Φ: φ -> α -> Bool} (x: Rule n φ):
   denote G Φ (Regex.onlyif condition x) = Language.onlyif condition (denote G Φ x) := by
   unfold Language.onlyif
   unfold Regex.onlyif
@@ -393,7 +393,7 @@ def Grammar.nullable (G: Grammar n φ): Bool :=
   Rule.nullable G.start
 
 theorem Rule.null_commutes {α: Type}
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) (x: Rule n φ):
+  (G: Grammar n φ) (Φ: φ -> α -> Bool) (x: Rule n φ):
   ((Rule.nullable x) = true) = Language.null (denote G Φ x) := by
   induction x with
   | emptyset =>

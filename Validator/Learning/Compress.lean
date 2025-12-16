@@ -21,7 +21,7 @@ namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
 def derive [DecidableEq φ]
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (xs: Rules n φ l) (t: Hedge.Node α): Rules n φ l :=
   if List.all xs.toList Regex.unescapable
   then xs
@@ -39,19 +39,19 @@ def derive [DecidableEq φ]
       Leave.deriveLeaves xs (Vec.map dchildxs Rule.nullable)
 
 def derivs [DecidableEq φ]
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ) (hedge: Hedge α): Rule n φ :=
   let dxs := List.foldl (derive G Φ) (Vec.cons x Vec.nil) hedge
   dxs.head
 
 def validate [DecidableEq φ]
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ) (hedge: Hedge α): Bool :=
   let dx := derivs G Φ x hedge
   Rule.nullable dx
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Bool :=
-  validate G Pred.eval G.start [t]
+  validate G Pred.evalb G.start [t]
 
 -- Tests
 

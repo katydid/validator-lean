@@ -10,12 +10,12 @@ namespace TestIO
 
 def validate {m}
   [DecidableEq φ] [ValidateM m n φ α]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ): m Bool :=
   Validate.validate G Φ x
 
 unsafe def run [DecidableEq φ] [Hashable φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (t: Hedge.Node α): Except String Bool :=
   unsafeEIO (TreeParserIO.run' (n := n) (φ := φ) (validate G Φ G.start) t)
 
@@ -34,7 +34,7 @@ def runTwice [DecidableEq α] [Hashable α] [DecidableEq β]
 unsafe def runTwice'
   [DecidableEq α] [Hashable α]
   (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (runTwice (n := n) (validate G Pred.eval G.start) t)
+  unsafeEIO (runTwice (n := n) (validate G Pred.evalb G.start) t)
 
 open TokenTree (node)
 

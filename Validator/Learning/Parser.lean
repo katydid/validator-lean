@@ -23,7 +23,7 @@ import Validator.Validator.Inst.TreeParserM
 namespace Parser
 
 def deriveEnter [DecidableEq φ] [ValidateM m n φ α]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ (Symbol.nums xs)) := do
   let enters <- Enter.DeriveEnter.deriveEnter xs
   let token <- Parser.token
@@ -33,7 +33,7 @@ def deriveLeaveM [DecidableEq φ] [ValidateM m n φ α] (xs: Rules n φ l) (cs: 
   Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.nullable)
 
 def deriveValue [DecidableEq φ] [ValidateM m n φ α]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ l) := do
   deriveEnter G Φ xs >>= deriveLeaveM (α := α) xs
 
@@ -41,7 +41,7 @@ def deriveValue [DecidableEq φ] [ValidateM m n φ α]
 -- for example: can you prove that your Parser will never return an Hint.leave after returning a Hint.field.
 -- This class can be called the LawfulParser.
 partial def derive [DecidableEq φ] [ValidateM m n φ α]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ l) := do
   if List.all xs.toList Regex.unescapable then
     Parser.skip; return xs
@@ -61,13 +61,13 @@ partial def derive [DecidableEq φ] [ValidateM m n φ α]
   | Hint.eof => return xs -- only happens at the top
 
 def validate {m} [DecidableEq φ] [ValidateM m n φ α]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ): m Bool := do
   let dxs <- derive G Φ (Vec.cons x Vec.nil)
   return Rule.nullable dxs.head
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserM.run' (validate G Pred.eval G.start) t
+  TreeParserM.run' (validate G Pred.evalb G.start) t
 
 -- Tests
 

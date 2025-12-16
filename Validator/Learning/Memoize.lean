@@ -11,12 +11,12 @@ import Validator.Learning.Parser
 namespace Memoize
 
 def validate {m} [DecidableEq φ] [ValidateM m n φ α]
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ): m Bool :=
   Parser.validate G Φ x
 
 def run [DecidableEq α] [Hashable α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemM.run' (n := n) (φ := Pred α) (validate G Pred.eval G.start) t
+  TreeParserMemM.run' (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t
 
 -- Tests
 

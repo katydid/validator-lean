@@ -27,7 +27,7 @@ private def foldLoop (deriv: Rule n φ -> Hedge.Node α -> Rule n φ) (start: Ru
 -- Note we need to use `partial`, since Lean cannot automatically figure out that the derive function terminates.
 -- In OriginalTotal we show how to remove this, by manually proving that it in fact does terminate.
 partial def derive
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ) (tree: Hedge.Node α): Rule n φ :=
   match x with
   | Regex.emptyset => Regex.emptyset
@@ -49,12 +49,12 @@ partial def derive
   | Regex.star y => Regex.concat (derive G Φ y tree) (Regex.star y)
 
 partial def validate
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ) (hedge: Hedge α): Bool :=
   Rule.nullable (List.foldl (derive G Φ) x hedge)
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  Except.ok (validate G Pred.eval G.start [t])
+  Except.ok (validate G Pred.evalb G.start [t])
 
 -- Tests
 

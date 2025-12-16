@@ -86,7 +86,7 @@ def expand (indices: Indices) (xs: List (Rule n φ)): Except String (List (Rule 
 
 -- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
 def derive [DecidableEq φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: List (Rule n φ)) (t: Hedge.Node α): Except String (List (Rule n φ)) :=
   if List.all xs Regex.unescapable
   then Except.ok xs
@@ -117,7 +117,7 @@ def derive [DecidableEq φ]
       Except.ok dxs
 
 def derivs [DecidableEq φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ) (hedge: Hedge α): Except String (Rule n φ) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM (derive G Φ) [x] hedge
@@ -127,14 +127,14 @@ def derivs [DecidableEq φ]
   | Except.ok _ => Except.error "expected one expression"
 
 def validate [DecidableEq φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
   match derivs G Φ x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Regex.nullable x')
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  validate G Pred.eval G.start [t]
+  validate G Pred.evalb G.start [t]
 
 -- Tests
 

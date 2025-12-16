@@ -11,24 +11,24 @@ import Validator.Validator.Inst.TreeParserMemTestM
 namespace TestMemLog
 
 def validate {m} [DecidableEq φ] [ValidateM m n φ α]
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ): m Bool :=
   Validate.validate G Φ x
 
 def run
   [DecidableEq α] [Hashable α]
   (G: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
-  TreeParserMemLogM.run' (n := n) (φ := Pred α) (validate G Pred.eval G.start) t
+  TreeParserMemLogM.run' (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
   (G: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
-  match TreeParserMemLogM.run (n := n) (φ := Pred α) (validate G Pred.eval G.start) t with
+  match TreeParserMemLogM.run (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t with
   | EStateM.Result.error err state1 => (state1.logs, Except.error err)
   | EStateM.Result.ok res1 state1 =>
-    match TreeParserMemLogM.runPopulatedMem (n := n) (φ := Pred α) (validate G Pred.eval G.start) t state1.enter state1.leave with
+    match TreeParserMemLogM.runPopulatedMem (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t state1.enter state1.leave with
     | EStateM.Result.error err state2 => (state1.logs ++ state2.logs, Except.error err)
     | EStateM.Result.ok res2 state2 =>
       if res1 ≠ res2
@@ -40,7 +40,7 @@ def testCacheIsHitOnSecondRun
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
   (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate G Pred.eval G.start) t
+  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t
 
 open TokenTree (node)
 

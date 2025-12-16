@@ -453,25 +453,25 @@ theorem Regex.denote_infix_star_n {α: Type} {σ: Type} (xs: List α) (dσ: σ -
     | nil =>
       simp only [Regex.denote_infix]
 
-def Regex.derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+def Regex.derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
   match r with
   | emptyset => emptyset
   | emptystr => emptyset
   | symbol s =>
-    if p s a
+    if Φ s a
     then emptystr
     else emptyset
   | or r1 r2 =>
-    or (derive p r1 a) (derive p r2 a)
+    or (derive Φ r1 a) (derive Φ r2 a)
   | concat r1 r2 =>
     if nullable r1
     then or
-      (concat (derive p r1 a) r2)
-      (derive p r2 a)
+      (concat (derive Φ r1 a) r2)
+      (derive Φ r2 a)
     else
-      (concat (derive p r1 a) r2)
+      (concat (derive Φ r1 a) r2)
   | star r1 =>
-    concat (derive p r1 a) (star r1)
+    concat (derive Φ r1 a) (star r1)
 
 -- derive2 is the same as derive, except the answer to the predicate is already included in a tuple with the original symbol.
 def Regex.derive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
@@ -535,8 +535,8 @@ theorem Regex.map_map (r: Regex α) (f: α -> β) (g: β -> σ):
     simp only [Regex.map]
     rw [ih1]
 
-theorem map_first (p: σ -> α -> Bool) (r: Regex σ) (a: α):
-  (r.map (fun s => (s, p s a))).first = r := by
+theorem map_first (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  (r.map (fun s => (s, Φ s a))).first = r := by
   induction r with
   | emptyset =>
     simp only [Regex.map, Regex.first]
@@ -561,8 +561,8 @@ theorem map_first (p: σ -> α -> Bool) (r: Regex σ) (a: α):
     simp only [Regex.star.injEq]
     exact ih1
 
-theorem map_nullable (p: σ -> α -> Bool) (r: Regex σ) (a: α):
-  (r.map (fun s => (s, p s a))).nullable = r.nullable := by
+theorem map_nullable {σ α} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  (r.map (fun s => (s, Φ s a))).nullable = r.nullable := by
   induction r with
   | emptyset =>
     simp only [Regex.map, Regex.nullable]
@@ -581,8 +581,8 @@ theorem map_nullable (p: σ -> α -> Bool) (r: Regex σ) (a: α):
   | star r1 ih1 =>
     simp only [Regex.map, Regex.nullable]
 
-theorem Regex.derive_is_derive2 (p: σ -> α -> Bool) (r: Regex σ) (a: α):
-  derive p r a = derive2 (map r (fun s => (s, p s a))) := by
+theorem Regex.derive_is_derive2 (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  derive Φ r a = derive2 (map r (fun s => (s, Φ s a))) := by
   induction r with
   | emptyset =>
     simp only [Regex.derive, Regex.map, Regex.derive2]
@@ -598,16 +598,16 @@ theorem Regex.derive_is_derive2 (p: σ -> α -> Bool) (r: Regex σ) (a: α):
     simp only [Regex.derive, Regex.map, Regex.derive2]
     rw [<- ih1]
     rw [<- ih2]
-    have h : (r2.map fun s => (s, p s a)).first = r2 := by
+    have h : (r2.map fun s => (s, Φ s a)).first = r2 := by
       apply map_first
-    have h' : (r1.map fun s => (s, p s a)).nullable = r1.nullable := by
+    have h' : (r1.map fun s => (s, Φ s a)).nullable = r1.nullable := by
       apply map_nullable
     rw [h]
     rw [h']
   | star r1 ih1 =>
     simp only [Regex.derive, Regex.map, Regex.derive2]
     rw [<- ih1]
-    have h : (r1.map fun s => (s, p s a)).first = r1 := by
+    have h : (r1.map fun s => (s, Φ s a)).first = r1 := by
       apply map_first
     rw [h]
 
@@ -633,8 +633,8 @@ def Regex.smartDerive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
 def Regexes.map (rs: Vec (Regex α) l) (f: α -> β): Vec (Regex β) l :=
   Vec.map rs (fun r => Regex.map r f)
 
-def Regex.derives (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
-  Vec.map rs (fun r => derive p r a)
+def Regex.derives (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
+  Vec.map rs (fun r => derive Φ r a)
 
 def Regex.derives2 (rs: Vec (Regex (σ × Bool)) l): Vec (Regex σ) l :=
   Vec.map rs derive2

@@ -44,7 +44,7 @@ def union_rules {n: Nat} {φ: Type}
 
 def BCFG.getStart
   {n: Nat} {φ: Type}
-  (g: BCFG n φ): RegexRule n φ :=
+  (G: BCFG n φ): RegexRule n φ :=
   match G.start with
   | Subtype.mk s hs =>
   match s with
@@ -61,7 +61,7 @@ def nullable {n: Nat} {φ: Type} (r: RegexRule n φ): Bool :=
   Regex.nullable r
 
 partial def derive {n: Nat}
-  (g: BCFG n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: BCFG n φ) (Φ: φ -> α -> Bool)
   (r: RegexRule n φ) (a: α): RegexRule n φ :=
   match r with
   | Regex.emptyset => Regex.emptyset

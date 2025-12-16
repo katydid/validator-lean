@@ -19,7 +19,7 @@ import Validator.Derive.Leave
 namespace Basic
 
 def derive {α: Type}
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (xs: Rules n φ l) (t: Hedge.Node α): Rules n φ l :=
   if List.all xs.toList Regex.unescapable
   then xs
@@ -38,19 +38,19 @@ def derive {α: Type}
       lchildxs
 
 def derivs {α: Type}
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ) (hedge: Hedge α): Rule n φ :=
   let dxs := List.foldl (derive G Φ) (#vec[x]) hedge
   dxs.head
 
 def validate {α: Type}
-  (G: Grammar n φ) (Φ : φ → α → Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ) (hedge: Hedge α): Bool :=
   let dx := derivs G Φ x hedge
   Rule.nullable dx
 
 def run {α: Type} [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Bool :=
-  validate G Pred.eval G.start [t]
+  validate G Pred.evalb G.start [t]
 
 -- Tests
 

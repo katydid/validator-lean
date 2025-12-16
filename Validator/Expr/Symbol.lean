@@ -140,19 +140,19 @@ def extractFrom (r: Regex σ): RegexID (num r) × Vec σ (num r) :=
   match extract r Vec.nil with
   | (r', xs) => (RegexID.cast r' (by omega), Vec.cast xs (by omega))
 
-def derive {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
   Regex.derive2
     (replaceFrom
       (extractFrom r).1
       (Vec.map
         (extractFrom r).2
-        (fun s => (s, p s a))
+        (fun s => (s, Φ s a))
       )
     )
 
-def derive' {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+def derive' {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
   let (r', symbols): (RegexID (num r) × Vec σ (num r)) := extractFrom r
-  let pred_results: Vec Bool (num r) := Vec.map symbols (fun s => p s a)
+  let pred_results: Vec Bool (num r) := Vec.map symbols (fun s => Φ s a)
   let replaces: Vec (σ × Bool) (num r) := Vec.zip symbols pred_results
   let replaced: Regex (σ × Bool) := replaceFrom r' replaces
   Regex.derive2 replaced
@@ -185,9 +185,9 @@ def extractsFrom (xs: Vec (Regex σ) nregex):
 def replacesFrom (rs: Vec (RegexID n) l) (xs: Vec σ n): Vec (Regex σ) l :=
   Vec.map rs (fun r => replaceFrom r xs)
 
-def derives {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
+def derives {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
   let (rs', symbols): (Vec (RegexID (nums rs)) l × Vec σ (nums rs)) := Symbol.extractsFrom rs
-  let pred_results: Vec Bool (nums rs) := Vec.map symbols (fun s => p s a)
+  let pred_results: Vec Bool (nums rs) := Vec.map symbols (fun s => Φ s a)
   let replaces: Vec (σ × Bool) (nums rs) := Vec.zip symbols pred_results
   let replaced: Vec (Regex (σ × Bool)) l := replacesFrom rs' replaces
   Regex.derives2 replaced
@@ -724,16 +724,16 @@ theorem extractFrom_replaceFrom_is_fmap (r: Regex α) (f: α -> β):
   rw [<- extract_replace_is_fmap r Vec.nil]
 
 theorem Symbol_derive_is_derive'
-  {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α):
-  Symbol.derive p r a = Symbol.derive' p r a := by
+  {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  Symbol.derive Φ r a = Symbol.derive' Φ r a := by
   unfold Symbol.derive
   unfold Symbol.derive'
   simp only
   rw [Vec.zip_map]
 
 theorem Symbol_derive_is_Regex_derive
-  {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Regex σ) (a: α):
-  Symbol.derive p r a = Regex.derive p r a := by
+  {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  Symbol.derive Φ r a = Regex.derive Φ r a := by
   unfold Symbol.derive
   rw [<- extractFrom_replaceFrom_is_fmap]
   rw [Regex.derive_is_derive2]
@@ -1322,8 +1322,8 @@ theorem extractsFrom_replacesFrom_is_fmap (rs: Vec (Regex α) l) (f: α -> β):
   simp only [map_cast]
 
 theorem Symbol_derives_is_fmap
-  {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives p rs a = Vec.map rs (fun r => Symbol.derive p r a) := by
+  {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
+  Symbol.derives Φ rs a = Vec.map rs (fun r => Symbol.derive Φ r a) := by
   unfold Symbol.derives
   simp only
   unfold Regex.derives2
@@ -1339,8 +1339,9 @@ theorem Symbol_derives_is_fmap
   simp only [Vec.map_map]
 
 theorem Symbol_derives_is_Regex_derives
-  {σ: Type} {α: Type} (p: σ -> α -> Bool) (r: Vec (Regex σ) l) (a: α):
-  Symbol.derives p r a = Regex.derives p r a := by
+  {σ: Type} {α: Type} (Φ: σ -> α -> Bool)
+  (r: Vec (Regex σ) l) (a: α):
+  Symbol.derives Φ r a = Regex.derives Φ r a := by
   rw [Symbol_derives_is_fmap]
   unfold Symbol.derive
   unfold Regex.derives

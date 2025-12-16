@@ -23,7 +23,7 @@ private def foldLoop (deriv: List (Rule n φ) -> Hedge.Node α -> List (Rule n �
   return res
 
 def derive
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: List (Rule n φ)) (tree: Hedge.Node α): List (Rule n φ) :=
   -- If all expressions are unescapable, then simply return without look at the input tree.
   -- An example of an unescapable expression is emptyset, since its derivative is always emptyset, no matter the input.
@@ -46,7 +46,7 @@ def derive
       dxs
 
 def derivs
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ) (hedge: Hedge α): Except String (Rule n φ) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldl (derive G Φ) [x] hedge
@@ -55,7 +55,7 @@ def derivs
   | _ => Except.error "expected one expression"
 
 def validate
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
   match derivs G Φ x hedge with
   | Except.error err => Except.error err
@@ -63,7 +63,7 @@ def validate
 
 def run [DecidableEq α]
   (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  validate G Pred.eval G.start [t]
+  validate G Pred.evalb G.start [t]
 
 -- Tests
 

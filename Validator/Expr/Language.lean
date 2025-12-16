@@ -36,7 +36,7 @@ def emptystr {α: Type} : Langs α :=
 def char {α: Type} (x : α): Langs α :=
   fun xs => xs = [x]
 
-def pred {α: Type} (p : α -> Prop): Langs α :=
+def pred {α: Type} (p : α -> Bool): Langs α :=
   fun xs => ∃ x, xs = [x] /\ p x
 
 def symbol {α: Type} (denote_symbol: σ -> List α -> Prop) (x: σ): Langs α :=
@@ -90,8 +90,8 @@ def star_n {α: Type} (R: Langs α) (xs: List α): Prop :=
 def not {α: Type} (R: Langs α): Langs α :=
   fun xs => (Not (R xs))
 
-def tree {α: Type} (P: α -> Prop) (R: Lang α): Lang α :=
-  fun xs => ∃ label children, xs = [Hedge.Node.mk label children] /\ P label /\ R children
+def tree {α: Type} (φ: α -> Bool) (R: Lang α): Lang α :=
+  fun xs => ∃ label children, xs = [Hedge.Node.mk label children] /\ φ label /\ R children
 
 -- attribute [simp] allows these definitions to be unfolded when using the simp tactic.
 attribute [simp] universal emptyset emptystr char onlyif or and concat
@@ -229,23 +229,23 @@ theorem null_char {α: Type} {c: α}:
   null (char c) = False := by
   rw [null_iff_char]
 
-theorem null_iff_pred {α: Type} {p: α -> Prop}:
+theorem null_iff_pred {α: Type} {p: α -> Bool}:
   null (pred p) <-> False :=
   Iff.intro nofun nofun
 
-theorem null_iff_tree {α: Type} {p: α -> Prop} {children: Lang α}:
+theorem null_iff_tree {α: Type} {p: α -> Bool} {children: Lang α}:
   null (tree p children) <-> False :=
   Iff.intro nofun nofun
 
-theorem not_null_if_pred {α: Type} {p: α -> Prop}:
+theorem not_null_if_pred {α: Type} {p: α -> Bool}:
   null (pred p) -> False :=
   nofun
 
-theorem null_pred {α: Type} {p: α -> Prop}:
+theorem null_pred {α: Type} {p: α -> Bool}:
   null (pred p) = False := by
   rw [null_iff_pred]
 
-theorem null_tree {α: Type} {p: α -> Prop} {children: Lang α}:
+theorem null_tree {α: Type} {p: α -> Bool} {children: Lang α}:
   null (tree p children) = False := by
   rw [null_iff_tree]
 
@@ -335,7 +335,7 @@ theorem derive_char {α: Type} [DecidableEq α] {a: α} {c: α}:
   funext
   rw [derive_iff_char]
 
-theorem derive_iff_pred {α: Type} {p: α -> Prop} {x: α} {xs: List α}:
+theorem derive_iff_pred {α: Type} {p: α -> Bool} {x: α} {xs: List α}:
   (derive (pred p) x) xs <-> (onlyif (p x) emptystr) xs := by
   simp only [derive, derives, singleton_append]
   simp only [onlyif, emptystr]
@@ -356,12 +356,12 @@ theorem derive_iff_pred {α: Type} {p: α -> Prop} {x: α} {xs: List α}:
     simp only [cons.injEq, true_and]
     exact And.intro hxs hpx
 
-theorem derive_pred {α: Type} {p: α -> Prop} [DecidablePred p] {x: α}:
+theorem derive_pred {α: Type} {p: α -> Bool} {x: α}:
   (derive (pred p) x) = (onlyif (p x) emptystr) := by
   funext
   rw [derive_iff_pred]
 
-theorem derive_iff_tree {α: Type} {p: α -> Prop} {childlang: Lang α} {label: α} {children: Hedge α} {xs: Hedge α}:
+theorem derive_iff_tree {α: Type} {p: α -> Bool} {childlang: Lang α} {label: α} {children: Hedge α} {xs: Hedge α}:
   (derive (tree p childlang) (Hedge.Node.mk label children)) xs <->
   (onlyif (p label /\ childlang children) emptystr) xs := by
   simp only [derive, derives, singleton_append]
@@ -384,7 +384,7 @@ theorem derive_iff_tree {α: Type} {p: α -> Prop} {childlang: Lang α} {label: 
     exact hif
 
 -- Language.derive (Language.tree p.eval (Denote.denote children)) a
-theorem derive_tree {α: Type} {p: α -> Prop} [DecidablePred p] {childlang: Lang α} {label: α} {children: Hedge α}:
+theorem derive_tree {α: Type} {p: α -> Bool} {childlang: Lang α} {label: α} {children: Hedge α}:
   (derive (tree p childlang) (Hedge.Node.mk label children)) =
   (onlyif (p label /\ childlang children) emptystr) := by
   funext

@@ -21,10 +21,10 @@ structure Grammar99 (n: Nat) (φ: Type) where
   prods: Vec (φ × Regex (Ref n)) n
 
 def Grammar99.lookup (G: Grammar99 n φ) (ref: Fin n): φ × Regex (Ref n) :=
-  Vec.get g.prods ref
+  Vec.get G.prods ref
 
 def Grammar99.denote_prod {α: Type}
-  (G: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar99 n φ) (Φ: φ -> α -> Bool)
   (pred: φ) (r: Regex (Ref n)) (xs: Hedge α): Prop :=
   match xs with
   | [Hedge.Node.mk label children] =>
@@ -44,7 +44,7 @@ def Grammar99.denote_prod {α: Type}
     omega
 
 def Grammar99.denote_start {α: Type}
-  (G: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar99 n φ) (Φ: φ -> α -> Bool)
   (r: Regex (Ref n)) (xs: Hedge α): Prop :=
   Regex.denote_infix r xs (fun ref xs' =>
     match (G.lookup ref) with
@@ -53,7 +53,7 @@ def Grammar99.denote_start {α: Type}
   )
 
 def Grammar99.denote {α: Type}
-  (G: Grammar99 n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar99 n φ) (Φ: φ -> α -> Bool)
   (xs: Hedge α): Prop :=
   Grammar99.denote_start G Φ G.start xs
 
@@ -80,6 +80,6 @@ def convert' (G: Grammar n φ) (r: Regex (φ × Ref n)): Regex (Ref n) :=
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptystr
   | Regex.symbol (_, ref) => Regex.symbol ref
-  | Regex.or p q => Regex.or (convert' g p) (convert' g q)
-  | Regex.concat p q => Regex.concat (convert' g p) (convert' g q)
-  | Regex.star p => Regex.star (convert' g p)
+  | Regex.or r1 r2 => Regex.or (convert' G r1) (convert' G r2)
+  | Regex.concat r1 r2 => Regex.concat (convert' G r1) (convert' G r2)
+  | Regex.star r1 => Regex.star (convert' G r1)

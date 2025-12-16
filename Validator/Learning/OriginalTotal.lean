@@ -115,17 +115,17 @@ def Rule.derive
     · apply decreasing_star
 
 def Rule.derive'
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (x: Hedge.Node α): Rule n φ :=
   Rule.derive G (fun p a => Φ p a) r x
 
 def validate
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (hedge: Hedge α): Bool :=
   Rule.nullable (List.foldl (Rule.derive' G Φ) r hedge)
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  Except.ok (validate G Pred.eval G.start [t])
+  Except.ok (validate G Pred.evalb G.start [t])
 
 -- Tests
 
@@ -192,8 +192,8 @@ open TokenTree (node)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok true
 
-theorem derive_commutes {α: Type} {φ: Type} [DecidableEq φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+theorem derive_commutes {α: Type} {φ: Type}
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (x: Hedge.Node α):
   Rule.denote G Φ (Rule.derive' G Φ r x) = Language.derive (Rule.denote G Φ r) x := by
   unfold Rule.derive'
@@ -212,7 +212,6 @@ theorem derive_commutes {α: Type} {φ: Type} [DecidableEq φ]
     rw [Rule.denote_emptystr]
     apply (congrArg fun x => Language.onlyif x Language.emptystr)
     congr
-    · simp only [decide_eq_true_eq]
     generalize (G.lookup childRef) = childExpr
     rw [Rule.null_commutes]
     unfold Language.null
