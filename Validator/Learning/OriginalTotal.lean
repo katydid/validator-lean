@@ -114,11 +114,18 @@ def Rule.derive
     · apply decreasing_concat_r
     · apply decreasing_star
 
-def validate [DecidableEq α] (G: Grammar n (Pred α)) (r: Rule n (Pred α)) (hedge: Hedge α): Bool :=
-  Rule.nullable (List.foldl (Rule.derive G Pred.evalb) r hedge)
+def Rule.derive'
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (r: Rule n φ) (x: Hedge.Node α): Rule n φ :=
+  Rule.derive G (fun p a => Φ p a) r x
+
+def validate
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
+  (r: Rule n φ) (hedge: Hedge α): Bool :=
+  Rule.nullable (List.foldl (Rule.derive' G Φ) r hedge)
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  Except.ok (validate G G.start [t])
+  Except.ok (validate G Pred.eval G.start [t])
 
 -- Tests
 
@@ -188,7 +195,8 @@ open TokenTree (node)
 theorem derive_commutes {α: Type} {φ: Type} [DecidableEq φ]
   (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ]
   (r: Rule n φ) (x: Hedge.Node α):
-  Rule.denote G Φ (Rule.derive G ((fun p a => Φ p a)) r x) = Language.derive (Rule.denote G Φ r) x := by
+  Rule.denote G Φ (Rule.derive' G Φ r x) = Language.derive (Rule.denote G Φ r) x := by
+  unfold Rule.derive'
   fun_induction (Rule.derive G (fun p a => Φ p a)) r x with
   | case1 => -- emptyset
     rw [Rule.denote_emptyset]
