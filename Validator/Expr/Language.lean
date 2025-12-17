@@ -623,7 +623,7 @@ example (r s: Langs α) (H: s = r):
   ac_nf
   rw [H]
 
-theorem concat_is_concat_n:
+theorem concat_n_iff_concat:
   concat_n P Q xs <-> concat P Q xs := by
   apply Iff.intro
   case mp =>
@@ -655,6 +655,23 @@ theorem concat_is_concat_n:
     ))
     simp only [List.take_left', List.drop_left']
     apply And.intro hx hy
+
+theorem concat_n_is_concat:
+  concat_n P Q = concat P Q := by
+  funext xs
+  rw [concat_n_iff_concat]
+
+theorem derive_iff_concat_n {α: Type} {x: α} {P Q: Langs α} {xs: List α}:
+  (derive (concat_n P Q) x) xs <->
+    (or (concat_n (derive P x) Q) (onlyif (null P) (derive Q x))) xs := by
+  repeat rw [concat_n_is_concat]
+  rw [derive_iff_concat]
+
+theorem derive_concat_n {α: Type} {x: α} {P Q: Langs α}:
+  (derive (concat_n P Q) x) =
+    (or (concat_n (derive P x) Q) (onlyif (null P) (derive Q x))) := by
+  funext
+  rw [derive_iff_concat_n]
 
 theorem star_is_star_n:
   star_n P xs <-> star P xs := by

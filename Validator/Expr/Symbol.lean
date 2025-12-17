@@ -218,6 +218,12 @@ def derives_preds_noinput {σ: Type}
   let pred_results: Vec Bool (nums rs) := ps symbols
   leave rs pred_results
 
+def derives_pred_noinput {σ: Type}
+  (p: σ -> Bool) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
+  let symbols: Vec σ (nums rs) := enter rs
+  let pred_results: Vec Bool (nums rs) := Vec.map symbols p
+  leave rs pred_results
+
 theorem nums_nil {σ: Type}:
   nums (@Vec.nil (Regex σ)) = 0 := by
   unfold nums
@@ -1374,4 +1380,14 @@ theorem Symbol_derives_preds_noinput_is_derives_preds
 
 theorem Symbol_derives_preds_noinput_nil:
   Symbol.derives_preds_noinput ps Vec.nil = Vec.nil := by
+  rfl
+
+theorem Symbol_derives_pred_noinput_is_derives
+  {σ: Type} {α: Type} (p: σ -> Bool) (rs: Vec (Regex σ) l) (a: α):
+  Symbol.derives_pred_noinput p rs = Symbol.derives (fun s _ => p s) rs a := by
+  rfl
+
+theorem Symbol_derives_is_derives_pred_noinput
+  {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
+  Symbol.derives p rs a = Symbol.derives_pred_noinput (fun s => p s a) rs := by
   rfl

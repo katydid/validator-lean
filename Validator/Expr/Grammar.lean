@@ -286,7 +286,7 @@ theorem Rule.denote_concat {n: Nat} {α: Type}
   = Language.concat (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   rw [Rule.denote_concat_n]
   funext xs
-  rw [Language.concat_is_concat_n]
+  rw [Language.concat_n_is_concat]
 
 theorem denote_rule_star_n' {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ} (xs: Hedge α):
