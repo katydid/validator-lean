@@ -3,10 +3,10 @@ import Std
 import Validator.Std.Debug
 import Validator.Std.Vec
 
-import Validator.Expr.Grammar
-import Validator.Expr.IfExpr
-import Validator.Expr.Regex
-import Validator.Expr.Symbol
+import Validator.Hedge.Grammar
+import Validator.Hedge.IfExpr
+import Validator.Regex.Regex
+import Validator.Regex.Symbol
 
 import Validator.Derive.Leave
 

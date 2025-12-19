@@ -2,7 +2,7 @@ import Std
 
 import Validator.Std.Vec
 
-import Validator.Expr.Regex
+import Validator.Regex.Regex
 
 namespace BalancedContextFreeGrammar
 

@@ -6,9 +6,9 @@ import Validator.Std.Except
 import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
-import Validator.Expr.Grammar
-import Validator.Expr.IfExpr
-import Validator.Expr.Regex
+import Validator.Hedge.Grammar
+import Validator.Hedge.IfExpr
+import Validator.Regex.Regex
 
 import Validator.Learning.ImperativeEnter
 import Validator.Learning.ImperativeLeave

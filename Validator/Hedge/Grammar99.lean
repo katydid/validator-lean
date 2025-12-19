@@ -1,10 +1,10 @@
 import Validator.Std.Hedge
 import Validator.Std.Vec
 
-import Validator.Expr.Grammar
+import Validator.Hedge.Grammar
 import Validator.Expr.Pred
-import Validator.Expr.Regex
-import Validator.Expr.Language
+import Validator.Regex.Regex
+import Validator.Regex.Language
 
 -- Definition of a regular hedge grammar according to http://www.xml.gr.jp/relax/hedge_nice.html
 -- A regular hedge grammar (RHG) is a 5-tuple <Σ, X, N, P,rf >, where:

@@ -1,7 +1,7 @@
 import Validator.Std.Vec
 
-import Validator.Expr.Regex
-import Validator.Expr.Grammar
+import Validator.Regex.Regex
+import Validator.Hedge.Grammar
 
 abbrev IfExpr n φ := (φ × Fin n)
 

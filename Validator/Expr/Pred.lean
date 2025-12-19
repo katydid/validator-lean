@@ -1,5 +1,3 @@
-import Validator.Parser.Token
-
 -- TODO: consider a more flexible Predicate model, for example:
 -- https://github.com/katydid/regex-deriv-lean/blob/main/RegexDeriv/Regex/Predicate.lean
 -- First definitions in regex-deriv-lean to use LawfulOrd

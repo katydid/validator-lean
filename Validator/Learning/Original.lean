@@ -7,9 +7,9 @@ import Validator.Std.Except
 import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
-import Validator.Expr.Grammar
+import Validator.Hedge.Grammar
 import Validator.Expr.Pred
-import Validator.Expr.Regex
+import Validator.Regex.Regex
 
 namespace Original
 

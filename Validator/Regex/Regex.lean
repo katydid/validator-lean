@@ -1,7 +1,7 @@
 import Validator.Std.Hedge
 import Validator.Std.Vec
 
-import Validator.Expr.Language
+import Validator.Regex.Language
 
 -- A regular expression is defined over a generic symbol
 inductive Regex (σ: Type) where

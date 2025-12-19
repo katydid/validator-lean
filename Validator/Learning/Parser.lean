@@ -5,10 +5,10 @@
 import Validator.Std.Hedge
 import Validator.Std.Vec
 
-import Validator.Expr.Compress
-import Validator.Expr.Grammar
-import Validator.Expr.IfExpr
-import Validator.Expr.Regex
+import Validator.Hedge.Compress
+import Validator.Hedge.Grammar
+import Validator.Hedge.IfExpr
+import Validator.Regex.Regex
 
 import Validator.Parser.Hint
 import Validator.Parser.Parser

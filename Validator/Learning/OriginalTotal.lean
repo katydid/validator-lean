@@ -8,8 +8,8 @@ import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Expr.Pred
-import Validator.Expr.Grammar
-import Validator.Expr.Regex
+import Validator.Hedge.Grammar
+import Validator.Regex.Regex
 
 namespace OriginalTotal
 
@@ -195,26 +195,26 @@ open TokenTree (node)
 theorem derive_commutes {α: Type} {φ: Type}
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (x: Hedge.Node α):
-  Rule.denote G Φ (Rule.derive' G Φ r x) = Language.derive (Rule.denote G Φ r) x := by
+  Rule.denote G Φ (Rule.derive' G Φ r x) = Regex.Language.derive (Rule.denote G Φ r) x := by
   unfold Rule.derive'
   fun_induction (Rule.derive G (fun p a => Φ p a)) r x with
   | case1 => -- emptyset
     rw [Rule.denote_emptyset]
-    rw [Language.derive_emptyset]
+    rw [Regex.Language.derive_emptyset]
   | case2 => -- emptystr
     rw [Rule.denote_emptyset]
     rw [Rule.denote_emptystr]
-    rw [Language.derive_emptystr]
+    rw [Regex.Language.derive_emptystr]
   | case3 p childRef label children ih =>
     rw [Rule.denote_symbol]
-    rw [Language.derive_tree]
+    rw [Hedge.Language.derive_tree]
     rw [Rule.denote_onlyif]
     rw [Rule.denote_emptystr]
-    apply (congrArg fun x => Language.onlyif x Language.emptystr)
+    apply (congrArg fun x => Regex.Language.onlyif x Regex.Language.emptystr)
     congr
     generalize (G.lookup childRef) = childExpr
     rw [Rule.null_commutes]
-    unfold Language.null
+    unfold Regex.Language.null
     induction children generalizing childExpr with
     | nil =>
       simp only [List.foldl_nil]
@@ -224,7 +224,7 @@ theorem derive_commutes {α: Type} {φ: Type}
       rw [ih']
       · cases c
         rw [ih]
-        simp only [Language.derive, Language.derives, List.cons_append, List.nil_append]
+        simp only [Regex.Language.derive, Regex.Language.derives, List.cons_append, List.nil_append]
         rw [List.mem_cons]
         apply Or.inl
         rfl
@@ -235,7 +235,7 @@ theorem derive_commutes {α: Type} {φ: Type}
   | case4 x p q ihp ihq => -- or
     rw [Rule.denote_or]
     rw [Rule.denote_or]
-    unfold Language.or
+    unfold Regex.Language.or
     rw [ihp]
     rw [ihq]
     rfl
@@ -244,14 +244,14 @@ theorem derive_commutes {α: Type} {φ: Type}
     rw [Rule.denote_or]
     rw [Rule.denote_concat]
     rw [Rule.denote_onlyif]
-    rw [Language.derive_concat]
+    rw [Regex.Language.derive_concat]
     rw [<- ihp]
     rw [<- ihq]
-    congrm (Language.or (Language.concat (Rule.denote G Φ (Rule.derive G (fun p a => Φ p a) p x)) (Rule.denote G Φ q)) ?_)
+    congrm (Regex.Language.or (Regex.Language.concat (Rule.denote G Φ (Rule.derive G (fun p a => Φ p a) p x)) (Rule.denote G Φ q)) ?_)
     rw [Rule.null_commutes]
   | case6 x r ih => -- star
     rw [Rule.denote_star]
     rw [Rule.denote_concat]
     rw [Rule.denote_star]
-    rw [Language.derive_star]
+    rw [Regex.Language.derive_star]
     rw [ih]

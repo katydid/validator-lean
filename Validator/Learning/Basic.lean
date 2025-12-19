@@ -8,9 +8,9 @@ import Validator.Std.Vec
 
 import Validator.Parser.TokenTree
 
-import Validator.Expr.Grammar
-import Validator.Expr.IfExpr
-import Validator.Expr.Language
+import Validator.Hedge.Grammar
+import Validator.Hedge.IfExpr
+import Validator.Regex.Language
 import Validator.Expr.Pred
 
 import Validator.Derive.Enter

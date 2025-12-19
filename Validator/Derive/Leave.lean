@@ -1,8 +1,8 @@
 import Validator.Std.Vec
 
-import Validator.Expr.Grammar
-import Validator.Expr.Regex
-import Validator.Expr.Symbol
+import Validator.Hedge.Grammar
+import Validator.Regex.Regex
+import Validator.Regex.Symbol
 import Validator.Derive.Enter
 
 namespace Leave

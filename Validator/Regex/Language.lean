@@ -1,8 +1,6 @@
 import Mathlib.Tactic.Linarith -- split_ands
 
-import Validator.Std.Hedge
-
-namespace Language
+namespace Regex.Language
 
 open List (
   append_assoc
@@ -21,8 +19,6 @@ open List (
 -- Definitions
 
 def Langs (α: Type): Type := List α -> Prop
-
-def Lang (α: Type): Type := Langs (Hedge.Node α)
 
 def emptyset : Langs α :=
   fun _ => False
@@ -90,9 +86,6 @@ def star_n {α: Type} (R: Langs α) (xs: List α): Prop :=
 def not {α: Type} (R: Langs α): Langs α :=
   fun xs => (Not (R xs))
 
-def tree {α: Type} (φ: α -> Bool) (R: Lang α): Lang α :=
-  fun xs => ∃ label children, xs = [Hedge.Node.mk label children] /\ φ label /\ R children
-
 -- attribute [simp] allows these definitions to be unfolded when using the simp tactic.
 attribute [simp] universal emptyset emptystr char onlyif or and concat
 
@@ -110,7 +103,6 @@ example: Langs Nat := (and (char 1) (char 2))
 example: Langs Nat := (onlyif True (char 2))
 example: Langs Nat := (concat (char 1) (char 2))
 example: Langs Nat := (pred (fun x => x = 1))
-example: Lang Nat := (tree (fun x => x = 1) (or (tree (fun x => x = 1) emptystr) emptyset))
 
 def null {α: Type} (R: Langs α): Prop :=
   R []
@@ -233,10 +225,6 @@ theorem null_iff_pred {α: Type} {p: α -> Bool}:
   null (pred p) <-> False :=
   Iff.intro nofun nofun
 
-theorem null_iff_tree {α: Type} {p: α -> Bool} {children: Lang α}:
-  null (tree p children) <-> False :=
-  Iff.intro nofun nofun
-
 theorem not_null_if_pred {α: Type} {p: α -> Bool}:
   null (pred p) -> False :=
   nofun
@@ -244,10 +232,6 @@ theorem not_null_if_pred {α: Type} {p: α -> Bool}:
 theorem null_pred {α: Type} {p: α -> Bool}:
   null (pred p) = False := by
   rw [null_iff_pred]
-
-theorem null_tree {α: Type} {p: α -> Bool} {children: Lang α}:
-  null (tree p children) = False := by
-  rw [null_iff_tree]
 
 theorem null_or {α: Type} {P Q: Langs α}:
   null (or P Q) = ((null P) \/ (null Q)) :=
@@ -360,35 +344,6 @@ theorem derive_pred {α: Type} {p: α -> Bool} {x: α}:
   (derive (pred p) x) = (onlyif (p x) emptystr) := by
   funext
   rw [derive_iff_pred]
-
-theorem derive_iff_tree {α: Type} {p: α -> Bool} {childlang: Lang α} {label: α} {children: Hedge α} {xs: Hedge α}:
-  (derive (tree p childlang) (Hedge.Node.mk label children)) xs <->
-  (onlyif (p label /\ childlang children) emptystr) xs := by
-  simp only [derive, derives, singleton_append]
-  simp only [onlyif, emptystr]
-  refine Iff.intro ?toFun ?invFun
-  case toFun =>
-    unfold tree
-    simp only [cons.injEq, Hedge.Node.mk.injEq]
-    intro ⟨ label', children', ⟨ ⟨ hlabel', hchildren' ⟩, hxs ⟩ , hif ⟩
-    subst_vars
-    simp only [and_true]
-    exact hif
-  case invFun =>
-    intro ⟨ hif , hxs  ⟩
-    unfold tree
-    exists label
-    exists children
-    rw [hxs]
-    simp only [true_and]
-    exact hif
-
--- Language.derive (Language.tree p.eval (Denote.denote children)) a
-theorem derive_tree {α: Type} {p: α -> Bool} {childlang: Lang α} {label: α} {children: Hedge α}:
-  (derive (tree p childlang) (Hedge.Node.mk label children)) =
-  (onlyif (p label /\ childlang children) emptystr) := by
-  funext
-  rw [derive_iff_tree]
 
 theorem derive_or {α: Type} {a: α} {P Q: Langs α}:
   (derive (or P Q) a) = (or (derive P a) (derive Q a)) :=

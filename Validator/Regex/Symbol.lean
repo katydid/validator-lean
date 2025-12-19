@@ -1,6 +1,6 @@
 import Validator.Std.Vec
 
-import Validator.Expr.Regex
+import Validator.Regex.Regex
 
 -- I want to define a map function over a regular expression:
 

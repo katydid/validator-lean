@@ -1,8 +1,8 @@
 -- ImperativeLeave.lean is an implementation of Leave.lean that does not use monads, so it is more verbose.
 -- This is supposed to make it easier to understand for programmers that have not used monads before.
 
-import Validator.Expr.Grammar
-import Validator.Expr.Regex
+import Validator.Hedge.Grammar
+import Validator.Regex.Regex
 
 namespace ImperativeLeave
 

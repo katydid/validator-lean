@@ -2,8 +2,9 @@ import Validator.Std.Vec
 import Validator.Std.Hedge
 
 import Validator.Expr.Pred
-import Validator.Expr.Regex
-import Validator.Expr.Language
+import Validator.Regex.Regex
+import Validator.Regex.Language
+import Validator.Hedge.Language
 
 -- ## Definition 3.2.3: Regular Hedge Grammar
 --   𝐺 = (𝑁, 𝑇, 𝑆, 𝑃)
@@ -158,15 +159,15 @@ theorem simp_denote_rule {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r:
     exists Hedge.Node.mk label children
 
 theorem Rule.denote_emptyset {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Bool}:
-  Rule.denote G Φ Regex.emptyset = Language.emptyset := by
-  unfold Language.emptyset
+  Rule.denote G Φ Regex.emptyset = Regex.Language.emptyset := by
+  unfold Regex.Language.emptyset
   funext xs
   unfold Rule.denote
   simp [Regex.denote_infix_emptyset]
 
 theorem Rule.denote_emptystr {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Bool}:
-  Rule.denote G Φ Regex.emptystr = Language.emptystr := by
-  unfold Language.emptystr
+  Rule.denote G Φ Regex.emptystr = Regex.Language.emptystr := by
+  unfold Regex.Language.emptystr
   funext xs
   unfold Rule.denote
   simp [Regex.denote_infix_emptystr]
@@ -175,21 +176,21 @@ theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {p: φ}
   {ref: Ref n} {xs: Hedge α}:
   Rule.denote G Φ (Regex.symbol (p, ref)) xs
-  <-> Language.tree (Φ p) (Rule.denote G Φ (G.lookup ref)) xs := by
+  <-> Hedge.Language.tree (Φ p) (Rule.denote G Φ (G.lookup ref)) xs := by
   cases xs with
   | nil =>
-    unfold Language.tree
+    unfold Hedge.Language.tree
     unfold Rule.denote
     simp [Regex.denote_infix_symbol]
   | cons x xs =>
     cases xs with
     | cons x' xs' =>
-      unfold Language.tree
+      unfold Hedge.Language.tree
       unfold Rule.denote
       simp [Regex.denote_infix_symbol]
       simp [List.InfixOf.self]
     | nil =>
-      unfold Language.tree
+      unfold Hedge.Language.tree
       unfold Rule.denote
       simp [Regex.denote_infix_symbol]
       simp [List.InfixOf.self]
@@ -222,25 +223,25 @@ theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
 theorem Rule.denote_symbol {n: Nat} {α: Type} {φ: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {p: φ} {ref: Ref n}:
   Rule.denote G Φ (Regex.symbol (p, ref))
-  = Language.tree (Φ p) (Rule.denote G Φ (G.lookup ref)) := by
+  = Hedge.Language.tree (Φ p) (Rule.denote G Φ (G.lookup ref)) := by
   funext xs
   rw [denote_rule_symbol']
 
 theorem Rule.denote_or {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
   Rule.denote G Φ (Regex.or r1 r2)
-  = Language.or (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
+  = Regex.Language.or (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   funext xs
-  unfold Language.or
+  unfold Regex.Language.or
   unfold Rule.denote
   simp [Regex.denote_infix_or]
 
 theorem Rule.denote_concat_n {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
   Rule.denote G Φ (Regex.concat r1 r2)
-  = Language.concat_n (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
+  = Regex.Language.concat_n (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   funext xs
-  unfold Language.concat_n
+  unfold Regex.Language.concat_n
   unfold Rule.denote
   simp only [Regex.denote_infix_concat_n]
   congr
@@ -283,18 +284,18 @@ theorem Rule.denote_concat_n {n: Nat} {α: Type}
 theorem Rule.denote_concat {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
   Rule.denote G Φ (Regex.concat r1 r2)
-  = Language.concat (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
+  = Regex.Language.concat (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   rw [Rule.denote_concat_n]
   funext xs
-  rw [Language.concat_n_is_concat]
+  rw [Regex.Language.concat_n_is_concat]
 
 theorem denote_rule_star_n' {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ} (xs: Hedge α):
   Rule.denote G Φ (Regex.star r) xs
   <->
-  Language.star_n (Rule.denote G Φ r) xs := by
+  Regex.Language.star_n (Rule.denote G Φ r) xs := by
   rw [<- eq_iff_iff]
-  unfold Language.star_n
+  unfold Regex.Language.star_n
   unfold Rule.denote
   cases xs with
   | nil =>
@@ -354,7 +355,7 @@ theorem Rule.denote_star_n {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ}:
   Rule.denote G Φ (Regex.star r)
   =
-  Language.star_n (Rule.denote G Φ r) := by
+  Regex.Language.star_n (Rule.denote G Φ r) := by
   funext xs
   rw [denote_rule_star_n']
 
@@ -362,16 +363,16 @@ theorem Rule.denote_star {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ}:
   Rule.denote G Φ (Regex.star r)
   =
-  Language.star (Rule.denote G Φ r) := by
+  Regex.Language.star (Rule.denote G Φ r) := by
   funext xs
   rw [denote_rule_star_n']
-  rw [Language.star_is_star_n]
+  rw [Regex.Language.star_is_star_n]
 
 def Rule.denote_onlyif {α: Type}
   (condition: Prop) [dcond: Decidable condition]
   (G: Grammar n φ) {Φ: φ -> α -> Bool} (x: Rule n φ):
-  denote G Φ (Regex.onlyif condition x) = Language.onlyif condition (denote G Φ x) := by
-  unfold Language.onlyif
+  denote G Φ (Regex.onlyif condition x) = Regex.Language.onlyif condition (denote G Φ x) := by
+  unfold Regex.Language.onlyif
   unfold Regex.onlyif
   funext xs
   split_ifs
@@ -382,7 +383,7 @@ def Rule.denote_onlyif {α: Type}
   case neg hc =>
     simp only [eq_iff_iff]
     rw [Rule.denote, Regex.denote_infix]
-    simp only [Language.emptyset, false_iff, not_and]
+    simp only [Regex.Language.emptyset, false_iff, not_and]
     intro hc'
     contradiction
 
@@ -394,30 +395,30 @@ def Grammar.nullable (G: Grammar n φ): Bool :=
 
 theorem Rule.null_commutes {α: Type}
   (G: Grammar n φ) (Φ: φ -> α -> Bool) (x: Rule n φ):
-  ((Rule.nullable x) = true) = Language.null (denote G Φ x) := by
+  ((Rule.nullable x) = true) = Regex.Language.null (denote G Φ x) := by
   induction x with
   | emptyset =>
     rw [denote_emptyset]
-    rw [Language.null_emptyset]
+    rw [Regex.Language.null_emptyset]
     unfold Rule.nullable
     unfold Regex.nullable
     apply Bool.false_eq_true
   | emptystr =>
     rw [denote_emptystr]
-    rw [Language.null_emptystr]
+    rw [Regex.Language.null_emptystr]
     unfold Rule.nullable
     unfold Regex.nullable
     simp only
   | symbol s =>
     obtain ⟨p, children⟩ := s
     rw [denote_symbol]
-    rw [Language.null_tree]
+    rw [Hedge.Language.null_tree]
     unfold Rule.nullable
     unfold Regex.nullable
     apply Bool.false_eq_true
   | or p q ihp ihq =>
     rw [denote_or]
-    rw [Language.null_or]
+    rw [Regex.Language.null_or]
     unfold Rule.nullable
     unfold Regex.nullable
     rw [<- ihp]
@@ -427,7 +428,7 @@ theorem Rule.null_commutes {α: Type}
     rw [Bool.or_eq_true]
   | concat p q ihp ihq =>
     rw [denote_concat]
-    rw [Language.null_concat]
+    rw [Regex.Language.null_concat]
     unfold Rule.nullable
     unfold Regex.nullable
     rw [<- ihp]
@@ -437,7 +438,7 @@ theorem Rule.null_commutes {α: Type}
     rw [Bool.and_eq_true]
   | star r ih =>
     rw [denote_star]
-    rw [Language.null_star]
+    rw [Regex.Language.null_star]
     unfold Rule.nullable
     unfold Regex.nullable
     simp only
