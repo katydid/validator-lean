@@ -1,4 +1,5 @@
 import Mathlib.Tactic.NthRewrite
+import Mathlib.Tactic.RewriteSearch
 
 namespace List
 

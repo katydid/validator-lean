@@ -457,39 +457,44 @@ def Regex.derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: 
   match r with
   | emptyset => emptyset
   | emptystr => emptyset
-  | symbol s =>
-    if Φ s a
-    then emptystr
-    else emptyset
+  | symbol s => onlyif (Φ s a) emptystr
   | or r1 r2 =>
     or (derive Φ r1 a) (derive Φ r2 a)
   | concat r1 r2 =>
-    if nullable r1
-    then or
+    or
       (concat (derive Φ r1 a) r2)
-      (derive Φ r2 a)
-    else
-      (concat (derive Φ r1 a) r2)
+      (onlyif (nullable r1) (derive Φ r2 a))
   | star r1 =>
     concat (derive Φ r1 a) (star r1)
+
+-- derive_closure embeds the input alphabet symbol α inside of the predicate closure,
+-- so there is no need to pass it along as a parameter as well.
+def Regex.derive_closure {σ: Type} (Φ: σ -> Bool) (r: Regex σ): Regex σ :=
+  match r with
+  | emptyset => emptyset
+  | emptystr => emptyset
+  | symbol s => onlyif (Φ s) emptystr
+  | or r1 r2 =>
+    or (derive_closure Φ r1) (derive_closure Φ r2)
+  | concat r1 r2 =>
+    or
+      (concat (derive_closure Φ r1) r2)
+      (onlyif (nullable r1) (derive_closure Φ r2))
+  | star r1 =>
+    concat (derive_closure Φ r1) (star r1)
 
 -- derive2 is the same as derive, except the answer to the predicate is already included in a tuple with the original symbol.
 def Regex.derive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   match r with
   | emptyset => emptyset
   | emptystr => emptyset
-  | symbol (_, b) =>
-    if b
-    then emptystr
-    else emptyset
+  | symbol (_, b) => onlyif b emptystr
   | or r1 r2 =>
     or (derive2 r1) (derive2 r2)
   | concat r1 r2 =>
-    if nullable r1
-    then
-      or (concat (derive2 r1) (first r2)) (derive2 r2)
-    else
-      concat (derive2 r1) (first r2)
+    or
+      (concat (derive2 r1) (first r2))
+      (onlyif (nullable r1) (derive2 r2))
   | star r1 =>
       concat (derive2 r1) (star (first r1))
 
@@ -615,18 +620,13 @@ def Regex.smartDerive2 {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   match r with
   | emptyset => emptyset
   | emptystr => emptyset
-  | symbol (_, b) =>
-    if b
-    then emptystr
-    else emptyset
+  | symbol (_, b) => onlyif b emptystr
   | or r1 r2 =>
     smartOr (derive2 r1) (derive2 r2)
   | concat r1 r2 =>
-    if nullable r1
-    then
-      smartOr (smartConcat (derive2 r1) (first r2)) (derive2 r2)
-    else
-      smartConcat (derive2 r1) (first r2)
+    smartOr
+      (smartConcat (derive2 r1) (first r2))
+      (onlyif (nullable r1) (derive2 r2))
   | star r1 =>
       smartConcat (derive2 r1) (smartStar (first r1))
 

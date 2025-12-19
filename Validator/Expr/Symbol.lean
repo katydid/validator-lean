@@ -212,17 +212,40 @@ def derives_preds {σ: Type} {α: Type}
   let pred_results: Vec Bool (nums rs) := ps symbols a
   leave rs pred_results
 
-def derives_preds_noinput {σ: Type}
+def derives_closures {σ: Type}
   (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
   let symbols: Vec σ (nums rs) := enter rs
   let pred_results: Vec Bool (nums rs) := ps symbols
   leave rs pred_results
 
-def derives_pred_noinput {σ: Type}
+def derives_closures' {σ: Type}
+  (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
+  leave rs (ps (enter rs))
+
+def derives_closure {σ: Type}
   (p: σ -> Bool) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
   let symbols: Vec σ (nums rs) := enter rs
   let pred_results: Vec Bool (nums rs) := Vec.map symbols p
   leave rs pred_results
+
+def derive_closure {σ: Type}
+  (p: σ -> Bool) (r: Regex σ): Regex σ :=
+  let symbols: Vec σ (nums #vec[r]) := enter #vec[r]
+  let pred_results: Vec Bool (nums #vec[r]) := Vec.map symbols p
+  let res := (leave #vec[r] pred_results)
+  match res with
+  | Vec.cons res' Vec.nil => res'
+
+def derive_closure' {σ: Type}
+  (p: σ -> Bool) (r: Regex σ): Regex σ :=
+  Regex.derive2
+    (replaceFrom
+      (extractFrom r).1
+      (Vec.map
+        (extractFrom r).2
+        (fun s => (s, p s))
+      )
+    )
 
 theorem nums_nil {σ: Type}:
   nums (@Vec.nil (Regex σ)) = 0 := by
@@ -1359,7 +1382,7 @@ theorem Symbol_derives_is_Regex_derives
 theorem Symbol_derives_is_derives_preds
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α)
   (h: ∀ {n': Nat} (xs: Vec σ n') (a: α), ps xs a = Vec.map xs (fun x => (ps (#vec[x]) a).head)):
-  Symbol.derives (fun s a => (ps (#vec[s]) a).head) rs a = Symbol.derives_preds ps rs a := by
+  Symbol.derives (fun s a => (ps #vec[s] a).head) rs a = Symbol.derives_preds ps rs a := by
   unfold derives
   simp only
   rw [<- h]
@@ -1368,26 +1391,36 @@ theorem Symbol_derives_is_derives_preds
   unfold enter
   simp only
 
-theorem Symbol_derives_preds_is_derives_preds_noinput
+theorem Symbol_derives_preds_is_derives_closures
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives_preds ps rs a = Symbol.derives_preds_noinput (fun ss => ps ss a) rs := by
+  Symbol.derives_preds ps rs a = Symbol.derives_closures (fun ss => ps ss a) rs := by
   rfl
 
-theorem Symbol_derives_preds_noinput_is_derives_preds
+theorem Symbol_derives_closures_is_derives_preds
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives_preds_noinput ps rs = Symbol.derives_preds (fun ss _ => ps ss) rs a := by
+  Symbol.derives_closures ps rs = Symbol.derives_preds (fun ss _ => ps ss) rs a := by
   rfl
 
-theorem Symbol_derives_preds_noinput_nil:
-  Symbol.derives_preds_noinput ps Vec.nil = Vec.nil := by
+theorem Symbol_derives_closures_nil:
+  Symbol.derives_closures ps Vec.nil = Vec.nil := by
   rfl
 
-theorem Symbol_derives_pred_noinput_is_derives
+theorem Symbol_derives_closure_is_derives
   {σ: Type} {α: Type} (p: σ -> Bool) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives_pred_noinput p rs = Symbol.derives (fun s _ => p s) rs a := by
+  Symbol.derives_closure p rs = Symbol.derives (fun s _ => p s) rs a := by
   rfl
 
-theorem Symbol_derives_is_derives_pred_noinput
+theorem Symbol_derives_is_derives_closure
   {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives p rs a = Symbol.derives_pred_noinput (fun s => p s a) rs := by
+  Symbol.derives p rs a = Symbol.derives_closure (fun s => p s a) rs := by
+  rfl
+
+theorem Symbol_derive_closure_is_derive
+  (p: σ -> Bool) (r: Regex σ) (a: α):
+  Symbol.derive_closure' p r = Symbol.derive (fun s _ => p s) r a := by
+  rfl
+
+theorem Symbol_derive_is_derive_closure
+  (p: σ -> α -> Bool) (r: Regex σ) (a: α):
+  Symbol.derive p r a = Symbol.derive_closure' (fun s => p s a) r := by
   rfl

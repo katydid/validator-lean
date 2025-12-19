@@ -1,6 +1,7 @@
 import Lean.Elab.Tactic
 
 import Mathlib.Tactic.NthRewrite
+import Mathlib.Tactic.RewriteSearch
 
 import Validator.Std.List
 
@@ -131,7 +132,7 @@ private theorem lt_plus (x y z: Nat):
   y < z -> x + y < x + z := by
   simp
 
-theorem take_eq_self_iff (x : List α) {n : Nat} : x.take n = x ↔ x.length ≤ n :=
+theorem take_eq_self_iff (xs : List α) {n : Nat} : xs.take n = xs ↔ xs.length ≤ n :=
   ⟨fun h ↦ by rw [← h]; simp; omega, List.take_of_length_le⟩
 
 theorem sizeOf_take (n: Nat) (xs: Hedge α):
@@ -167,6 +168,17 @@ theorem sizeOf_take (n: Nat) (xs: Hedge α):
     simp only [gt_iff_lt, Nat.not_lt] at h
     apply Or.inl
     assumption
+
+theorem sizeOf_take_lt_n {xs: Hedge α}
+  (hlen: n < List.length xs):
+  sizeOf (List.take n xs) < sizeOf xs := by
+  have h := sizeOf_take n xs
+  cases h with
+  | inl hh =>
+    rw [List.list_take_eq_self_iff] at hh
+    omega
+  | inr hh =>
+    exact hh
 
 theorem sizeOf_drop (n: Nat) (xs: Hedge α):
   List.drop n xs = xs \/ sizeOf (List.drop n xs) < sizeOf xs := by
