@@ -14,7 +14,7 @@ def enter (x: Rule n φ) (res: List (IfExpr n φ) := []): List (IfExpr n φ) :=
   | Regex.symbol s => s :: res
   | Regex.or y z => enter y (enter z res)
   | Regex.concat y z =>
-    if Regex.nullable y
+    if Regex.null y
     then enter y (enter z res)
     else enter y res
   | Regex.star y => enter y res

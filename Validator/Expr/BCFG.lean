@@ -58,8 +58,8 @@ def BCFG.lookup {n: Nat} {φ: Type}
   (g: BCFG n φ) (ref: Fin n): RegexRule n φ :=
   union_rules (Vec.get g.prods ref)
 
-def nullable {n: Nat} {φ: Type} (r: RegexRule n φ): Bool :=
-  Regex.nullable r
+def null {n: Nat} {φ: Type} (r: RegexRule n φ): Bool :=
+  Regex.null r
 
 partial def derive {n: Nat}
   (G: BCFG n φ) (Φ: φ -> α -> Bool)
@@ -76,7 +76,7 @@ partial def derive {n: Nat}
   | Regex.or r1 r2 =>
     Regex.or (derive G Φ r1 a) (derive G Φ r2 a)
   | Regex.concat r1 r2 =>
-    if nullable r1
+    if null r1
     then Regex.or
       (Regex.concat (derive G Φ r1 a) r2)
       (derive G Φ r2 a)

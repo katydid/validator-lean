@@ -55,25 +55,25 @@ theorem map_map (r: Regex α) (f: α -> β) (g: β -> σ):
     simp only [map]
     rw [ih1]
 
-theorem map_nullable {σ α} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
-  (map r (fun s => (s, Φ s a))).nullable = r.nullable := by
+theorem map_null {σ α} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  (map r (fun s => (s, Φ s a))).null = r.null := by
   induction r with
   | emptyset =>
-    simp only [map, Regex.nullable]
+    simp only [map, Regex.null]
   | emptystr =>
-    simp only [map, Regex.nullable]
+    simp only [map, Regex.null]
   | symbol _ =>
-    simp only [map, Regex.nullable]
+    simp only [map, Regex.null]
   | or r1 r2 ih1 ih2 =>
-    simp only [map, Regex.nullable]
+    simp only [map, Regex.null]
     rw [ih1]
     rw [ih2]
   | concat r1 r2 ih1 ih2 =>
-    simp only [map, Regex.nullable]
+    simp only [map, Regex.null]
     rw [ih1]
     rw [ih2]
   | star r1 ih1 =>
-    simp only [map, Regex.nullable]
+    simp only [map, Regex.null]
 
 def maps (rs: Vec (Regex α) l) (f: α -> β): Vec (Regex β) l :=
   Vec.map rs (fun r => Regex.map r f)

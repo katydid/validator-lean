@@ -52,7 +52,7 @@ def or {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
 def and {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
   fun xs => P xs /\ Q xs
 
-def concat {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
+def concat_append {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
   fun (xs : List α) =>
     ∃ (xs1 : List α) (xs2 : List α), P xs1 /\ Q xs2 /\ xs = (xs1 ++ xs2)
 
@@ -61,13 +61,13 @@ def concat_n {α: Type} (P : Langs α) (Q : Langs α) : Langs α :=
   fun (xs : List α) =>
     ∃ n: Fin (xs.length + 1), P (List.take n xs) /\ Q (List.drop n xs)
 
-inductive star {α: Type} (R: Langs α): Langs α where
-  | zero: star R []
+inductive star_append {α: Type} (R: Langs α): Langs α where
+  | zero: star_append R []
   | more: ∀ (x: α) (xs1 xs2 xs: List α),
     xs = (x::xs1) ++ xs2
     -> R (x::xs1)
-    -> star R xs2
-    -> star R xs
+    -> star_append R xs2
+    -> star_append R xs
 
 -- alternative definition of star
 def star_n {α: Type} (R: Langs α) (xs: List α): Prop :=
@@ -87,21 +87,21 @@ def not {α: Type} (R: Langs α): Langs α :=
   fun xs => (Not (R xs))
 
 -- attribute [simp] allows these definitions to be unfolded when using the simp tactic.
-attribute [simp] universal emptyset emptystr char onlyif or and concat
+attribute [simp] universal emptyset emptystr char onlyif or and concat_append
 
 example: Langs α := universal
 example: Langs α := emptystr
 example: Langs α := (or emptystr universal)
 example: Langs α := (and emptystr universal)
 example: Langs α := emptyset
-example: Langs α := (star emptyset)
+example: Langs α := (star_append emptyset)
 example: Langs Char := char 'a'
 example: Langs Char := char 'b'
 example: Langs Char := (or (char 'a') emptyset)
 example: Langs Char := (and (char 'a') (char 'b'))
 example: Langs Nat := (and (char 1) (char 2))
 example: Langs Nat := (onlyif True (char 2))
-example: Langs Nat := (concat (char 1) (char 2))
+example: Langs Nat := (concat_append (char 1) (char 2))
 example: Langs Nat := (pred (fun x => x = 1))
 
 def null {α: Type} (R: Langs α): Prop :=
@@ -245,8 +245,8 @@ theorem null_and {α: Type} {P Q: Langs α}:
   null (and P Q) = ((null P) /\ (null Q)) :=
   rfl
 
-theorem null_iff_concat {α: Type} {P Q: Langs α}:
-  null (concat P Q) <-> ((null P) /\ (null Q)) := by
+theorem null_iff_concat_append {α: Type} {P Q: Langs α}:
+  null (concat_append P Q) <-> ((null P) /\ (null Q)) := by
   refine Iff.intro ?toFun ?invFun
   case toFun =>
     intro ⟨x, y, hx, hy, hxy⟩
@@ -256,23 +256,23 @@ theorem null_iff_concat {α: Type} {P Q: Langs α}:
   case invFun =>
     exact fun ⟨x, y⟩ => ⟨[], [], x, y, rfl⟩
 
-theorem null_concat {α: Type} {P Q: Langs α}:
-  null (concat P Q) = ((null P) /\ (null Q)) := by
-  rw [null_iff_concat]
+theorem null_concat_append {α: Type} {P Q: Langs α}:
+  null (concat_append P Q) = ((null P) /\ (null Q)) := by
+  rw [null_iff_concat_append]
 
-theorem null_if_star {α: Type} {R: Langs α}:
-  null (star R) :=
-  star.zero
+theorem null_if_star_append {α: Type} {R: Langs α}:
+  null (star_append R) :=
+  star_append.zero
 
-theorem null_iff_star {α: Type} {R: Langs α}:
-  null (star R) <-> True :=
+theorem null_iff_star_append {α: Type} {R: Langs α}:
+  null (star_append R) <-> True :=
   Iff.intro
     (fun _ => True.intro)
-    (fun _ => star.zero)
+    (fun _ => star_append.zero)
 
-theorem null_star {α: Type} {R: Langs α}:
-  null (star R) = True := by
-  rw [null_iff_star]
+theorem null_star_append {α: Type} {R: Langs α}:
+  null (star_append R) = True := by
+  rw [null_iff_star_append]
 
 theorem null_not {α: Type} {R: Langs α}:
   null (not R) = null (Not ∘ R) :=
@@ -357,12 +357,12 @@ theorem derive_onlyif {α: Type} {a: α} {s: Prop} {P: Langs α}:
   (derive (onlyif s P) a) = (onlyif s (derive P a)) :=
   rfl
 
-theorem derive_iff_concat {α: Type} {x: α} {P Q: Langs α} {xs: List α}:
-  (derive (concat P Q) x) xs <->
-    (or (concat (derive P x) Q) (onlyif (null P) (derive Q x))) xs := by
+theorem derive_iff_concat_append {α: Type} {x: α} {P Q: Langs α} {xs: List α}:
+  (derive (concat_append P Q) x) xs <->
+    (or (concat_append (derive P x) Q) (onlyif (null P) (derive Q x))) xs := by
   refine Iff.intro ?toFun ?invFun
   case toFun =>
-    simp only [Language.or, Language.concat, derive, derives, null, onlyif]
+    simp only [Language.or, Language.concat_append, derive, derives, null, onlyif]
     intro d
     guard_hyp d: ∃ x_1 y, P x_1 ∧ Q y ∧ [x] ++ xs = x_1 ++ y
     guard_target = (∃ x_1 y, P ([x] ++ x_1) ∧ Q y ∧ xs = x_1 ++ y) ∨ P [] ∧ Q ([x] ++ xs)
@@ -396,7 +396,7 @@ theorem derive_iff_concat {α: Type} {x: α} {P Q: Langs α} {xs: List α}:
         guard_target = ∃ x y, P ([p] ++ x) ∧ Q y ∧ ps ++ qs = x ++ y
         exact Exists.intro ps (Exists.intro qs (And.intro hp (And.intro hq rfl)))
   case invFun =>
-    simp only [Language.or, Language.concat, derive, derives, null, onlyif]
+    simp only [Language.or, Language.concat_append, derive, derives, null, onlyif]
     intro e
     guard_hyp e : (∃ x_1 y, P ([x] ++ x_1) ∧ Q y ∧ xs = x_1 ++ y) ∨ P [] ∧ Q ([x] ++ xs)
     guard_target = ∃ x_1 y, P x_1 ∧ Q y ∧ [x] ++ xs = x_1 ++ y
@@ -419,14 +419,14 @@ theorem derive_iff_concat {α: Type} {x: α} {P Q: Langs α} {xs: List α}:
       | And.intro hp hq =>
         exact Exists.intro [] (Exists.intro (x :: xs) (And.intro hp (And.intro hq rfl)))
 
-theorem derive_concat {α: Type} {x: α} {P Q: Langs α}:
-  (derive (concat P Q) x) =
-    (or (concat (derive P x) Q) (onlyif (null P) (derive Q x))) := by
+theorem derive_concat_append {α: Type} {x: α} {P Q: Langs α}:
+  (derive (concat_append P Q) x) =
+    (or (concat_append (derive P x) Q) (onlyif (null P) (derive Q x))) := by
   funext
-  rw [derive_iff_concat]
+  rw [derive_iff_concat_append]
 
-theorem derive_iff_star {α: Type} {x: α} {R: Langs α} {xs: List α}:
-  (derive (star R) x) xs <-> (concat (derive R x) (star R)) xs := by
+theorem derive_iff_star_append {α: Type} {x: α} {R: Langs α} {xs: List α}:
+  (derive (star_append R) x) xs <-> (concat_append (derive R x) (star_append R)) xs := by
   refine Iff.intro ?toFun ?invFun
   case toFun =>
     intro deriveStar
@@ -434,7 +434,7 @@ theorem derive_iff_star {α: Type} {x: α} {R: Langs α} {xs: List α}:
     unfold derives at deriveStar
     cases deriveStar with
     | more x' xs1 xs2 _ hxs Rxxs1 starRxs2 =>
-      unfold concat
+      unfold concat_append
       exists xs1
       exists xs2
       simp only [cons_append, cons.injEq] at hxs
@@ -447,7 +447,7 @@ theorem derive_iff_star {α: Type} {x: α} {R: Langs α} {xs: List α}:
       · exact hxs2
   case invFun =>
     intro concatDerive
-    unfold concat at concatDerive
+    unfold concat_append at concatDerive
     cases concatDerive with
     | intro xs1 concatDerive =>
     cases concatDerive with
@@ -458,16 +458,16 @@ theorem derive_iff_star {α: Type} {x: α} {R: Langs α} {xs: List α}:
     | intro starRxs2 hxs =>
     unfold derive
     unfold derives
-    refine star.more x xs1 xs2 ?hxs ?e ?f ?g
+    refine star_append.more x xs1 xs2 ?hxs ?e ?f ?g
     · rw [hxs]
       simp only [cons_append, nil_append]
     · apply deriveRxxs1
     · exact starRxs2
 
-theorem derive_star {α: Type} {x: α} {R: Langs α}:
-  (derive (star R) x) = (concat (derive R x) (star R)) := by
+theorem derive_star_append {α: Type} {x: α} {R: Langs α}:
+  (derive (star_append R) x) = (concat_append (derive R x) (star_append R)) := by
   funext
-  rw [derive_iff_star]
+  rw [derive_iff_star_append]
 
 theorem derive_not {α: Type} {x: α} {R: Langs α}:
   (derive (not R) x) = Not ∘ (derive R x) :=
@@ -480,31 +480,31 @@ theorem derive_iff_not {α: Type} {x: α} {R: Langs α} {xs: List α}:
 
 -- Theorems: simplification rules
 
-theorem simp_concat_emptyset_l_is_emptyset (r: Langs α):
-  concat emptyset r = emptyset := by
-  unfold concat
+theorem simp_concat_append_emptyset_l_is_emptyset (r: Langs α):
+  concat_append emptyset r = emptyset := by
+  unfold concat_append
   simp only [emptyset, false_and, exists_const]
   rfl
 
-theorem simp_concat_emptyset_r_is_emptyset (r: Langs α):
-  concat r emptyset = emptyset := by
-  unfold concat
+theorem simp_concat_append_emptyset_r_is_emptyset (r: Langs α):
+  concat_append r emptyset = emptyset := by
+  unfold concat_append
   simp only [emptyset, false_and, and_false, exists_const]
   rfl
 
-theorem simp_concat_emptystr_l_is_r (r: Langs α):
-  concat emptystr r = r := by
-  unfold concat
+theorem simp_concat_append_emptystr_l_is_r (r: Langs α):
+  concat_append emptystr r = r := by
+  unfold concat_append
   simp only [emptystr, exists_and_left, exists_eq_left, nil_append, exists_eq_right']
 
-theorem simp_concat_emptystr_r_is_l (r: Langs α):
-  concat r emptystr = r := by
-  unfold concat
+theorem simp_concat_append_emptystr_r_is_l (r: Langs α):
+  concat_append r emptystr = r := by
+  unfold concat_append
   simp only [emptystr, exists_and_left, exists_eq_left, append_nil, exists_eq_right']
 
-theorem simp_concat_assoc (r s t: Langs α):
-  concat (concat r s) t = concat r (concat s t) := by
-  unfold concat
+theorem simp_concat_append_assoc (r s t: Langs α):
+  concat_append (concat_append r s) t = concat_append r (concat_append s t) := by
+  unfold concat_append
   funext xs
   simp only [eq_iff_iff]
   apply Iff.intro
@@ -555,31 +555,31 @@ theorem simp_concat_assoc (r s t: Langs α):
 
 -- class Associative found in Init/Core.lean in namespace Std
 -- It is used by the ac_rfl tactic.
-instance IsAssociative_concat {α: Type}: Std.Associative (@concat α) :=
-  { assoc := @simp_concat_assoc α }
+instance IsAssociative_concat_append {α: Type}: Std.Associative (@concat_append α) :=
+  { assoc := @simp_concat_append_assoc α }
 
 -- Test that ac_rfl uses the instance of Std.Associative
 example (r s t: Langs α):
-  concat (concat r s) t = concat r (concat s t) := by
+  concat_append (concat_append r s) t = concat_append r (concat_append s t) := by
   ac_rfl
 
-instance IsLawfulIdentity_concat {α: Type} : Std.LawfulIdentity (@concat α) (@emptystr α) where
-  left_id := simp_concat_emptystr_l_is_r
-  right_id := simp_concat_emptystr_r_is_l
+instance IsLawfulIdentity_concat_append {α: Type} : Std.LawfulIdentity (@concat_append α) (@emptystr α) where
+  left_id := simp_concat_append_emptystr_l_is_r
+  right_id := simp_concat_append_emptystr_r_is_l
 
 -- Test ac_rfl uses the instance of LawfulIdentity
 example (r: Langs α):
-  concat emptystr r = r := by
+  concat_append emptystr r = r := by
   ac_rfl
 
 -- Test ac_nf tactic
 example (r s: Langs α) (H: s = r):
-  concat emptystr r = s := by
+  concat_append emptystr r = s := by
   ac_nf
   rw [H]
 
 theorem concat_n_iff_concat:
-  concat_n P Q xs <-> concat P Q xs := by
+  concat_n P Q xs <-> concat_append P Q xs := by
   apply Iff.intro
   case mp =>
     intro h
@@ -612,7 +612,7 @@ theorem concat_n_iff_concat:
     apply And.intro hx hy
 
 theorem concat_n_is_concat:
-  concat_n P Q = concat P Q := by
+  concat_n P Q = concat_append P Q := by
   funext xs
   rw [concat_n_iff_concat]
 
@@ -620,7 +620,7 @@ theorem derive_iff_concat_n {α: Type} {x: α} {P Q: Langs α} {xs: List α}:
   (derive (concat_n P Q) x) xs <->
     (or (concat_n (derive P x) Q) (onlyif (null P) (derive Q x))) xs := by
   repeat rw [concat_n_is_concat]
-  rw [derive_iff_concat]
+  rw [derive_iff_concat_append]
 
 theorem derive_concat_n {α: Type} {x: α} {P Q: Langs α}:
   (derive (concat_n P Q) x) =
@@ -628,24 +628,24 @@ theorem derive_concat_n {α: Type} {x: α} {P Q: Langs α}:
   funext
   rw [derive_iff_concat_n]
 
-theorem star_is_star_n:
-  star_n P xs <-> star P xs := by
+theorem star_append_is_star_n:
+  star_n P xs <-> star_append P xs := by
   apply Iff.intro
   case mp =>
     intro h
     unfold star_n at h
     cases xs with
     | nil =>
-      apply star.zero
+      apply star_append.zero
     | cons x xs =>
       simp at h
       obtain ⟨⟨n, hn⟩, ⟨hp, hq⟩⟩ := h
       simp at hp hq
-      apply star.more x (List.take n xs) (List.drop n xs)
+      apply star_append.more x (List.take n xs) (List.drop n xs)
       · rw [cons_append]
         simp
       · assumption
-      · apply star_is_star_n.mp hq
+      · apply star_append_is_star_n.mp hq
   case mpr =>
     intro h
     cases xs with
@@ -665,7 +665,7 @@ theorem star_is_star_n:
         ))
         simp
         apply And.intro hp
-        apply star_is_star_n.mpr hq
+        apply star_append_is_star_n.mpr hq
   termination_by xs.length
 
 theorem simp_or_emptyset_l_is_r (r: Langs α):
@@ -1040,19 +1040,19 @@ theorem simp_and_not_null_l_not_emptystr_r_is_l
   rw [hxs] at hr
   contradiction
 
-theorem simp_one_r_implies_star_r (r: Langs α) (xs: List α):
-  r xs -> star r xs := by
+theorem simp_one_r_implies_star_append_r (r: Langs α) (xs: List α):
+  r xs -> star_append r xs := by
   intro h
   cases xs
-  · exact star.zero
+  · exact star_append.zero
   · case cons x xs =>
-    apply star.more x xs []
+    apply star_append.more x xs []
     · simp only [append_nil]
     · exact h
-    · exact star.zero
+    · exact star_append.zero
 
-theorem simp_star_concat_star_implies_star (r: Langs α) (xs: List α):
-  concat (star r) (star r) xs -> star r xs := by
+theorem simp_star_append_concat_append_star_append_implies_star_append (r: Langs α) (xs: List α):
+  concat_append (star_append r) (star_append r) xs -> star_append r xs := by
   intro h
   cases h with
   | intro xs1 h =>
@@ -1071,48 +1071,48 @@ theorem simp_star_concat_star_implies_star (r: Langs α) (xs: List α):
   | more x xs11 xs12 _ xs1split rxxs11 starrxs12 ih =>
     rename_i xs1
     rw [xs1split]
-    apply star.more x xs11 (xs12 ++ xs2)
+    apply star_append.more x xs11 (xs12 ++ xs2)
     simp only [cons_append, append_assoc]
     exact rxxs11
     exact ih
 
-theorem simp_star_implies_star_concat_star (r: Langs α) (xs: List α):
-  star r xs -> concat (star r) (star r) xs  := by
+theorem simp_star_append_implies_star_append_concat_append_star_append (r: Langs α) (xs: List α):
+  star_append r xs -> concat_append (star_append r) (star_append r) xs  := by
   intro h
   cases h with
   | zero =>
-    unfold concat
+    unfold concat_append
     exists []
     exists []
     split_ands
-    · exact star.zero
-    · exact star.zero
+    · exact star_append.zero
+    · exact star_append.zero
     · simp only [append_nil]
   | more x xs1 xs2 _ xssplit rxxs1 starrxs2 =>
-    unfold concat
+    unfold concat_append
     exists (x::xs1)
     exists xs2
     split_ands
-    · refine star.more x xs1 [] _ ?_ ?_ ?_
+    · refine star_append.more x xs1 [] _ ?_ ?_ ?_
       · simp only [append_nil]
       · exact rxxs1
-      · exact star.zero
+      · exact star_append.zero
     · exact starrxs2
     · rw [xssplit]
 
-theorem simp_star_concat_star_is_star (r: Langs α):
-  concat (star r) (star r) = star r := by
-  unfold concat
+theorem simp_star_append_concat_append_star_append_is_star_append (r: Langs α):
+  concat_append (star_append r) (star_append r) = star_append r := by
+  unfold concat_append
   funext xs
   simp only [eq_iff_iff]
   apply Iff.intro
   case mp =>
-    apply simp_star_concat_star_implies_star
+    apply simp_star_append_concat_append_star_append_implies_star_append
   case mpr =>
-    apply simp_star_implies_star_concat_star
+    apply simp_star_append_implies_star_append_concat_append_star_append
 
-theorem simp_star_star_is_star (r: Langs α):
-  star (star r) = star r := by
+theorem simp_star_append_star_append_is_star_append (r: Langs α):
+  star_append (star_append r) = star_append r := by
   funext xs
   simp only [eq_iff_iff]
   apply Iff.intro
@@ -1120,29 +1120,29 @@ theorem simp_star_star_is_star (r: Langs α):
     intro h
     induction h with
     | zero =>
-      exact star.zero
+      exact star_append.zero
     | more x xs1 xs2 _ xssplit starrxxs1 starstarrxs2 ih =>
       rename_i xss
       rw [xssplit]
-      rw [<- simp_star_concat_star_is_star]
-      unfold concat
+      rw [<- simp_star_append_concat_append_star_append_is_star_append]
+      unfold concat_append
       exists (x::xs1)
       exists xs2
   case mpr =>
     intro h
     induction h with
     | zero =>
-      exact star.zero
+      exact star_append.zero
     | more x xs1 xs2 _ xssplit rxxs1 starrxs2 ih =>
       rename_i xss
-      apply star.more x xs1 xs2
+      apply star_append.more x xs1 xs2
       · exact xssplit
-      · apply simp_one_r_implies_star_r
+      · apply simp_one_r_implies_star_append_r
         exact rxxs1
       · exact ih
 
-theorem simp_star_emptystr_is_emptystr {α: Type}:
-  star (@emptystr α) = (@emptystr α) := by
+theorem simp_star_append_emptystr_is_emptystr {α: Type}:
+  star_append (@emptystr α) = (@emptystr α) := by
   funext xs
   simp only [emptystr, eq_iff_iff]
   apply Iff.intro
@@ -1156,10 +1156,10 @@ theorem simp_star_emptystr_is_emptystr {α: Type}:
   case mpr =>
     intro h
     rw [h]
-    exact star.zero
+    exact star_append.zero
 
-theorem simp_star_emptyset_is_emptystr {α: Type}:
-  star (@emptyset α) = (@emptystr α) := by
+theorem simp_star_append_emptyset_is_emptystr {α: Type}:
+  star_append (@emptyset α) = (@emptystr α) := by
   funext xs
   simp only [emptystr, eq_iff_iff]
   apply Iff.intro
@@ -1173,10 +1173,10 @@ theorem simp_star_emptyset_is_emptystr {α: Type}:
   case mpr =>
     intro h
     rw [h]
-    exact star.zero
+    exact star_append.zero
 
-theorem simp_star_any_is_universal {α: Type}:
-  star (@any α) = @universal α := by
+theorem simp_star_append_any_is_universal {α: Type}:
+  star_append (@any α) = @universal α := by
   funext xs
   simp only [universal, eq_iff_iff]
   apply Iff.intro
@@ -1187,9 +1187,9 @@ theorem simp_star_any_is_universal {α: Type}:
     intro h
     induction xs with
     | nil =>
-      exact star.zero
+      exact star_append.zero
     | cons x xs ih =>
-      apply star.more x [] xs
+      apply star_append.more x [] xs
       · simp only [singleton_append]
       · unfold any
         exists x
@@ -1217,9 +1217,9 @@ def onlyif_false {cond: Prop} {l: List α -> Prop} (condIsFalse: ¬cond):
     intro h
     nomatch h
 
-theorem simp_or_concat_left_distrib (a b c : Langs α) : concat a (or b c) = or (concat a b) (concat a c) := by
+theorem simp_or_concat_append_left_distrib (a b c : Langs α) : concat_append a (or b c) = or (concat_append a b) (concat_append a c) := by
   unfold or
-  unfold concat
+  unfold concat_append
   funext xs
   simp only
   simp only [eq_iff_iff]
@@ -1286,9 +1286,9 @@ theorem simp_or_concat_left_distrib (a b c : Langs α) : concat a (or b c) = or 
       exact Hc
       exact H
 
-theorem simp_or_concat_right_distrib (a b c : Langs α) : concat (or a b) c = or (concat a c) (concat b c) := by
+theorem simp_or_concat_append_right_distrib (a b c : Langs α) : concat_append (or a b) c = or (concat_append a c) (concat_append b c) := by
   unfold or
-  unfold concat
+  unfold concat_append
   funext xs
   simp only [eq_iff_iff]
   apply Iff.intro
@@ -1478,12 +1478,12 @@ theorem simp_and_or_right_distrib (a b c : Langs α) : or (and a b) c = and (or 
       | inl h => simp_all only [and_true, or_true]
       | inr h_2 => simp_all only [or_true]
 
-theorem simp_or_star_any_l_is_star_any (r: Langs α):
-  or (star any) r = (star any) := by
-  rw [simp_star_any_is_universal]
+theorem simp_or_star_append_any_l_is_star_append_any (r: Langs α):
+  or (star_append any) r = (star_append any) := by
+  rw [simp_star_append_any_is_universal]
   rw [simp_or_universal_l_is_universal]
 
-theorem simp_or_star_any_r_is_star_any (r: Langs α):
-  or r (star any) = (star any) := by
-  rw [simp_star_any_is_universal]
+theorem simp_or_star_append_any_r_is_star_append_any (r: Langs α):
+  or r (star_append any) = (star_append any) := by
+  rw [simp_star_append_any_is_universal]
   rw [simp_or_universal_r_is_universal]

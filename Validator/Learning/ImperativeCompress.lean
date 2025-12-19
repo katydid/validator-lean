@@ -113,7 +113,7 @@ def derive [DecidableEq φ]
       | Except.error err => Except.error err
       | Except.ok dchildxs =>
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
-      let dxs: List (Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Rule.nullable dchildxs)
+      let dxs: List (Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Rule.null dchildxs)
       Except.ok dxs
 
 def derivs [DecidableEq φ]
@@ -131,7 +131,7 @@ def validate [DecidableEq φ]
   (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
   match derivs G Φ x hedge with
   | Except.error err => Except.error err
-  | Except.ok x' => Except.ok (Regex.nullable x')
+  | Except.ok x' => Except.ok (Regex.null x')
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   validate G Pred.evalb G.start [t]

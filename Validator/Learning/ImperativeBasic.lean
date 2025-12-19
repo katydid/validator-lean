@@ -42,7 +42,7 @@ def derive
       let dchildxs: List (Rule n φ) := List.foldl (derive G Φ) childxs children
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
       -- leaves is the other one of our two new memoizable functions.
-      let dxs: List (Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Regex.nullable dchildxs)
+      let dxs: List (Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Regex.null dchildxs)
       dxs
 
 def derivs
@@ -59,7 +59,7 @@ def validate
   (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
   match derivs G Φ x hedge with
   | Except.error err => Except.error err
-  | Except.ok x' => Except.ok (Rule.nullable x')
+  | Except.ok x' => Except.ok (Rule.null x')
 
 def run [DecidableEq α]
   (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=

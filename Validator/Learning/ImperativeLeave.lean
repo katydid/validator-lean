@@ -24,7 +24,7 @@ def leave (x: Rule n φ) (ns: List Bool): (Rule n φ × List Bool) :=
     let (z', ns'') := leave z ns'
     (Regex.or y' z', ns'')
   | Regex.concat y z =>
-    if Regex.nullable y
+    if Regex.null y
     then
       let (y', ns') := leave y ns
       let (z', ns'') := leave z ns'

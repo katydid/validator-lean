@@ -32,7 +32,7 @@ def derive {α: Type}
       let childxs: Rules n φ (Symbol.nums xs) := IfExpr.evals G Φ ifExprs label
       -- dchildxs = derivatives of children.
       let dchildxs: Rules n φ (Symbol.nums xs) := List.foldl (derive G Φ) childxs children
-      let ns: Vec Bool (Symbol.nums xs) := Vec.map dchildxs Rule.nullable
+      let ns: Vec Bool (Symbol.nums xs) := Vec.map dchildxs Rule.null
       -- leaves is the other one of our two new memoizable functions.
       let lchildxs: Rules n φ l := Leave.deriveLeaves xs ns
       lchildxs
@@ -47,7 +47,7 @@ def validate {α: Type}
   (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ) (hedge: Hedge α): Bool :=
   let dx := derivs G Φ x hedge
-  Rule.nullable dx
+  Rule.null dx
 
 def run {α: Type} [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Bool :=
   validate G Pred.evalb G.start [t]

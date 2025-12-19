@@ -30,7 +30,7 @@ def deriveEnter [DecidableEq φ] [ValidateM m n φ α]
   return IfExpr.evals G Φ enters token
 
 def deriveLeaveM [DecidableEq φ] [ValidateM m n φ α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
-  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.nullable)
+  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
 
 def deriveValue [DecidableEq φ] [ValidateM m n φ α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
@@ -64,7 +64,7 @@ def validate {m} [DecidableEq φ] [ValidateM m n φ α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ): m Bool := do
   let dxs <- derive G Φ (Vec.cons x Vec.nil)
-  return Rule.nullable dxs.head
+  return Rule.null dxs.head
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   TreeParserM.run' (validate G Pred.evalb G.start) t

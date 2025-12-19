@@ -36,7 +36,7 @@ def derive [DecidableEq φ]
       let cdchildxs := List.foldl (derive G Φ) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs := Compress.expand indices cdchildxs
-      Leave.deriveLeaves xs (Vec.map dchildxs Rule.nullable)
+      Leave.deriveLeaves xs (Vec.map dchildxs Rule.null)
 
 def derivs [DecidableEq φ]
   (G: Grammar n φ) (Φ : φ → α → Bool)
@@ -48,7 +48,7 @@ def validate [DecidableEq φ]
   (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ) (hedge: Hedge α): Bool :=
   let dx := derivs G Φ x hedge
-  Rule.nullable dx
+  Rule.null dx
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Bool :=
   validate G Pred.evalb G.start [t]

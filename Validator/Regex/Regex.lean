@@ -35,13 +35,13 @@ def denote {α: Type} {σ: Type} (Φ : σ -> List α -> Prop) (r: Regex σ): (xs
   | concat p q => Language.concat_n (denote Φ p) (denote Φ q)
   | star p => Language.star_n (denote Φ p)
 
-def nullable {σ: Type} (r: Regex σ): Bool :=
+def null {σ: Type} (r: Regex σ): Bool :=
   match r with
   | emptyset => false
   | emptystr => true
   | symbol _ => false
-  | or p q => nullable p || nullable q
-  | concat p q => nullable p && nullable q
+  | or p q => null p || null q
+  | concat p q => null p && null q
   | star _ => true
 
 def unescapable (x: Regex σ): Bool :=
@@ -51,6 +51,39 @@ def unescapable (x: Regex σ): Bool :=
 
 def onlyif (cond: Prop) [dcond: Decidable cond] (x: Regex σ): Regex σ :=
   if cond then x else emptyset
+
+def denote_onlyif {α: Type} (Φ : σ -> List α -> Prop) (condition: Prop) [dcond: Decidable condition] (r: Regex σ):
+  denote Φ (onlyif condition r) = Language.onlyif condition (denote Φ r) := by
+  unfold Language.onlyif
+  unfold onlyif
+  funext xs
+  split_ifs
+  case pos hc =>
+    simp only [eq_iff_iff, iff_and_self]
+    intro d
+    assumption
+  case neg hc =>
+    simp only [eq_iff_iff]
+    rw [denote]
+    rw [Language.emptyset]
+    simp only [false_iff, not_and]
+    intro hc'
+    contradiction
+
+def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+  match r with
+  | emptyset => emptyset
+  | emptystr => emptyset
+  | symbol s => onlyif (Φ s a) emptystr
+  | or r1 r2 => or (derive Φ r1 a) (derive Φ r2 a)
+  | concat r1 r2 =>
+    or
+      (concat (derive Φ r1 a) r2)
+      (onlyif (null r1) (derive Φ r2 a))
+  | star r1 => concat (derive Φ r1 a) (star r1)
+
+def derives (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
+  Vec.map rs (fun r => derive Φ r a)
 
 -- We prove that for each regular expression the denotation holds for the specific language definition:
 -- * Regex.denote Φ Regex.emptyset = Language.emptyset
@@ -95,20 +128,3 @@ theorem denote_star_n' {α: Type} {σ: Type} (Φ: σ -> List α -> Prop) (r: Reg
 theorem denote_star_n {α: Type} {σ: Type} (Φ: σ -> List α -> Prop) (r: Regex σ):
   denote Φ (star r) = Language.star_n (denote Φ r) := by
   simp only [denote]
-
-def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
-  match r with
-  | emptyset => emptyset
-  | emptystr => emptyset
-  | symbol s => onlyif (Φ s a) emptystr
-  | or r1 r2 =>
-    or (derive Φ r1 a) (derive Φ r2 a)
-  | concat r1 r2 =>
-    or
-      (concat (derive Φ r1 a) r2)
-      (onlyif (nullable r1) (derive Φ r2 a))
-  | star r1 =>
-    concat (derive Φ r1 a) (star r1)
-
-def derives (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
-  Vec.map rs (fun r => derive Φ r a)

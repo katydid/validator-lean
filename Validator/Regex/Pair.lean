@@ -17,7 +17,7 @@ def derive {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   | concat r1 r2 =>
     or
       (concat (derive r1) (first r2))
-      (onlyif (nullable r1) (derive r2))
+      (onlyif (null r1) (derive r2))
   | star r1 =>
       concat (derive r1) (star (first r1))
 
@@ -66,8 +66,8 @@ theorem derive_is_pair_derive (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
     rw [<- ih2]
     have h : first (r2.map fun s => (s, Φ s a)) = r2 := by
       apply map_first
-    have h' : (r1.map fun s => (s, Φ s a)).nullable = r1.nullable := by
-      apply map_nullable
+    have h' : (r1.map fun s => (s, Φ s a)).null = r1.null := by
+      apply map_null
     rw [h]
     rw [h']
   | star r1 ih1 =>

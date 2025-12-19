@@ -81,7 +81,7 @@ def Rule.derive
       Regex.onlyif
         (
           Φ p label
-          /\ Rule.nullable (List.foldl (Rule.derive G Φ) (G.lookup ref) children)
+          /\ Rule.null (List.foldl (Rule.derive G Φ) (G.lookup ref) children)
         )
         Regex.emptystr
   | Regex.or r1 r2 =>
@@ -89,7 +89,7 @@ def Rule.derive
   | Regex.concat r1 r2 =>
     Regex.or
       (Regex.concat (Rule.derive G Φ r1 x) r2)
-      (Regex.onlyif (Rule.nullable r1) (Rule.derive G Φ r2 x))
+      (Regex.onlyif (Rule.null r1) (Rule.derive G Φ r2 x))
   | Regex.star r1 =>
     Regex.concat (Rule.derive G Φ r1 x) (Regex.star r1)
   -- Lean cannot guess how the recursive function terminates,
@@ -122,7 +122,7 @@ def Rule.derive'
 def validate
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (hedge: Hedge α): Bool :=
-  Rule.nullable (List.foldl (Rule.derive' G Φ) r hedge)
+  Rule.null (List.foldl (Rule.derive' G Φ) r hedge)
 
 def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate G Pred.evalb G.start [t])
@@ -244,14 +244,14 @@ theorem derive_commutes {α: Type} {φ: Type}
     rw [Rule.denote_or]
     rw [Rule.denote_concat]
     rw [Rule.denote_onlyif]
-    rw [Regex.Language.derive_concat]
+    rw [Regex.Language.derive_concat_append]
     rw [<- ihp]
     rw [<- ihq]
-    congrm (Regex.Language.or (Regex.Language.concat (Rule.denote G Φ (Rule.derive G (fun p a => Φ p a) p x)) (Rule.denote G Φ q)) ?_)
+    congrm (Regex.Language.or (Regex.Language.concat_append (Rule.denote G Φ (Rule.derive G (fun p a => Φ p a) p x)) (Rule.denote G Φ q)) ?_)
     rw [Rule.null_commutes]
   | case6 x r ih => -- star
     rw [Rule.denote_star]
     rw [Rule.denote_concat]
     rw [Rule.denote_star]
-    rw [Regex.Language.derive_star]
+    rw [Regex.Language.derive_star_append]
     rw [ih]

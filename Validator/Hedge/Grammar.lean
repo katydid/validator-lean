@@ -285,7 +285,7 @@ theorem Rule.denote_concat_n {n: Nat} {α: Type}
 theorem Rule.denote_concat {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
   Rule.denote G Φ (Regex.concat r1 r2)
-  = Regex.Language.concat (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
+  = Regex.Language.concat_append (Rule.denote G Φ r1) (Rule.denote G Φ r2) := by
   rw [Rule.denote_concat_n]
   funext xs
   rw [Regex.Language.concat_n_is_concat]
@@ -364,10 +364,10 @@ theorem Rule.denote_star {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ}:
   Rule.denote G Φ (Regex.star r)
   =
-  Regex.Language.star (Rule.denote G Φ r) := by
+  Regex.Language.star_append (Rule.denote G Φ r) := by
   funext xs
   rw [denote_rule_star_n']
-  rw [Regex.Language.star_is_star_n]
+  rw [Regex.Language.star_append_is_star_n]
 
 def Rule.denote_onlyif {α: Type}
   (condition: Prop) [dcond: Decidable condition]
@@ -388,58 +388,58 @@ def Rule.denote_onlyif {α: Type}
     intro hc'
     contradiction
 
-def Rule.nullable (r: Rule n φ): Bool :=
-  Regex.nullable r
+def Rule.null (r: Rule n φ): Bool :=
+  Regex.null r
 
-def Grammar.nullable (G: Grammar n φ): Bool :=
-  Rule.nullable G.start
+def Grammar.null (G: Grammar n φ): Bool :=
+  Rule.null G.start
 
 theorem Rule.null_commutes {α: Type}
   (G: Grammar n φ) (Φ: φ -> α -> Bool) (x: Rule n φ):
-  ((Rule.nullable x) = true) = Regex.Language.null (denote G Φ x) := by
+  ((Rule.null x) = true) = Regex.Language.null (denote G Φ x) := by
   induction x with
   | emptyset =>
     rw [denote_emptyset]
     rw [Regex.Language.null_emptyset]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    unfold Rule.null
+    unfold Regex.null
     apply Bool.false_eq_true
   | emptystr =>
     rw [denote_emptystr]
     rw [Regex.Language.null_emptystr]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    unfold Rule.null
+    unfold Regex.null
     simp only
   | symbol s =>
     obtain ⟨p, children⟩ := s
     rw [denote_symbol]
     rw [Hedge.Language.null_tree]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    unfold Rule.null
+    unfold Regex.null
     apply Bool.false_eq_true
   | or p q ihp ihq =>
     rw [denote_or]
     rw [Regex.Language.null_or]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    unfold Rule.null
+    unfold Regex.null
     rw [<- ihp]
     rw [<- ihq]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    unfold Rule.null
+    unfold Regex.null
     rw [Bool.or_eq_true]
   | concat p q ihp ihq =>
     rw [denote_concat]
-    rw [Regex.Language.null_concat]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    rw [Regex.Language.null_concat_append]
+    unfold Rule.null
+    unfold Regex.null
     rw [<- ihp]
     rw [<- ihq]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    unfold Rule.null
+    unfold Regex.null
     rw [Bool.and_eq_true]
   | star r ih =>
     rw [denote_star]
-    rw [Regex.Language.null_star]
-    unfold Rule.nullable
-    unfold Regex.nullable
+    rw [Regex.Language.null_star_append]
+    unfold Rule.null
+    unfold Regex.null
     simp only

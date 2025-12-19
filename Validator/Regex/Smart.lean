@@ -38,7 +38,7 @@ def derive_pair {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   | Regex.concat r1 r2 =>
     or
       (concat (derive_pair r1) (Regex.Pair.first r2))
-      (Regex.onlyif (Regex.nullable r1) (derive_pair r2))
+      (Regex.onlyif (Regex.null r1) (derive_pair r2))
   | Regex.star r1 =>
       concat (derive_pair r1) (star (Regex.Pair.first r1))
 
