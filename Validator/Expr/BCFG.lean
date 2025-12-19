@@ -3,6 +3,7 @@ import Std
 import Validator.Std.Vec
 
 import Validator.Regex.Regex
+import Validator.Regex.Map
 
 namespace BalancedContextFreeGrammar
 

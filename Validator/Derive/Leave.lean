@@ -2,6 +2,7 @@ import Validator.Std.Vec
 
 import Validator.Hedge.Grammar
 import Validator.Regex.Regex
+import Validator.Regex.Smart
 import Validator.Regex.Symbol
 import Validator.Derive.Enter
 
@@ -17,7 +18,7 @@ def deriveLeaves
   let (regexes, symbols) := Symbol.extractsFrom xs
   let res: Vec ((φ × Ref n) × Bool) (Symbol.nums xs) := Vec.zip symbols ns
   let res': Vec (Regex ((φ × Ref n) × Bool)) l := Symbol.replacesFrom regexes res
-  Regex.smartDerives2 res'
+  Regex.Smart.derive_pairs res'
 
 def deriveLeaveM [Monad m] {n: Nat} {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n φ l) := do
   return deriveLeaves xs ns

@@ -29,7 +29,7 @@ def Grammar99.denote_prod {α: Type}
   match xs with
   | [Hedge.Node.mk label children] =>
     Φ pred label /\
-    Regex.denote_infix r children (fun ref xs' =>
+    Regex.Infix.denote_infix r children (fun ref xs' =>
       match (G.lookup ref) with
       | (pred', r') =>
         Grammar99.denote_prod G Φ pred' r' xs'
@@ -46,7 +46,7 @@ def Grammar99.denote_prod {α: Type}
 def Grammar99.denote_start {α: Type}
   (G: Grammar99 n φ) (Φ: φ -> α -> Bool)
   (r: Regex (Ref n)) (xs: Hedge α): Prop :=
-  Regex.denote_infix r xs (fun ref xs' =>
+  Regex.Infix.denote_infix r xs (fun ref xs' =>
     match (G.lookup ref) with
     | (pred', r') =>
       Grammar99.denote_prod G Φ pred' r' xs'

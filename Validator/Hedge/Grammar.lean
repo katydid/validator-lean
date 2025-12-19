@@ -3,6 +3,7 @@ import Validator.Std.Hedge
 
 import Validator.Expr.Pred
 import Validator.Regex.Regex
+import Validator.Regex.Infix
 import Validator.Regex.Language
 import Validator.Hedge.Language
 
@@ -94,7 +95,7 @@ theorem Rule.denote_decreasing {x: Hedge.Node α} {xs: Hedge α} (h: List.IsInfi
 def Rule.denote {α: Type}
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (r: Rule n φ) (xs: Hedge α): Prop :=
-  Regex.denote_infix r xs (fun (pred, ref) xs' =>
+  Regex.Infix.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
     | Subtype.mk [x] _hx =>
         Φ pred x.getLabel
@@ -108,14 +109,14 @@ def Grammar.denote {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (xs: Hedg
   Rule.denote G Φ G.start xs
 
 theorem simp_denote_rule' {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r: Rule n φ) (xs: Hedge α):
-  (Regex.denote_infix r xs (fun (pred, ref) xs' =>
+  (Regex.Infix.denote_infix r xs (fun (pred, ref) xs' =>
     match xs' with
     | Subtype.mk [x] _hx =>
         Φ pred x.getLabel
         /\ Rule.denote G Φ (G.lookup ref) x.getChildren
     | _ => False
   )) =
-  (Regex.denote_infix r xs (fun (pred, ref) xs' =>
+  (Regex.Infix.denote_infix r xs (fun (pred, ref) xs' =>
     ∃ x: Hedge.Node α, xs'.val = [x] /\ Φ pred x.getLabel /\ Rule.denote G Φ (G.lookup ref) x.getChildren
   )) := by
   congr
@@ -137,7 +138,7 @@ theorem simp_denote_rule' {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r
 
 theorem simp_denote_rule {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r: Rule n φ) (xs: Hedge α):
   Rule.denote G Φ r xs =
-  Regex.denote_infix r xs (fun (pred, ref) xs' =>
+  Regex.Infix.denote_infix r xs (fun (pred, ref) xs' =>
     ∃ label children, xs'.val = [Hedge.Node.mk label children] /\ Φ pred label /\ Rule.denote G Φ (G.lookup ref) children
   ) := by
   nth_rewrite 1 [Rule.denote]
@@ -163,14 +164,14 @@ theorem Rule.denote_emptyset {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Bool}
   unfold Regex.Language.emptyset
   funext xs
   unfold Rule.denote
-  simp [Regex.denote_infix_emptyset]
+  simp [Regex.Infix.denote_infix_emptyset]
 
 theorem Rule.denote_emptystr {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Bool}:
   Rule.denote G Φ Regex.emptystr = Regex.Language.emptystr := by
   unfold Regex.Language.emptystr
   funext xs
   unfold Rule.denote
-  simp [Regex.denote_infix_emptystr]
+  simp [Regex.Infix.denote_infix_emptystr]
 
 theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {p: φ}
@@ -181,18 +182,18 @@ theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
   | nil =>
     unfold Hedge.Language.tree
     unfold Rule.denote
-    simp [Regex.denote_infix_symbol]
+    simp [Regex.Infix.denote_infix_symbol]
   | cons x xs =>
     cases xs with
     | cons x' xs' =>
       unfold Hedge.Language.tree
       unfold Rule.denote
-      simp [Regex.denote_infix_symbol]
+      simp [Regex.Infix.denote_infix_symbol]
       simp [List.InfixOf.self]
     | nil =>
       unfold Hedge.Language.tree
       unfold Rule.denote
-      simp [Regex.denote_infix_symbol]
+      simp [Regex.Infix.denote_infix_symbol]
       simp [List.InfixOf.self]
       apply Iff.intro
       case mp =>
@@ -234,7 +235,7 @@ theorem Rule.denote_or {n: Nat} {α: Type}
   funext xs
   unfold Regex.Language.or
   unfold Rule.denote
-  simp [Regex.denote_infix_or]
+  simp [Regex.Infix.denote_infix_or]
 
 theorem Rule.denote_concat_n {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
@@ -243,12 +244,12 @@ theorem Rule.denote_concat_n {n: Nat} {α: Type}
   funext xs
   unfold Regex.Language.concat_n
   unfold Rule.denote
-  simp only [Regex.denote_infix_concat_n]
+  simp only [Regex.Infix.denote_infix_concat_n]
   congr
   ext n
   rw [<- eq_iff_iff]
-  unfold denote_symbol_lift_take
-  unfold denote_symbol_lift_drop
+  unfold Regex.Infix.denote_symbol_lift_take
+  unfold Regex.Infix.denote_symbol_lift_drop
   congr
   next =>
     simp only
@@ -299,16 +300,16 @@ theorem denote_rule_star_n' {n: Nat} {α: Type}
   unfold Rule.denote
   cases xs with
   | nil =>
-    simp [Regex.denote_infix_star_n]
+    simp [Regex.Infix.denote_infix_star_n]
   | cons x xs =>
     simp only
-    rw [Regex.denote_infix_star_n]
+    rw [Regex.Infix.denote_infix_star_n]
     simp only
     congr
     ext n
     rw [<- eq_iff_iff]
-    unfold denote_symbol_lift_take
-    unfold denote_symbol_lift_drop
+    unfold Regex.Infix.denote_symbol_lift_take
+    unfold Regex.Infix.denote_symbol_lift_drop
     congr
     next =>
       ext s ys
@@ -382,7 +383,7 @@ def Rule.denote_onlyif {α: Type}
     assumption
   case neg hc =>
     simp only [eq_iff_iff]
-    rw [Rule.denote, Regex.denote_infix]
+    rw [Rule.denote, Regex.Infix.denote_infix]
     simp only [Regex.Language.emptyset, false_iff, not_and]
     intro hc'
     contradiction
