@@ -38,6 +38,9 @@ def pred {α: Type} (p : α -> Bool): Langs α :=
 def symbol {α: Type} (denote_symbol: σ -> List α -> Prop) (x: σ): Langs α :=
   fun xs => denote_symbol x xs
 
+def symbol_pred {α: Type} (Φ: σ -> α -> Prop) (s: σ): Langs α :=
+  fun xs => ∃ x, xs = [x] /\ Φ s x
+
 def any {α: Type}: Langs α :=
   fun xs => ∃ x, xs = [x]
 
@@ -233,6 +236,18 @@ theorem null_pred {α: Type} {p: α -> Bool}:
   null (pred p) = False := by
   rw [null_iff_pred]
 
+theorem null_iff_symbol_pred {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
+  null (symbol_pred Φ s) <-> False :=
+  Iff.intro nofun nofun
+
+theorem not_null_if_symbol_pred {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
+  null (symbol_pred Φ s) -> False :=
+  nofun
+
+theorem null_symbol_pred {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
+  null (symbol_pred Φ s) = False := by
+  rw [null_iff_symbol_pred]
+
 theorem null_or {α: Type} {P Q: Langs α}:
   null (or P Q) = ((null P) \/ (null Q)) :=
   rfl
@@ -260,6 +275,27 @@ theorem null_concat_append {α: Type} {P Q: Langs α}:
   null (concat_append P Q) = ((null P) /\ (null Q)) := by
   rw [null_iff_concat_append]
 
+theorem null_iff_concat_n {α: Type} {P Q: Langs α}:
+  null (concat_n P Q) <-> ((null P) /\ (null Q)) := by
+  refine Iff.intro ?toFun ?invFun
+  case toFun =>
+    intro ⟨⟨n, hn⟩, hp, hq⟩
+    simp at hn
+    subst hn
+    simp only [List.take] at hp
+    simp only [List.drop] at hq
+    exact And.intro hp hq
+  case invFun =>
+    intro ⟨hp, hq⟩
+    unfold concat_n
+    simp only [null, List.length_nil, Nat.reduceAdd, Fin.val_eq_zero, List.take_nil, List.drop_nil,
+      exists_const]
+    exact And.intro hp hq
+
+theorem null_concat_n {α: Type} {P Q: Langs α}:
+  null (concat_n P Q) = ((null P) /\ (null Q)) := by
+  rw [null_iff_concat_n]
+
 theorem null_if_star_append {α: Type} {R: Langs α}:
   null (star_append R) :=
   star_append.zero
@@ -273,6 +309,19 @@ theorem null_iff_star_append {α: Type} {R: Langs α}:
 theorem null_star_append {α: Type} {R: Langs α}:
   null (star_append R) = True := by
   rw [null_iff_star_append]
+
+theorem null_iff_star_n {α: Type} {R: Langs α}:
+  null (star_n R) <-> True :=
+  Iff.intro
+    (fun _ => True.intro)
+    (fun _ => by
+      unfold null
+      simp only [star_n]
+    )
+
+theorem null_star_n {α: Type} {R: Langs α}:
+  null (star_n R) = True := by
+  rw [null_iff_star_n]
 
 theorem null_not {α: Type} {R: Langs α}:
   null (not R) = null (Not ∘ R) :=

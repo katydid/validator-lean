@@ -208,3 +208,15 @@ theorem le (a b: Nat):
       omega
     | inr h =>
       omega
+
+theorem elem_is_leq_sizeOf {α: Type} [SizeOf α] {x: Hedge.Node α} {ys: Hedge α}:
+  x ∈ ys ->
+  sizeOf x <= sizeOf ys := by
+  intro h
+  induction h with
+  | head =>
+    simp only [List.cons.sizeOf_spec]
+    omega
+  | tail =>
+    simp only [List.cons.sizeOf_spec]
+    omega

@@ -3,6 +3,19 @@ import Mathlib.Tactic.RewriteSearch
 
 namespace List
 
+abbrev ElemOf {α: Type} (xs: List α) := { y: α // y ∈ xs }
+
+def ElemOf.mk {α: Type} (y: α) (xs: List α) (property : y ∈ xs) : ElemOf xs :=
+  (Subtype.mk y property)
+
+def ElemOf.self {α: Type} (x: α) : ElemOf [x] :=
+  (Subtype.mk x (by simp only [mem_cons, not_mem_nil, or_false]))
+
+def ElemOf.selfs {α: Type} (xs: List α) : List (ElemOf xs) :=
+  map (fun x =>
+    ElemOf.mk x.val xs x.property
+  ) xs.attach
+
 theorem list_elem_lt [SizeOf α] {xs: List α} (h: x ∈ xs): sizeOf x ≤ sizeOf xs := by
   rw [show (x ∈ xs) = List.Mem x xs from rfl] at h
   induction h with
@@ -26,7 +39,7 @@ theorem list_splitAt_fst_take: (List.splitAt n xs).1 = take n xs := by
 theorem list_splitAt_snd_drop: (List.splitAt n xs).2 = drop n xs := by
   simp only [List.splitAt_eq]
 
-theorem list_take_drop_n: xs = List.take n xs ++ List.drop n xs := by
+theorem list_take_drop_n (n: Nat) (xs: List α): xs = List.take n xs ++ List.drop n xs := by
   simp only [List.take_append_drop]
 
 theorem list_sizeOf_prepend [SizeOf α] (xs ys: List α):
@@ -238,3 +251,19 @@ theorem list_infix_is_leq_sizeOf {α: Type} [SizeOf α] {xs ys: List α}:
 
 theorem list_take_eq_self_iff (x : List α) {n : Nat} : x.take n = x ↔ x.length ≤ n :=
   ⟨fun h ↦ by rw [← h]; simp; omega, take_of_length_le⟩
+
+theorem list_elemof_take_is_elem {xs: List α} (y: List.ElemOf (List.take n xs)):
+  y.val ∈ xs := by
+  obtain ⟨y, hy⟩ := y
+  simp only
+  rw [list_take_drop_n n xs]
+  rw [List.mem_append]
+  exact Or.inl hy
+
+theorem list_elemof_drop_is_elem {xs: List α} (y: List.ElemOf (List.drop n xs)):
+  y.val ∈ xs := by
+  obtain ⟨y, hy⟩ := y
+  simp only
+  rw [list_take_drop_n n xs]
+  rw [List.mem_append]
+  exact Or.inr hy
