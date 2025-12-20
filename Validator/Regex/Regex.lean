@@ -7,9 +7,9 @@ inductive Regex (σ: Type) where
   | emptyset
   | emptystr
   | symbol (s: σ)
-  | or (p q: Regex σ)
-  | concat (p q: Regex σ)
-  | star (p: Regex σ)
+  | or (r1 r2: Regex σ)
+  | concat (r1 r2: Regex σ)
+  | star (r1: Regex σ)
   deriving DecidableEq, Ord, Repr, Hashable
 
 instance [Ord σ]: Ord (Regex σ) := inferInstance

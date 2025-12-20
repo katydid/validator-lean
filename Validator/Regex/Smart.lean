@@ -29,6 +29,18 @@ def star (x: Regex σ): Regex σ :=
   | Regex.emptyset => Regex.emptystr
   | _ => Regex.star x
 
+def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
+  match r with
+  | Regex.emptyset => Regex.emptyset
+  | Regex.emptystr => Regex.emptyset
+  | Regex.symbol s => Regex.onlyif (Φ s a) Regex.emptystr
+  | Regex.or r1 r2 => or (derive Φ r1 a) (derive Φ r2 a)
+  | Regex.concat r1 r2 =>
+    or
+      (concat (derive Φ r1 a) r2)
+      (Regex.onlyif (Regex.null r1) (derive Φ r2 a))
+  | Regex.star r1 => concat (derive Φ r1 a) (star r1)
+
 def derive_pair {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   match r with
   | Regex.emptyset => Regex.emptyset
