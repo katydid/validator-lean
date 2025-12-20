@@ -3,6 +3,7 @@ import Validator.Std.Vec
 
 import Validator.Hedge.Grammar
 import Validator.Expr.Pred
+import Validator.Regex.Elem
 import Validator.Regex.Regex
 import Validator.Regex.Language
 
@@ -29,16 +30,16 @@ def Grammar99.denote_prod {α: Type}
   match xs with
   | [Hedge.Node.mk label children] =>
     Φ pred label /\
-    Regex.Infix.denote_infix r children (fun ref xs' =>
+    Regex.Elem.denote_elem r children (fun ref x' =>
       match (G.lookup ref) with
       | (pred', r') =>
-        Grammar99.denote_prod G Φ pred' r' xs'
+        Grammar99.denote_prod G Φ pred' r' [x']
     )
   | _ => False
   termination_by xs
   decreasing_by
-    obtain ⟨xs, hxs⟩ := xs'
-    have h := List.list_infix_is_leq_sizeOf hxs
+    obtain ⟨x, hx⟩ := x'
+    have h := Hedge.elem_is_leq_sizeOf hx
     simp +arith only
     simp only [List.cons.sizeOf_spec, List.nil.sizeOf_spec, Hedge.Node.mk.sizeOf_spec]
     omega
@@ -46,10 +47,10 @@ def Grammar99.denote_prod {α: Type}
 def Grammar99.denote_start {α: Type}
   (G: Grammar99 n φ) (Φ: φ -> α -> Bool)
   (r: Regex (Ref n)) (xs: Hedge α): Prop :=
-  Regex.Infix.denote_infix r xs (fun ref xs' =>
+  Regex.Elem.denote_elem r xs (fun ref x' =>
     match (G.lookup ref) with
     | (pred', r') =>
-      Grammar99.denote_prod G Φ pred' r' xs'
+      Grammar99.denote_prod G Φ pred' r' [x']
   )
 
 def Grammar99.denote {α: Type}
