@@ -30,7 +30,7 @@ def denote {α: Type} {σ: Type} (Φ : σ -> α -> Prop) (r: Regex σ): (xs: Lis
   match r with
   | emptyset => Language.emptyset
   | emptystr => Language.emptystr
-  | symbol s => Language.symbol_pred Φ s
+  | symbol s => Language.symbol Φ s
   | or p q => Language.or (denote Φ p) (denote Φ q)
   | concat p q => Language.concat_n (denote Φ p) (denote Φ q)
   | star p => Language.star_n (denote Φ p)
@@ -101,8 +101,8 @@ theorem denote_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Prop):
   denote Φ emptystr = Language.emptystr := by
   simp only [denote]
 
-theorem denote_symbol_pred {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (s: σ):
-  denote Φ (symbol s) = Language.symbol_pred Φ s := by
+theorem denote_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (s: σ):
+  denote Φ (symbol s) = Language.symbol Φ s := by
   simp only [denote]
 
 theorem denote_or {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (p q: Regex σ):

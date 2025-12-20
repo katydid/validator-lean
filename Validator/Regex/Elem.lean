@@ -153,8 +153,8 @@ theorem denote_list_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Prop):
 
 theorem denote_list_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (s: σ):
   denote_list Φ (Regex.symbol s)
-  = Language.symbol_pred Φ s := by
-  unfold Language.symbol_pred
+  = Language.symbol Φ s := by
+  unfold Language.symbol
   funext xs
   simp only [denote_list]
   unfold denote_elem
@@ -269,7 +269,7 @@ theorem denote_list_is_Regex.denote {α: Type} {σ: Type} (Φ: σ -> α -> Prop)
     rw [Regex.denote_emptystr]
   | symbol s =>
     rw [denote_list_symbol]
-    rw [Regex.denote_symbol_pred]
+    rw [Regex.denote_symbol]
   | or p q ihp ihq =>
     rw [denote_list_or]
     rw [Regex.denote_or]
@@ -299,20 +299,20 @@ theorem denote_elem_emptystr {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List
 
 theorem denote_elem_symbol {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop) (s: σ):
   denote_elem (Regex.symbol s) xs Φ
-  = Language.symbol_pred Φ s (List.ElemOf.selfs xs) := by
+  = Language.symbol Φ s (List.ElemOf.selfs xs) := by
   unfold denote_elem
   cases xs with
   | nil =>
-    simp only [Language.symbol_pred, List.ElemOf.selfs, List.attach_nil, List.map_nil,
+    simp only [Language.symbol, List.ElemOf.selfs, List.attach_nil, List.map_nil,
       List.ne_cons_self, false_and, exists_false]
   | cons x xs =>
     cases xs with
     | nil =>
-      simp only [List.ElemOf.self, Language.symbol_pred, List.ElemOf.selfs, List.ElemOf.mk, Subtype.coe_eta,
+      simp only [List.ElemOf.self, Language.symbol, List.ElemOf.selfs, List.ElemOf.mk, Subtype.coe_eta,
         List.attach_cons, List.attach_nil, List.map_nil, List.map_cons, List.cons.injEq, and_true,
         exists_eq_left']
     | cons x' xs =>
-      simp only [Language.symbol_pred, List.ElemOf.selfs, List.attach_cons, List.map_cons, List.map_map,
+      simp only [Language.symbol, List.ElemOf.selfs, List.attach_cons, List.map_cons, List.map_map,
         List.cons.injEq, reduceCtorEq, and_false, false_and, nonempty_subtype, List.mem_cons,
         exists_or_eq_left, exists_const]
 

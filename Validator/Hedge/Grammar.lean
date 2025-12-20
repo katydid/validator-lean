@@ -174,7 +174,7 @@ theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
     unfold Hedge.Language.tree
     unfold Rule.denote
     simp [Regex.Elem.denote_elem_symbol]
-    simp only [Regex.Language.symbol_pred]
+    simp only [Regex.Language.symbol]
     simp only [Subtype.exists, List.not_mem_nil, IsEmpty.exists_iff, exists_false,
       not_false_eq_true]
   | cons x xs =>
@@ -184,7 +184,7 @@ theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
       unfold Rule.denote
       simp [Regex.Elem.denote_elem_symbol]
       simp [List.ElemOf.selfs]
-      simp only [Regex.Language.symbol_pred]
+      simp only [Regex.Language.symbol]
       simp only [List.cons.injEq, reduceCtorEq, and_false, false_and, nonempty_subtype,
         List.mem_cons, exists_or_eq_left, exists_const, not_false_eq_true]
     | nil =>
@@ -224,7 +224,7 @@ theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
         simp only [Regex.Elem.denote_elem_symbol]
         simp only [List.ElemOf.selfs, List.ElemOf.mk, Subtype.coe_eta, List.attach_cons,
           List.attach_nil, List.map_nil, List.map_cons]
-        simp only [Regex.Language.symbol_pred, List.cons.injEq, and_true, exists_eq_left']
+        simp only [Regex.Language.symbol, List.cons.injEq, and_true, exists_eq_left']
         simp only [Hedge.Node.getLabel, Hedge.Node.getChildren]
         exact And.intro hp hg
 
