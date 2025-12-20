@@ -391,6 +391,32 @@ theorem derive_pred {α: Type} {p: α -> Prop} {x: α}:
   funext
   rw [derive_iff_pred]
 
+theorem derive_iff_symbol {α: Type} {Φ: σ -> α -> Prop} {x: α} {xs: List α}:
+  (derive (symbol Φ s) x) xs <-> (onlyif (Φ s x) emptystr) xs := by
+  simp only [derive, derives, singleton_append]
+  simp only [onlyif, emptystr]
+  refine Iff.intro ?toFun ?invFun
+  case toFun =>
+    intro D
+    match D with
+    | Exists.intro x' D =>
+    simp only [cons.injEq] at D
+    match D with
+    | And.intro (And.intro hxx' hxs) hpx =>
+    rw [<- hxx'] at hpx
+    exact And.intro hpx hxs
+  case invFun =>
+    intro ⟨ hpx , hxs  ⟩
+    unfold symbol
+    exists x
+    simp only [cons.injEq, true_and]
+    exact And.intro hxs hpx
+
+theorem derive_symbol {α: Type} {Φ: σ -> α -> Prop} {x: α}:
+  (derive (symbol Φ s) x) = (onlyif (Φ s x) emptystr) := by
+  funext
+  rw [derive_iff_symbol]
+
 theorem derive_or {α: Type} {a: α} {P Q: Langs α}:
   (derive (or P Q) a) = (or (derive P a) (derive Q a)) :=
   rfl
@@ -470,6 +496,35 @@ theorem derive_concat_append {α: Type} {x: α} {P Q: Langs α}:
     (or (concat_append (derive P x) Q) (onlyif (null P) (derive Q x))) := by
   funext
   rw [derive_iff_concat_append]
+
+theorem derive_iff_star_n {α: Type} {x: α} {R: Langs α} {xs: List α}:
+  (derive (star_n R) x) xs <-> (concat_n (derive R x) (star_n R)) xs := by
+  refine Iff.intro ?toFun ?invFun
+  case toFun =>
+    intro h
+    unfold derive at h
+    unfold derives at h
+    simp only [cons_append, nil_append] at h
+    simp only [star_n] at h
+    unfold concat_n
+    obtain ⟨n, h⟩ := h
+    simp only [List.length_cons, List.take_succ_cons, List.drop_succ_cons] at h
+    exists n
+  case invFun =>
+    intro h
+    unfold concat_n at h
+    obtain ⟨n, h⟩ := h
+    simp only [derive, derives, cons_append, nil_append] at h
+    unfold derive
+    unfold derives
+    simp only [cons_append, nil_append]
+    simp only [star_n]
+    exists n
+
+theorem derive_star_n {α: Type} {x: α} {R: Langs α}:
+  (derive (star_n R) x) = (concat_n (derive R x) (star_n R)) := by
+  funext
+  rw [derive_iff_star_n]
 
 theorem derive_iff_star_append {α: Type} {x: α} {R: Langs α} {xs: List α}:
   (derive (star_append R) x) xs <-> (concat_append (derive R x) (star_append R)) xs := by

@@ -160,3 +160,43 @@ theorem null_commutes {σ: Type} {α: Type} (Φ: σ -> α -> Prop) (r: Regex σ)
     rw [Language.null_star_n]
     unfold null
     simp only
+
+theorem derive_commutes {σ: Type} {α: Type} (Φ: σ -> α -> Prop) [DecidableRel Φ] (r: Regex σ) (x: α):
+  denote Φ (derive (fun s a => Φ s a) r x) = Language.derive (denote Φ r) x := by
+  induction r with
+  | emptyset =>
+    simp only [denote, derive]
+    rw [Language.derive_emptyset]
+  | emptystr =>
+    simp only [denote, derive]
+    rw [Language.derive_emptystr]
+  | symbol p =>
+    simp only [denote]
+    rw [Language.derive_symbol]
+    unfold derive
+    rw [denote_onlyif]
+    simp only [denote]
+    simp only [decide_eq_true_eq]
+  | or p q ihp ihq =>
+    simp only [denote, derive]
+    rw [Language.derive_or]
+    unfold Language.or
+    rw [ihp]
+    rw [ihq]
+  | concat p q ihp ihq =>
+    simp only [denote, derive]
+    rw [Language.derive_concat_n]
+    rw [<- ihp]
+    rw [<- ihq]
+    rw [denote_onlyif]
+    congrm (Language.or (Language.concat_n (denote Φ (derive (fun s a => Φ s a) p x)) (denote Φ q)) ?_)
+    rw [null_commutes]
+  | star r ih =>
+    simp only [denote, derive]
+    rw [Language.derive_star_n]
+    guard_target =
+      Language.concat_n (denote Φ (derive (fun s a => Φ s a) r x)) (Language.star_n (denote Φ r))
+      = Language.concat_n (Language.derive (denote Φ r) x) (Language.star_n (denote Φ r))
+    congrm ((Language.concat_n ?_ (Language.star_n (denote Φ r))))
+    guard_target = denote Φ (derive (fun s a => Φ s a) r x) = Language.derive (denote Φ r) x
+    exact ih
