@@ -4,7 +4,7 @@ import Validator.Std.Vec
 
 import Validator.Expr.Pred
 import Validator.Regex.Regex
-import Validator.Regex.Infix
+import Validator.Regex.Elem
 import Validator.Regex.Language
 import Validator.Hedge.Language
 

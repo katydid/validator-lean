@@ -1,5 +1,5 @@
 import Validator.Regex.Closure
-import Validator.Regex.Infix
+import Validator.Regex.Elem
 import Validator.Regex.Language
 import Validator.Regex.Map
 import Validator.Regex.Pair
