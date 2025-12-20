@@ -32,10 +32,10 @@ def emptystr {α: Type} : Langs α :=
 def char {α: Type} (x : α): Langs α :=
   fun xs => xs = [x]
 
-def pred {α: Type} (p : α -> Bool): Langs α :=
+def pred {α: Type} (p : α -> Prop): Langs α :=
   fun xs => ∃ x, xs = [x] /\ p x
 
-def symbol {α: Type} (Φ: σ -> α -> Bool) (s: σ): Langs α :=
+def symbol {α: Type} (Φ: σ -> α -> Prop) (s: σ): Langs α :=
   fun xs => ∃ x, xs = [x] /\ Φ s x
 
 def any {α: Type}: Langs α :=
@@ -221,27 +221,27 @@ theorem null_char {α: Type} {c: α}:
   null (char c) = False := by
   rw [null_iff_char]
 
-theorem null_iff_pred {α: Type} {p: α -> Bool}:
+theorem null_iff_pred {α: Type} {p: α -> Prop}:
   null (pred p) <-> False :=
   Iff.intro nofun nofun
 
-theorem not_null_if_pred {α: Type} {p: α -> Bool}:
+theorem not_null_if_pred {α: Type} {p: α -> Prop}:
   null (pred p) -> False :=
   nofun
 
-theorem null_pred {α: Type} {p: α -> Bool}:
+theorem null_pred {α: Type} {p: α -> Prop}:
   null (pred p) = False := by
   rw [null_iff_pred]
 
-theorem null_iff_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Bool} {s: σ}:
+theorem null_iff_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
   null (symbol Φ s) <-> False :=
   Iff.intro nofun nofun
 
-theorem not_null_if_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Bool} {s: σ}:
+theorem not_null_if_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
   null (symbol Φ s) -> False :=
   nofun
 
-theorem null_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Bool} {s: σ}:
+theorem null_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
   null (symbol Φ s) = False := by
   rw [null_iff_symbol]
 
@@ -365,7 +365,7 @@ theorem derive_char {α: Type} [DecidableEq α] {a: α} {c: α}:
   funext
   rw [derive_iff_char]
 
-theorem derive_iff_pred {α: Type} {p: α -> Bool} {x: α} {xs: List α}:
+theorem derive_iff_pred {α: Type} {p: α -> Prop} {x: α} {xs: List α}:
   (derive (pred p) x) xs <-> (onlyif (p x) emptystr) xs := by
   simp only [derive, derives, singleton_append]
   simp only [onlyif, emptystr]
@@ -386,7 +386,7 @@ theorem derive_iff_pred {α: Type} {p: α -> Bool} {x: α} {xs: List α}:
     simp only [cons.injEq, true_and]
     exact And.intro hxs hpx
 
-theorem derive_pred {α: Type} {p: α -> Bool} {x: α}:
+theorem derive_pred {α: Type} {p: α -> Prop} {x: α}:
   (derive (pred p) x) = (onlyif (p x) emptystr) := by
   funext
   rw [derive_iff_pred]
