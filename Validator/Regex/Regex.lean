@@ -122,3 +122,41 @@ theorem denote_star_n' {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ
 theorem denote_star_n {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ):
   denote Φ (star r) = Language.star_n (denote Φ r) := by
   simp only [denote]
+
+theorem null_commutes {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ):
+  ((null r) = true) = Language.null (denote Φ r) := by
+  induction r with
+  | emptyset =>
+    unfold denote
+    rw [Language.null_emptyset]
+    unfold null
+    apply Bool.false_eq_true
+  | emptystr =>
+    unfold denote
+    rw [Language.null_emptystr]
+    unfold null
+    simp only
+  | symbol p =>
+    unfold denote
+    rw [Language.null_symbol]
+    unfold null
+    apply Bool.false_eq_true
+  | or p q ihp ihq =>
+    unfold denote
+    rw [Language.null_or]
+    unfold null
+    rw [<- ihp]
+    rw [<- ihq]
+    rw [Bool.or_eq_true]
+  | concat p q ihp ihq =>
+    unfold denote
+    rw [Language.null_concat_n]
+    unfold null
+    rw [<- ihp]
+    rw [<- ihq]
+    rw [Bool.and_eq_true]
+  | star r ih =>
+    unfold denote
+    rw [Language.null_star_n]
+    unfold null
+    simp only
