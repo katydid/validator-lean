@@ -37,23 +37,12 @@ theorem derive_is_closure_derive (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
     simp only [Regex.derive, Regex.Closure.derive]
     rw [ih1]
 
-theorem closure_derive_is_derive (Φ: σ -> Bool) (r: Regex σ) (a: α):
-  Regex.Closure.derive Φ r = Regex.derive (fun s _ => Φ s) r a := by
-  induction r with
-  | emptyset =>
-    simp only [Regex.derive, Regex.Closure.derive]
-  | emptystr =>
-    simp only [Regex.derive, Regex.Closure.derive]
-  | symbol s =>
-    simp only [Regex.derive, Regex.Closure.derive]
-  | or r1 r2 ih1 ih2 =>
-    simp only [Regex.derive, Regex.Closure.derive]
-    rw [ih1]
-    rw [ih2]
-  | concat r1 r2 ih1 ih2 =>
-    simp only [Regex.derive, Regex.Closure.derive]
-    rw [ih1]
-    rw [ih2]
-  | star r1 ih1 =>
-    simp only [Regex.derive, Regex.Closure.derive]
-    rw [ih1]
+theorem derive_commutesb {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  denote (fun s a => Φ s a) (Regex.Closure.derive (fun s => Φ s a) r) = Language.derive (denote (fun s a => Φ s a) r) a := by
+  rw [<- derive_is_closure_derive]
+  rw [<- Regex.derive_commutesb]
+
+theorem derive_commutesb' {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  denote (fun s a => Φ s a) (Regex.Closure.derive (fun s => Φ s a) r) = Language.derive (denote (fun s a => Φ s a) r) a := by
+  rw [<- derive_is_closure_derive]
+  rw [<- Regex.derive_commutesb]

@@ -12,15 +12,15 @@ inductive Regex (σ: Type) where
   | star (p: Regex σ)
   deriving DecidableEq, Ord, Repr, Hashable
 
-instance [Ord α]: Ord (Regex α) := inferInstance
+instance [Ord σ]: Ord (Regex σ) := inferInstance
 
-instance [Repr α]: Repr (Regex α) := inferInstance
+instance [Repr σ]: Repr (Regex σ) := inferInstance
 
-instance [DecidableEq α]: DecidableEq (Regex α) := inferInstance
+instance [DecidableEq σ]: DecidableEq (Regex σ) := inferInstance
 
-instance [DecidableEq α]: BEq (Regex α) := inferInstance
+instance [DecidableEq σ]: BEq (Regex σ) := inferInstance
 
-instance [Hashable α]: Hashable (Regex α) := inferInstance
+instance [Hashable σ]: Hashable (Regex σ) := inferInstance
 
 namespace Regex
 
@@ -200,3 +200,10 @@ theorem derive_commutes {σ: Type} {α: Type} (Φ: σ -> α -> Prop) [DecidableR
     congrm ((Language.concat_n ?_ (Language.star_n (denote Φ r))))
     guard_target = denote Φ (derive (fun s a => Φ s a) r x) = Language.derive (denote Φ r) x
     exact ih
+
+theorem derive_commutesb {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (x: α):
+  denote (fun s a => Φ s a) (derive (fun s a => Φ s a) r x) = Language.derive (denote (fun s a => Φ s a) r) x := by
+  rw [<- derive_commutes]
+  congr
+  funext s a
+  simp only [Bool.decide_eq_true]
