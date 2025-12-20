@@ -72,17 +72,17 @@ theorem denote_elem_sizeOf_star_right {α: Type} {σ: Type} {p: Regex σ} {x: α
 
 -- denote_symbol_lift_take and denote_symbol_lift_drop is used by denote_elem to lift
 --   a Φ predicate to work on an element of the original list:
--- * (denote_symbol: σ -> List.ElemOf xs -> Prop) -> (σ -> List.ElemOf (List.take n xs) -> Prop)
--- * (denote_symbol: σ -> List.ElemOf xs -> Prop) -> (σ -> List.ElemOf (List.drop n xs) -> Prop)
+-- * (denote_symbol: σ -> List.ElemOf xs -> Bool) -> (σ -> List.ElemOf (List.take n xs) -> Bool)
+-- * (denote_symbol: σ -> List.ElemOf xs -> Bool) -> (σ -> List.ElemOf (List.drop n xs) -> Bool)
 -- This works, because take and drop create infixes of a list and an element of an infix is a element.
 -- We need these lifting functions to make the prove that denote_list = Regex.denote possible.
 -- See denote_list_concat_n and denote_list_star_n for the exact detail.
 
-def denote_symbol_lift_take (n: Nat) (Φ: σ -> List.ElemOf xs -> Prop): (σ -> List.ElemOf (List.take n xs) -> Prop) :=
+def denote_symbol_lift_take (n: Nat) (Φ: σ -> List.ElemOf xs -> Bool): (σ -> List.ElemOf (List.take n xs) -> Bool) :=
   fun (s: σ) (y: List.ElemOf (List.take n xs)) =>
     Φ s (List.ElemOf.mk y.val xs (by apply List.list_elemof_take_is_elem))
 
-def denote_symbol_lift_drop (n: Nat) (Φ: σ -> List.ElemOf xs -> Prop): (σ -> List.ElemOf (List.drop n xs) -> Prop) :=
+def denote_symbol_lift_drop (n: Nat) (Φ: σ -> List.ElemOf xs -> Bool): (σ -> List.ElemOf (List.drop n xs) -> Bool) :=
   fun (s: σ) (y: List.ElemOf (List.drop n xs)) =>
     Φ s (List.ElemOf.mk y.val xs (by apply List.list_elemof_drop_is_elem))
 
@@ -92,7 +92,7 @@ def denote_symbol_lift_drop (n: Nat) (Φ: σ -> List.ElemOf xs -> Prop): (σ -> 
 -- The only other changes is that denote_elem contains unfolded versions of Language.or, Language.concat_n and Language.star_n.
 def denote_elem
   {α: Type} {σ: Type}
-  (x: Regex σ) (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop): Prop :=
+  (x: Regex σ) (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool): Prop :=
   match x with
   | Regex.emptyset => Language.emptyset xs
   | Regex.emptystr => Language.emptystr xs
@@ -125,7 +125,7 @@ def denote_elem
 
 -- denote_list has the same type signature as Regex.denote, but uses denote_elem.
 -- We will prove that denote_list = Regex.denote
-def denote_list {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ) (xs: List α): Prop :=
+def denote_list {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (xs: List α): Prop :=
   denote_elem r xs (fun s (x': List.ElemOf xs) => Φ s x'.val)
 
 -- We want to prove the correctness of our denote_list denotation function,
@@ -139,19 +139,19 @@ def denote_list {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ) (xs: 
 -- * denote_list Φ (Regex.concat p q) = Language.concat_n (denote_list Φ p) (denote_list Φ q)
 -- * denote_list Φ (Regex.star r) = Language.star_n (denote_list Φ r)
 
-theorem denote_list_emptyset {α: Type} {σ: Type} (Φ: σ -> α -> Prop):
+theorem denote_list_emptyset {α: Type} {σ: Type} (Φ: σ -> α -> Bool):
   denote_list Φ Regex.emptyset
   = Language.emptyset := by
   funext xs
   simp only [denote_list, denote_elem, Language.emptyset]
 
-theorem denote_list_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Prop):
+theorem denote_list_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Bool):
   denote_list Φ Regex.emptystr
   = Language.emptystr := by
   funext xs
   simp only [denote_list, denote_elem, Language.emptystr]
 
-theorem denote_list_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (s: σ):
+theorem denote_list_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (s: σ):
   denote_list Φ (Regex.symbol s)
   = Language.symbol Φ s := by
   unfold Language.symbol
@@ -169,7 +169,7 @@ theorem denote_list_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (s: σ):
     | cons x' xs =>
       simp only [List.cons.injEq, reduceCtorEq, and_false, false_and, exists_false]
 
-theorem denote_list_or {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (p q: Regex σ):
+theorem denote_list_or {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (p q: Regex σ):
   denote_list Φ (Regex.or p q)
   = Language.or (denote_list Φ p) (denote_list Φ q) := by
   unfold Language.or
@@ -200,7 +200,7 @@ theorem denote_list_or {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (p q: Regex 
 -- The functions denote_symbol_lift_take and denote_symbol_lift_drop is used to make the types of xs' the same:
 -- * denote_symbol_lift_take: (denote_symbol: σ -> List.InfixOf xs -> Prop) -> (σ -> List.InfixOf (List.take n xs) -> Prop)
 -- * denote_symbol_lift_drop: (denote_symbol: σ -> List.InfixOf xs -> Prop) -> (σ -> List.InfixOf (List.drop n xs) -> Prop)
-theorem denote_list_concat_n {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (p q: Regex σ):
+theorem denote_list_concat_n {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (p q: Regex σ):
   denote_list Φ (Regex.concat p q)
   = Language.concat_n (denote_list Φ p) (denote_list Φ q) := by
   funext xs
@@ -210,7 +210,7 @@ theorem denote_list_concat_n {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (p q: 
   unfold List.ElemOf.mk
   simp only
 
-theorem denote_list_star_n_iff {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ) (xs: List α):
+theorem denote_list_star_n_iff {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (xs: List α):
   denote_list Φ (Regex.star r) xs
   <-> Language.star_n (denote_list Φ r) xs := by
   cases xs with
@@ -251,14 +251,14 @@ theorem denote_list_star_n_iff {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: 
 -- Just like concat_n, star_n also splits the string, using take and drop.
 -- This means it also requires the lifting functions: denote_symbol_lift_take and denote_symbol_lift_drop to make this proof possible.
 -- See denote_list_concat_n for details.
-theorem denote_list_star_n {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ):
+theorem denote_list_star_n {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ):
   denote_list Φ (Regex.star r)
   = Language.star_n (denote_list Φ r) := by
   funext xs
   rw [denote_list_star_n_iff]
 
 -- Given the above theorems it is easy to prove that the definition of denote_list is the equivalent to Regex.denote:
-theorem denote_list_is_Regex.denote {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ):
+theorem denote_list_is_Regex.denote {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ):
   denote_list Φ r = Regex.denote Φ r := by
   induction r with
   | emptyset =>
@@ -287,17 +287,17 @@ theorem denote_list_is_Regex.denote {α: Type} {σ: Type} (Φ: σ -> α -> Prop)
 
 -- Helper theorems for proofs of functions that use denote_elem
 
-theorem denote_elem_emptyset {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop):
+theorem denote_elem_emptyset {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool):
   denote_elem Regex.emptyset xs Φ
   = Language.emptyset xs := by
-  simp only [denote_elem, denote_elem, Language.emptyset]
+  simp only [denote_elem, Language.emptyset]
 
-theorem denote_elem_emptystr {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop):
+theorem denote_elem_emptystr {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool):
   denote_elem Regex.emptystr xs Φ
   = Language.emptystr xs := by
-  simp only [denote_elem, denote_elem, Language.emptystr]
+  simp only [denote_elem, Language.emptystr]
 
-theorem denote_elem_symbol {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop) (s: σ):
+theorem denote_elem_symbol {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool) (s: σ):
   denote_elem (Regex.symbol s) xs Φ
   = Language.symbol Φ s (List.ElemOf.selfs xs) := by
   unfold denote_elem
@@ -316,26 +316,26 @@ theorem denote_elem_symbol {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.E
         List.cons.injEq, reduceCtorEq, and_false, false_and, nonempty_subtype, List.mem_cons,
         exists_or_eq_left, exists_const]
 
-theorem denote_elem_or {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop) (p q: Regex σ):
+theorem denote_elem_or {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool) (p q: Regex σ):
   denote_elem (Regex.or p q) xs Φ
   = ((denote_elem p xs Φ) \/ (denote_elem q xs Φ)) := by
   simp only [denote_elem]
 
-theorem denote_elem_concat_n {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop) (p q: Regex σ):
+theorem denote_elem_concat_n {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool) (p q: Regex σ):
   denote_elem (Regex.concat p q) xs Φ
   = (∃ (n: Fin (xs.length + 1)),
        (denote_elem p (List.take n xs) (denote_symbol_lift_take n Φ))
     /\ (denote_elem q (List.drop n xs) (denote_symbol_lift_drop n Φ))) := by
   simp only [denote_elem]
 
-theorem denote_elem_concat_n' {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop) (p q: Regex σ):
+theorem denote_elem_concat_n' {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool) (p q: Regex σ):
   denote_elem (Regex.concat p q) xs Φ
   = (∃ (n: Fin (xs.length + 1)),
        (denote_elem p (List.take n xs) (denote_symbol_lift_take n Φ))
     /\ (denote_elem q (List.drop n xs) (denote_symbol_lift_drop n Φ))) := by
   simp only [denote_elem]
 
-theorem denote_elem_star_n {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Prop) (r: Regex σ):
+theorem denote_elem_star_n {α: Type} {σ: Type} (xs: List α) (Φ: σ -> List.ElemOf xs -> Bool) (r: Regex σ):
   denote_elem (Regex.star r) xs Φ
   = (match xs with
     | [] => True

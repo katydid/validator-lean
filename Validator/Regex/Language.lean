@@ -35,7 +35,7 @@ def char {α: Type} (x : α): Langs α :=
 def pred {α: Type} (p : α -> Bool): Langs α :=
   fun xs => ∃ x, xs = [x] /\ p x
 
-def symbol {α: Type} (Φ: σ -> α -> Prop) (s: σ): Langs α :=
+def symbol {α: Type} (Φ: σ -> α -> Bool) (s: σ): Langs α :=
   fun xs => ∃ x, xs = [x] /\ Φ s x
 
 def any {α: Type}: Langs α :=
@@ -233,15 +233,15 @@ theorem null_pred {α: Type} {p: α -> Bool}:
   null (pred p) = False := by
   rw [null_iff_pred]
 
-theorem null_iff_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
+theorem null_iff_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Bool} {s: σ}:
   null (symbol Φ s) <-> False :=
   Iff.intro nofun nofun
 
-theorem not_null_if_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
+theorem not_null_if_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Bool} {s: σ}:
   null (symbol Φ s) -> False :=
   nofun
 
-theorem null_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Prop} {s: σ}:
+theorem null_symbol {σ: Type} {α: Type} {Φ: σ -> α -> Bool} {s: σ}:
   null (symbol Φ s) = False := by
   rw [null_iff_symbol]
 

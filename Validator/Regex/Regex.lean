@@ -26,7 +26,7 @@ namespace Regex
 
 -- A regular expression is denoted as usual, expect that allow the user to inject the denotation of the generic symbol, Φ.
 -- This allows us to handle generic predicates or even trees, without extending the original regular expression with new operators.
-def denote {α: Type} {σ: Type} (Φ : σ -> α -> Prop) (r: Regex σ): (xs: List α) -> Prop :=
+def denote {α: Type} {σ: Type} (Φ : σ -> α -> Bool) (r: Regex σ): (xs: List α) -> Prop :=
   match r with
   | emptyset => Language.emptyset
   | emptystr => Language.emptystr
@@ -52,7 +52,7 @@ def unescapable (x: Regex σ): Bool :=
 def onlyif (cond: Prop) [dcond: Decidable cond] (x: Regex σ): Regex σ :=
   if cond then x else emptyset
 
-def denote_onlyif {α: Type} (Φ : σ -> α -> Prop) (condition: Prop) [dcond: Decidable condition] (r: Regex σ):
+def denote_onlyif {α: Type} (Φ : σ -> α -> Bool) (condition: Prop) [dcond: Decidable condition] (r: Regex σ):
   denote Φ (onlyif condition r) = Language.onlyif condition (denote Φ r) := by
   unfold Language.onlyif
   unfold onlyif
@@ -93,32 +93,32 @@ def derives (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ
 -- * Regex.denote Φ (Regex.concat p q) = Language.concat_n (Regex.denote Φ p) (Regex.denote Φ q)
 -- * Regex.denote Φ (Regex.star r) = Language.star_n (Regex.denote Φ r)
 
-theorem denote_emptyset {α: Type} {σ: Type} (Φ: σ -> α -> Prop):
+theorem denote_emptyset {α: Type} {σ: Type} (Φ: σ -> α -> Bool):
   denote Φ emptyset = Language.emptyset := by
   simp only [denote]
 
-theorem denote_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Prop):
+theorem denote_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Bool):
   denote Φ emptystr = Language.emptystr := by
   simp only [denote]
 
-theorem denote_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (s: σ):
+theorem denote_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (s: σ):
   denote Φ (symbol s) = Language.symbol Φ s := by
   simp only [denote]
 
-theorem denote_or {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (p q: Regex σ):
+theorem denote_or {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (p q: Regex σ):
   denote Φ (or p q) = Language.or (denote Φ p) (denote Φ q) := by
   funext
   simp only [denote, Language.or]
 
-theorem denote_concat_n {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (p q: Regex σ):
+theorem denote_concat_n {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (p q: Regex σ):
   denote Φ (concat p q) = Language.concat_n (denote Φ p) (denote Φ q) := by
   funext
   simp only [denote]
 
-theorem denote_star_n' {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ) (xs: List α):
+theorem denote_star_n' {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (xs: List α):
   denote Φ (star r) xs <-> Language.star_n (denote Φ r) xs := by
   simp only [denote]
 
-theorem denote_star_n {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ):
+theorem denote_star_n {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r: Regex σ):
   denote Φ (star r) = Language.star_n (denote Φ r) := by
   simp only [denote]
