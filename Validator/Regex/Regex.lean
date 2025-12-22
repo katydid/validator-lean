@@ -10,7 +10,7 @@ inductive Regex (σ: Type) where
   | or (r1 r2: Regex σ)
   | concat (r1 r2: Regex σ)
   | star (r1: Regex σ)
-  deriving DecidableEq, Ord, Repr, Hashable
+  deriving DecidableEq, Ord, Repr, Hashable, Repr
 
 instance [Ord σ]: Ord (Regex σ) := inferInstance
 
@@ -81,6 +81,10 @@ def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): R
       (concat (derive Φ r1 a) r2)
       (onlyif (null r1) (derive Φ r2 a))
   | star r1 => concat (derive Φ r1 a) (star r1)
+
+#guard
+  derive (· == ·) (Regex.or (Regex.symbol 1) (Regex.symbol 2)) 1
+  = Regex.or Regex.emptystr Regex.emptyset
 
 def map_derive (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
   Vec.map rs (fun r => derive Φ r a)

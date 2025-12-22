@@ -16,6 +16,11 @@ def derive {σ: Type} (Φ: σ -> Bool) (r: Regex σ): Regex σ :=
       (onlyif (null r1) (derive Φ r2))
   | star r1 => concat (derive Φ r1) (star r1)
 
+-- example to show how to embed the input inside the predicate closure
+#guard
+  Regex.derive (· == ·) (Regex.or (Regex.symbol 1) (Regex.symbol 2)) 1
+  = Regex.Closure.derive (· == 1) (Regex.or (Regex.symbol 1) (Regex.symbol 2))
+
 theorem derive_is_closure_derive (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
   Regex.derive Φ r a = Regex.Closure.derive (fun s => Φ s a) r := by
   induction r with
