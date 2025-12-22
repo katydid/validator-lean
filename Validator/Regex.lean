@@ -1,3 +1,4 @@
+import Validator.Regex.Compress
 import Validator.Regex.Elem
 import Validator.Regex.Enter
 import Validator.Regex.EnterMem

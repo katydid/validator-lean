@@ -6,7 +6,7 @@
 import Validator.Std.Hedge
 import Validator.Std.Vec
 
-import Validator.Hedge.Compress
+import Validator.Regex.Compress
 import Validator.Hedge.Grammar
 import Validator.Hedge.IfExpr
 import Validator.Regex.Regex
