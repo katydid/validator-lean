@@ -6,7 +6,10 @@ import Validator.Regex.Replace
 
 namespace Leave
 
-def deriveLeaves
+-- leaves takes a vector of expressions and vector of bools.
+-- The vectors of bools represent the nullability of the derived child expressions.
+-- Each bool will then replace each symbol expression with either an emptystr or emptyset.
+def leaves
   (rs: Vec (Regex σ) l)
   (ps: Vec Bool (Symbol.nums rs))
   : (Vec (Regex σ) l) :=
@@ -15,7 +18,7 @@ def deriveLeaves
   Regex.Point.derives replaced
 
 def deriveLeaveM [Monad m] {l: Nat} (xs: Vec (Regex σ) l) (ns: Vec Bool (Symbol.nums xs)): m (Vec (Regex σ) l) := do
-  return deriveLeaves xs ns
+  return leaves xs ns
 
 class DeriveLeaveM (m: Type -> Type u) (σ: Type) where
   deriveLeaveM {l: Nat} (xs: Vec (Regex σ) l) (ns: Vec Bool (Symbol.nums xs)): m (Vec (Regex σ) l)

@@ -6,10 +6,10 @@ import Validator.Regex.Symbol
 
 namespace LeaveSmart
 
--- deriveLeaves takes a vector of expressions and vector of bools.
+-- leaves takes a vector of expressions and vector of bools.
 -- The vectors of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each symbol expression with either an emptystr or emptyset.
-def deriveLeaves
+def leaves
   (xs: Vec (Regex σ) l)
   (ns: Vec Bool (Symbol.nums xs))
   : (Vec (Regex σ) l) :=
@@ -19,7 +19,4 @@ def deriveLeaves
   Regex.Smart.derive_points res'
 
 def deriveLeaveM [Monad m] {l: Nat} (xs: Vec (Regex σ) l) (ns: Vec Bool (Symbol.nums xs)): m (Vec (Regex σ) l) := do
-  return deriveLeaves xs ns
-
-class DeriveLeaveM (m: Type -> Type u) (σ: Type) where
-  deriveLeaveM {l: Nat} (xs: Vec (Regex σ) l) (ns: Vec Bool (Symbol.nums xs)): m (Vec (Regex σ) l)
+  return leaves xs ns

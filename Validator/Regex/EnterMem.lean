@@ -53,7 +53,7 @@ def deriveEnter
   match get? memoized xs with
   | Option.none =>
     Debug.debug "cache miss"
-    let newvalue := Enter.deriveEnter xs
+    let newvalue := Enter.enters xs
     EnterMem.setEnter (insert memoized xs newvalue)
     return newvalue
   | Option.some value =>

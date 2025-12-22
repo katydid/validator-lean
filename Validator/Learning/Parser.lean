@@ -30,7 +30,7 @@ def deriveEnter [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   return IfExpr.evals G Φ enters token
 
 def deriveLeaveM [DecidableEq φ] [ValidateM m (Symbol n φ) α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
-  LeaveSmart.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
+  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
 
 def deriveValue [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)

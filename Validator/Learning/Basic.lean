@@ -25,7 +25,7 @@ def derive {α: Type}
   then xs
   else
     -- enters is one of our two new memoizable functions.
-    let ifExprs: IfExprs n φ (Symbol.nums xs) := Enter.deriveEnter xs
+    let ifExprs: IfExprs n φ (Symbol.nums xs) := Enter.enters xs
     match t with
     | Hedge.Node.mk label children =>
       -- childxs = expressions to evaluate on children.
@@ -34,7 +34,7 @@ def derive {α: Type}
       let dchildxs: Rules n φ (Symbol.nums xs) := List.foldl (derive G Φ) childxs children
       let ns: Vec Bool (Symbol.nums xs) := Vec.map dchildxs Rule.null
       -- leaves is the other one of our two new memoizable functions.
-      let lchildxs: Rules n φ l := LeaveSmart.deriveLeaves xs ns
+      let lchildxs: Rules n φ l := LeaveSmart.leaves xs ns
       lchildxs
 
 def derivs {α: Type}

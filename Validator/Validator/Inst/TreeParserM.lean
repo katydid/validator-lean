@@ -21,9 +21,9 @@ instance
   token := Parser.token
 
 instance : Enter.DeriveEnter (Impl α) (Symbol n φ) where
-  deriveEnter xs := return Enter.deriveEnter xs
+  deriveEnter xs := return Enter.enters xs
 
-instance : LeaveSmart.DeriveLeaveM (Impl α) (Symbol n φ) where
+instance : Leave.DeriveLeaveM (Impl α) (Symbol n φ) where
   deriveLeaveM xs ns := LeaveSmart.deriveLeaveM xs ns
 
 instance [DecidableEq φ] [DecidableEq α]: ValidateM (Impl α) (Symbol n φ) α where

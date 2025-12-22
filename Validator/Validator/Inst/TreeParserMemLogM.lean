@@ -81,7 +81,7 @@ instance [DecidableEq φ] [Hashable φ]: LeaveMem (Impl n φ α) (Symbol n φ) w
       set (State.mk s.parser s.enter leave s.logs)
 
 -- This should just follow from the instance declared in LeaveMem, but we spell it out just in case.
-instance [DecidableEq φ] [Hashable φ]: LeaveSmart.DeriveLeaveM (Impl n φ α) (Symbol n φ) where
+instance [DecidableEq φ] [Hashable φ]: Leave.DeriveLeaveM (Impl n φ α) (Symbol n φ) where
   deriveLeaveM {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): Impl n φ α (Rules n φ l) := LeaveMem.deriveLeaveM xs ns
 
 instance [DecidableEq φ] [Hashable φ]: ValidateM (Impl n φ α) (Symbol n φ) α where

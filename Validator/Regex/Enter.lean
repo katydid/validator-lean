@@ -6,7 +6,10 @@ import Validator.Regex.Regex
 
 namespace Enter
 
-def deriveEnter (xs: Vec (Regex σ) l): Vec σ (Symbol.nums xs) :=
+def enter (x: Regex σ): Vec σ (Symbol.num x) :=
+  (Symbol.extractFrom x).2
+
+def enters (xs: Vec (Regex σ) l): Vec σ (Symbol.nums xs) :=
   (Symbol.extractsFrom xs).2
 
 class DeriveEnter (m: Type -> Type u) (σ: Type) where

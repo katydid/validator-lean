@@ -18,6 +18,6 @@ class ValidateM (m: Type -> Type u) (σ: Type) (α: Type) extends
   MonadExcept String m,
   Parser m α,
   Enter.DeriveEnter m σ,
-  LeaveSmart.DeriveLeaveM m σ
+  Leave.DeriveLeaveM m σ
 
 namespace ValidateM
