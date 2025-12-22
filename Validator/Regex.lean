@@ -14,5 +14,6 @@ import Validator.Regex.Point
 import Validator.Regex.Regex
 import Validator.Regex.RegexID
 import Validator.Regex.Replace
+import Validator.Regex.Room
 import Validator.Regex.Smart
 import Validator.Regex.Symbol

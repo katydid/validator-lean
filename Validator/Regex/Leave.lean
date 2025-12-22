@@ -10,8 +10,8 @@ def leave
   (r: Regex σ)
   (ps: Vec Bool (Symbol.num r))
   : Regex σ :=
-  let replaces: Vec (σ × Bool) (Symbol.num r) := Vec.zip (Symbol.extractFrom r).2 ps
-  let replaced: Regex (σ × Bool) := Symbol.replaceFrom (Symbol.extractFrom r).1 replaces
+  let points: Vec (σ × Bool) (Symbol.num r) := Vec.zip (Symbol.extractFrom r).2 ps
+  let replaced: Regex (σ × Bool) := Symbol.replaceFrom (Symbol.extractFrom r).1 points
   Regex.Point.derive replaced
 
 -- leaves takes a vector of expressions and vector of bools.
@@ -21,8 +21,8 @@ def leaves
   (rs: Vec (Regex σ) l)
   (ps: Vec Bool (Symbol.nums rs))
   : (Vec (Regex σ) l) :=
-  let replaces: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip (Symbol.extractsFrom rs).2 ps
-  let replaced: Vec (Regex (σ × Bool)) l := Symbol.replacesFrom (Symbol.extractsFrom rs).1 replaces
+  let points: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip (Symbol.extractsFrom rs).2 ps
+  let replaced: Vec (Regex (σ × Bool)) l := Symbol.replacesFrom (Symbol.extractsFrom rs).1 points
   Regex.Point.derives replaced
 
 def deriveLeaveM [Monad m] {l: Nat} (xs: Vec (Regex σ) l) (ns: Vec Bool (Symbol.nums xs)): m (Vec (Regex σ) l) := do

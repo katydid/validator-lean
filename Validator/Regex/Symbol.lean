@@ -9,6 +9,7 @@ import Validator.Regex.Point
 import Validator.Regex.Regex
 import Validator.Regex.RegexID
 import Validator.Regex.Replace
+import Validator.Regex.Room
 
 -- I want to define a map function over a regular expression:
 
@@ -38,23 +39,6 @@ import Validator.Regex.Replace
 -- We want to prove the theorem that if the function is id then replace (id (extract r)) = r
 
 namespace Symbol
-
-def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
-  Regex.Point.derive
-    (replaceFrom
-      (extractFrom r).1
-      (Vec.map
-        (extractFrom r).2
-        (fun s => (s, Φ s a))
-      )
-    )
-
-def derive' {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
-  let (r', symbols): (RegexID (Symbol.num r) × Vec σ (Symbol.num r)) := extractFrom r
-  let pred_results: Vec Bool (Symbol.num r) := Vec.map symbols (fun s => Φ s a)
-  let replaces: Vec (σ × Bool) (Symbol.num r) := Vec.zip symbols pred_results
-  let replaced: Regex (σ × Bool) := replaceFrom r' replaces
-  Regex.Point.derive replaced
 
 def derives {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
   let (rs', symbols): (Vec (RegexID (Symbol.nums rs)) l × Vec σ (Symbol.nums rs)) := Symbol.extractsFrom rs
@@ -86,25 +70,6 @@ def derives_closure {σ: Type}
   let symbols: Vec σ (Symbol.nums rs) := Enter.enters rs
   let pred_results: Vec Bool (Symbol.nums rs) := Vec.map symbols p
   Leave.leaves rs pred_results
-
-def derive_closure {σ: Type}
-  (p: σ -> Bool) (r: Regex σ): Regex σ :=
-  let symbols: Vec σ (Symbol.nums #vec[r]) := Enter.enters #vec[r]
-  let pred_results: Vec Bool (Symbol.nums #vec[r]) := Vec.map symbols p
-  let res := (Leave.leaves #vec[r] pred_results)
-  match res with
-  | Vec.cons res' Vec.nil => res'
-
-def derive_closure' {σ: Type}
-  (p: σ -> Bool) (r: Regex σ): Regex σ :=
-  Regex.Point.derive
-    (replaceFrom
-      (extractFrom r).1
-      (Vec.map
-        (extractFrom r).2
-        (fun s => (s, p s))
-      )
-    )
 
 theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
   r = replaceFrom (extract r acc).1 (extract r acc).2 := by
@@ -309,18 +274,12 @@ theorem extractFrom_replaceFrom_is_fmap (r: Regex α) (f: α -> β):
   rw [<- replace_cast_both]
   rw [<- extract_replace_is_fmap r Vec.nil]
 
-theorem Symbol_derive_is_derive'
+theorem Room_derive_unfolded_is_Regex_derive
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
-  Symbol.derive Φ r a = Symbol.derive' Φ r a := by
-  unfold Symbol.derive
-  unfold Symbol.derive'
+  Room.derive_unfolded Φ r a = Regex.derive Φ r a := by
+  unfold Room.derive_unfolded
   simp only
-  rw [Vec.zip_map]
-
-theorem Symbol_derive_is_Regex_derive
-  {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
-  Symbol.derive Φ r a = Regex.derive Φ r a := by
-  unfold Symbol.derive
+  rw [<- Vec.zip_map]
   rw [<- extractFrom_replaceFrom_is_fmap]
   rw [Regex.Point.derive_is_point_derive]
 
@@ -378,30 +337,32 @@ theorem extractsFrom_replacesFrom_is_fmap (rs: Vec (Regex α) l) (f: α -> β):
 
 theorem Symbol_derives_is_fmap
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives Φ rs a = Vec.map rs (fun r => Symbol.derive Φ r a) := by
+  Symbol.derives Φ rs a = Vec.map rs (fun r => Room.derive_unfolded Φ r a) := by
   unfold Symbol.derives
   simp only
   unfold Regex.Point.derives
-  unfold Symbol.derive
+  unfold Room.derive_unfolded
   nth_rewrite 2 [<- Vec.map_map]
   nth_rewrite 1 [<- Vec.map_map]
   apply (congrArg (fun xs => Vec.map xs Regex.Point.derive))
+  rw [Vec.map_id]
   rw [<- Vec.zip_map]
-  -- rewrites under the closure
-  simp only [<- extractFrom_replaceFrom_is_fmap]
   rw [<- extractsFrom_replacesFrom_is_fmap]
   unfold Regex.maps
-  simp only [Vec.map_map]
+  simp only [<- Vec.zip_map]
+  simp only [<- extractFrom_replaceFrom_is_fmap]
 
 theorem Symbol_derives_is_Regex_derives
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool)
   (r: Vec (Regex σ) l) (a: α):
   Symbol.derives Φ r a = Regex.map_derive Φ r a := by
   rw [Symbol_derives_is_fmap]
-  unfold Symbol.derive
+  unfold Room.derive_unfolded
   unfold Regex.map_derive
   congr
   funext r
+  simp only
+  simp only [<- Vec.zip_map]
   rw [<- extractFrom_replaceFrom_is_fmap]
   rw [Regex.Point.derive_is_point_derive]
 
@@ -441,12 +402,12 @@ theorem Symbol_derives_is_derives_closure
   Symbol.derives p rs a = Symbol.derives_closure (fun s => p s a) rs := by
   rfl
 
-theorem Symbol_derive_closure_is_derive
+theorem Room_derive_partial_unfolded_is_derive'
   (p: σ -> Bool) (r: Regex σ) (a: α):
-  Symbol.derive_closure' p r = Symbol.derive (fun s _ => p s) r a := by
+  Room.derive_partial_unfolded p r = Room.derive_unfolded (fun s _ => p s) r a := by
   rfl
 
-theorem Symbol_derive_is_derive_closure
+theorem Symbol_derive'_is_Room_derive_partial_unfolded
   (p: σ -> α -> Bool) (r: Regex σ) (a: α):
-  Symbol.derive p r a = Symbol.derive_closure' (fun s => p s a) r := by
+  Room.derive_unfolded p r a = Room.derive_partial_unfolded (fun s => p s a) r := by
   rfl
