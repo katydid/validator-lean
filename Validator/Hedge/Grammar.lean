@@ -18,8 +18,9 @@ import Validator.Hedge.Language
 -- n = the number of non-terminals
 abbrev Ref (n: Nat) := Fin n -- non-terminal
 
-abbrev Rule (n: Nat) (φ: Type) :=
-  Regex (φ × Ref n)
+abbrev Symbol (n: Nat) (φ: Type) := (φ × Ref n)
+
+abbrev Rule (n: Nat) (φ: Type) := Regex (Symbol n φ)
 
 abbrev Rules (n: Nat) (φ: Type) (l: Nat) :=
   Vec (Rule n φ) l

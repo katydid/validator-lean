@@ -1,6 +1,5 @@
 import Validator.Std
 
-import Validator.Derive
 import Validator.Hedge
 import Validator.Learning
 import Validator.Memoize

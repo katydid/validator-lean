@@ -14,25 +14,25 @@ import Validator.Parser.Hint
 import Validator.Parser.Parser
 import Validator.Parser.TokenTree
 
-import Validator.Derive.Enter
-import Validator.Derive.Leave
+import Validator.Regex.Enter
+import Validator.Regex.LeaveSmart
 
 import Validator.Validator.ValidateM
 import Validator.Validator.Inst.TreeParserM
 
 namespace Parser
 
-def deriveEnter [DecidableEq φ] [ValidateM m n φ α]
+def deriveEnter [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ (Symbol.nums xs)) := do
   let enters <- Enter.DeriveEnter.deriveEnter xs
   let token <- Parser.token
   return IfExpr.evals G Φ enters token
 
-def deriveLeaveM [DecidableEq φ] [ValidateM m n φ α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
-  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
+def deriveLeaveM [DecidableEq φ] [ValidateM m (Symbol n φ) α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
+  LeaveSmart.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
 
-def deriveValue [DecidableEq φ] [ValidateM m n φ α]
+def deriveValue [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ l) := do
   deriveEnter G Φ xs >>= deriveLeaveM (α := α) xs
@@ -40,7 +40,7 @@ def deriveValue [DecidableEq φ] [ValidateM m n φ α]
 -- TODO: Is it possible to have a Parser type that can be proved to be of the correct shape, and have not expection throwing
 -- for example: can you prove that your Parser will never return an Hint.leave after returning a Hint.field.
 -- This class can be called the LawfulParser.
-partial def derive [DecidableEq φ] [ValidateM m n φ α]
+partial def derive [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ l) := do
   if List.all xs.toList Regex.unescapable then
@@ -60,7 +60,7 @@ partial def derive [DecidableEq φ] [ValidateM m n φ α]
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top
 
-def validate {m} [DecidableEq φ] [ValidateM m n φ α]
+def validate {m} [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (x: Rule n φ): m Bool := do
   let dxs <- derive G Φ (Vec.cons x Vec.nil)

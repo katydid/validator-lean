@@ -65,7 +65,7 @@ instance [DecidableEq φ] [Hashable φ]: MemEnter (Impl n φ α) n φ where
       set (State.mk s.parser enter s.leave s.logs)
 
 -- This should just follow from the instance declared in MemEnter, but we spell it out just in case.
-instance [DecidableEq φ] [Hashable φ]: Enter.DeriveEnter (Impl n φ α) n φ where
+instance [DecidableEq φ] [Hashable φ]: Enter.DeriveEnter (Impl n φ α) (Symbol n φ) where
   deriveEnter {l: Nat} (xs: Rules n φ l): Impl n φ α (IfExprs n φ (Symbol.nums xs)) := MemEnter.deriveEnter xs
 
 instance [DecidableEq φ] [Hashable φ]: MemLeave (Impl n φ α) n φ where
@@ -78,10 +78,10 @@ instance [DecidableEq φ] [Hashable φ]: MemLeave (Impl n φ α) n φ where
       set (State.mk s.parser s.enter leave s.logs)
 
 -- This should just follow from the instance declared in MemLeave, but we spell it out just in case.
-instance [DecidableEq φ] [Hashable φ]: Leave.DeriveLeaveM (Impl n φ α) n φ where
+instance [DecidableEq φ] [Hashable φ]: LeaveSmart.DeriveLeaveM (Impl n φ α) (Symbol n φ) where
   deriveLeaveM {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): Impl n φ α (Rules n φ l) := MemLeave.deriveLeaveM xs ns
 
-instance [DecidableEq φ] [Hashable φ]: ValidateM (Impl n φ α) n φ α where
+instance [DecidableEq φ] [Hashable φ]: ValidateM (Impl n φ α) (Symbol n φ) α where
   -- all instances have been created, so no implementations are required here
 
 def run [DecidableEq φ] [Hashable φ] (f: Impl n φ α β) (t: Hedge.Node α): EStateM.Result String (State n φ α) β :=

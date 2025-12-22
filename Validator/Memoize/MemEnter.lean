@@ -7,7 +7,7 @@ import Validator.Hedge.IfExpr
 import Validator.Regex.Regex
 import Validator.Regex.Symbol
 
-import Validator.Derive.Enter
+import Validator.Regex.Enter
 
 abbrev MemEnter.EnterMap (n: Nat) φ [DecidableEq φ] [Hashable φ] :=
   Std.ExtDHashMap
@@ -62,5 +62,5 @@ def deriveEnter
     Debug.debug "cache hit"
     return value
 
-instance [DecidableEq φ] [Hashable φ] [Monad m] [Debug m] [MemEnter m n φ] : Enter.DeriveEnter m n φ where
+instance [DecidableEq φ] [Hashable φ] [Monad m] [Debug m] [MemEnter m n φ] : Enter.DeriveEnter m (φ × Ref n) where
   deriveEnter {l: Nat} (xs: Rules n φ l): m (IfExprs n φ (Symbol.nums xs)) := deriveEnter xs

@@ -14,8 +14,8 @@ import Validator.Hedge.Grammar
 import Validator.Hedge.IfExpr
 import Validator.Regex.Regex
 
-import Validator.Derive.Enter
-import Validator.Derive.Leave
+import Validator.Regex.Enter
+import Validator.Regex.LeaveSmart
 
 namespace Compress
 
@@ -36,7 +36,7 @@ def derive [DecidableEq φ]
       let cdchildxs := List.foldl (derive G Φ) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs := Compress.expand indices cdchildxs
-      Leave.deriveLeaves xs (Vec.map dchildxs Rule.null)
+      LeaveSmart.deriveLeaves xs (Vec.map dchildxs Rule.null)
 
 def derivs [DecidableEq φ]
   (G: Grammar n φ) (Φ : φ → α → Bool)

@@ -8,7 +8,7 @@ import Validator.Hedge.IfExpr
 import Validator.Regex.Regex
 import Validator.Regex.Symbol
 
-import Validator.Derive.Leave
+import Validator.Regex.LeaveSmart
 
 def hashRulesAndNulls {n: Nat} {φ: Type} {l: Nat} [Hashable φ] (x: (xs: Rules n φ l) × (Vec Bool (Symbol.nums xs))): UInt64 :=
   mixHash (hash x.1) (hash x.2)
@@ -60,12 +60,12 @@ def deriveLeaveM
   match get? memoized key with
   | Option.none =>
     Debug.debug "cache miss"
-    let newvalue := Leave.deriveLeaves xs ns
+    let newvalue := LeaveSmart.deriveLeaves xs ns
     MemLeave.setLeave (insert memoized key newvalue)
     return newvalue
   | Option.some value =>
     Debug.debug "cache hit"
     return value
 
-instance [DecidableEq φ] [Hashable φ] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n φ] : Leave.DeriveLeaveM m n φ where
+instance [DecidableEq φ] [Hashable φ] [Monad m] [Debug m] [MonadExcept String m] [MemLeave m n φ] : LeaveSmart.DeriveLeaveM m (Symbol n φ) where
   deriveLeaveM {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n φ l) := deriveLeaveM xs ns

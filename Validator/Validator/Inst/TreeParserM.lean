@@ -1,3 +1,4 @@
+import Validator.Hedge.Grammar
 import Validator.Parser.TreeParser
 
 import Validator.Validator.ValidateM
@@ -19,13 +20,13 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance : Enter.DeriveEnter (Impl α) n φ where
+instance : Enter.DeriveEnter (Impl α) (Symbol n φ) where
   deriveEnter xs := return Enter.deriveEnter xs
 
-instance : Leave.DeriveLeaveM (Impl α) n φ where
-  deriveLeaveM xs ns := Leave.deriveLeaveM xs ns
+instance : LeaveSmart.DeriveLeaveM (Impl α) (Symbol n φ) where
+  deriveLeaveM xs ns := LeaveSmart.deriveLeaveM xs ns
 
-instance [DecidableEq φ] [DecidableEq α]: ValidateM (Impl α) n φ α where
+instance [DecidableEq φ] [DecidableEq α]: ValidateM (Impl α) (Symbol n φ) α where
   -- all instances have been created, so no implementations are required here
 
 def run' (x: Impl α β) (t: Hedge.Node α): Except String β :=

@@ -10,7 +10,7 @@ import Validator.Learning.Parser
 
 namespace Memoize
 
-def validate {m} [DecidableEq φ] [ValidateM m n φ α]
+def validate {m} [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ : φ → α → Bool)
   (x: Rule n φ): m Bool :=
   Parser.validate G Φ x

@@ -11,8 +11,8 @@ import Validator.Hedge.Grammar
 import Validator.Hedge.IfExpr
 import Validator.Regex.Regex
 
-import Validator.Derive.Enter
-import Validator.Derive.Leave
+import Validator.Regex.Enter
+import Validator.Regex.LeaveSmart
 
 import Validator.Parser.TokenTree
 import Validator.Parser.Parser
@@ -23,22 +23,22 @@ import Validator.Validator.Inst.TreeParserMemM
 
 namespace Validate
 
-def deriveEnter [DecidableEq φ] [ValidateM m n φ α]
+def deriveEnter [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ (Symbol.nums xs)) := do
   let token <- Parser.token
   let enters <- Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals G Φ enters token
 
-def deriveLeaveM [ValidateM m n φ α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
-  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
+def deriveLeaveM [ValidateM m (Symbol n φ) α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
+  LeaveSmart.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
 
-def deriveValue [DecidableEq φ] [ValidateM m n φ α]
+def deriveValue [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ l) := do
   deriveLeaveM (α := α) xs (<- deriveEnter G Φ xs)
 
-partial def derive [DecidableEq φ] [ValidateM m n φ α]
+partial def derive [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (xs: Rules n φ l): m (Rules n φ l) := do
   if List.all xs.toList Regex.unescapable then
@@ -67,7 +67,7 @@ partial def derive [DecidableEq φ] [ValidateM m n φ α]
 
 def validate {m} {n: Nat} {α: Type} [DecidableEq φ]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  [ValidateM m n φ α] (x: Rule n φ): m Bool := do
+  [ValidateM m (Symbol n φ) α] (x: Rule n φ): m Bool := do
   let dxs <- derive G Φ (Vec.cons x Vec.nil)
   return Rule.null dxs.head
 

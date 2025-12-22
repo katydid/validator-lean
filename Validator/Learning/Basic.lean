@@ -13,8 +13,8 @@ import Validator.Hedge.IfExpr
 import Validator.Regex.Language
 import Validator.Pred.AnyEq
 
-import Validator.Derive.Enter
-import Validator.Derive.Leave
+import Validator.Regex.Enter
+import Validator.Regex.LeaveSmart
 
 namespace Basic
 
@@ -34,7 +34,7 @@ def derive {α: Type}
       let dchildxs: Rules n φ (Symbol.nums xs) := List.foldl (derive G Φ) childxs children
       let ns: Vec Bool (Symbol.nums xs) := Vec.map dchildxs Rule.null
       -- leaves is the other one of our two new memoizable functions.
-      let lchildxs: Rules n φ l := Leave.deriveLeaves xs ns
+      let lchildxs: Rules n φ l := LeaveSmart.deriveLeaves xs ns
       lchildxs
 
 def derivs {α: Type}
