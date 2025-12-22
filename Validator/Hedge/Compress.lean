@@ -1,7 +1,6 @@
 import Validator.Std.Vec
 
 import Validator.Regex.Regex
-import Validator.Hedge.Grammar
 
 namespace Compress
 
@@ -167,8 +166,8 @@ def indices [DecidableEq α] {xs: List α} (ys: { ys': List α // ∀ x ∈ xs, 
           )
         )
 
-def compress [DecidableEq φ] (xs: Rules n φ l1): Σ l2, ((Rules n φ l2) × (Indices l2 l1)) :=
-  let xs_list: List (Rule n φ) := xs.toList
+def compress [DecidableEq σ] (xs: Vec (Regex σ) l1): Σ l2, ((Vec (Regex σ) l2) × (Indices l2 l1)) :=
+  let xs_list: List (Regex σ) := xs.toList
   have hn : xs_list.length = l1 := by
     simp_all only [Vec.toList_length, xs_list]
 
@@ -176,7 +175,7 @@ def compress [DecidableEq φ] (xs: Rules n φ l1): Σ l2, ((Rules n φ l2) × (I
   -- TODO: let sxs := List.mergeSort xs
 
   -- remove duplicates
-  let xs_noreps: { ys: List (Rule n φ) // ∀ x ∈ xs_list, x ∈ ys } := eraseReps_sub xs_list
+  let xs_noreps: { ys: List (Regex σ) // ∀ x ∈ xs_list, x ∈ ys } := eraseReps_sub xs_list
 
   -- get indices
   let xs_idxs: Vec (Fin (xs_noreps.val).length) (List.length xs_list) := indices xs_noreps
@@ -213,10 +212,10 @@ def indexOf [DecidableEq α] (xs: Vec (Regex α) l) (y: Regex α) (h: y ∈ xs \
   then Index.emptyset
   else Index.val (Vec.indexOf xs y (mem_emptyset h hy))
 
-def ofIndex' (xs: Rules n φ l) (index: Fin l): Rule n φ :=
+def ofIndex' (xs: Vec (Regex σ) l) (index: Fin l): Regex σ :=
   xs.get index
 
-def ofIndex (xs: Rules n φ l) (index: Index l): Rule n φ :=
+def ofIndex (xs: Vec (Regex σ) l) (index: Index l): Regex σ :=
   match index with
   | Index.emptyset => Regex.emptyset
   | Index.val n => ofIndex' xs n
@@ -224,12 +223,12 @@ def ofIndex (xs: Rules n φ l) (index: Index l): Rule n φ :=
 def compressed [DecidableEq σ] (xs: Vec (Regex σ) l): Nat :=
   (List.erase (List.eraseReps xs.toList) Regex.emptyset).length
 
-def compressM [DecidableEq φ] [Monad m] (xs: Rules n φ l1): m (Σ l2, (Rules n φ l2) × Indices l2 l1) := do
+def compressM [DecidableEq σ] [Monad m] (xs: Vec (Regex σ) l1): m (Σ l2, (Vec (Regex σ) l2) × Indices l2 l1) := do
   return compress xs
 
 -- expand expands a list of expressions.
-def expand (indices: Indices l1 l2) (xs: Rules n φ l1): (Rules n φ l2) :=
+def expand (indices: Indices l1 l2) (xs: Vec (Regex σ) l1): (Vec (Regex σ) l2) :=
   Vec.map indices (ofIndex xs)
 
-def expandM [Monad m] (indices: Indices l1 l2) (xs: Rules n φ l1): m (Rules n φ l2) :=
+def expandM [Monad m] (indices: Indices l1 l2) (xs: Vec (Regex σ) l1): m (Vec (Regex σ) l2) :=
   return (expand indices xs)
