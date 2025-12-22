@@ -45,22 +45,13 @@ def derives_closure {σ: Type}
   let pred_results: Vec Bool (Symbol.nums rs) := Vec.map symbols p
   Leave.leaves rs pred_results
 
-theorem Room_derive_unfolded_is_Regex_derive
-  {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
-  Room.derive_unfolded Φ r a = Regex.derive Φ r a := by
-  unfold Room.derive_unfolded
-  simp only
-  rw [<- Vec.zip_map]
-  rw [<- extractFrom_replaceFrom_is_fmap]
-  rw [Regex.Point.derive_is_point_derive]
-
 theorem Symbol_derives_is_fmap
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives Φ rs a = Vec.map rs (fun r => Room.derive_unfolded Φ r a) := by
+  Symbol.derives Φ rs a = Vec.map rs (fun r => Room.derive_unapplied_unfolded Φ r a) := by
   unfold Symbol.derives
   simp only
   unfold Regex.Point.derives
-  unfold Room.derive_unfolded
+  unfold Room.derive_unapplied_unfolded
   nth_rewrite 2 [<- Vec.map_map]
   nth_rewrite 1 [<- Vec.map_map]
   apply (congrArg (fun xs => Vec.map xs Regex.Point.derive))
@@ -76,7 +67,7 @@ theorem Symbol_derives_is_Regex_derives
   (r: Vec (Regex σ) l) (a: α):
   Symbol.derives Φ r a = Regex.map_derive Φ r a := by
   rw [Symbol_derives_is_fmap]
-  unfold Room.derive_unfolded
+  unfold Room.derive_unapplied_unfolded
   unfold Regex.map_derive
   congr
   funext r
@@ -119,14 +110,4 @@ theorem Symbol_derives_closure_is_derives
 theorem Symbol_derives_is_derives_closure
   {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
   Symbol.derives p rs a = Symbol.derives_closure (fun s => p s a) rs := by
-  rfl
-
-theorem Room_derive_partial_unfolded_is_derive'
-  (p: σ -> Bool) (r: Regex σ) (a: α):
-  Room.derive_partial_unfolded p r = Room.derive_unfolded (fun s _ => p s) r a := by
-  rfl
-
-theorem Symbol_derive'_is_Room_derive_partial_unfolded
-  (p: σ -> α -> Bool) (r: Regex σ) (a: α):
-  Room.derive_unfolded p r a = Room.derive_partial_unfolded (fun s => p s a) r := by
   rfl
