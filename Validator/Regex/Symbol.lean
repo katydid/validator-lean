@@ -1,6 +1,8 @@
 import Validator.Std.Vec
 
+import Validator.Regex.Enter
 import Validator.Regex.Extract
+import Validator.Regex.Leave
 import Validator.Regex.Map
 import Validator.Regex.Num
 import Validator.Regex.Point
@@ -61,47 +63,35 @@ def derives {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) 
   let replaced: Vec (Regex (σ × Bool)) l := replacesFrom rs' replaces
   Regex.Point.derives replaced
 
-def leave
-  (rs: Vec (Regex σ) l)
-  (ps: Vec Bool (Symbol.nums rs))
-  : (Vec (Regex σ) l) :=
-  let replaces: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip (Symbol.extractsFrom rs).2 ps
-  let replaced: Vec (Regex (σ × Bool)) l := replacesFrom (Symbol.extractsFrom rs).1 replaces
-  Regex.Point.derives replaced
-
-def enter (rs: Vec (Regex σ) l): Vec σ (Symbol.nums rs) :=
-  let (_, symbols): (Vec (RegexID (Symbol.nums rs)) l × Vec σ (Symbol.nums rs)) := Symbol.extractsFrom rs
-  symbols
-
 -- derives_preds unlike derives takes a predicate that works out the full vector of predicates.
 -- This gives the predicate control over the evaluation order of α, for example α is a tree, we can first evaluate the same label, before traversing down.
 def derives_preds {σ: Type} {α: Type}
   (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
-  let symbols: Vec σ (Symbol.nums rs) := enter rs
+  let symbols: Vec σ (Symbol.nums rs) := Enter.deriveEnter rs
   let pred_results: Vec Bool (Symbol.nums rs) := ps symbols a
-  leave rs pred_results
+  Leave.deriveLeaves rs pred_results
 
 def derives_closures {σ: Type}
   (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
-  let symbols: Vec σ (Symbol.nums rs) := enter rs
+  let symbols: Vec σ (Symbol.nums rs) := Enter.deriveEnter rs
   let pred_results: Vec Bool (Symbol.nums rs) := ps symbols
-  leave rs pred_results
+  Leave.deriveLeaves rs pred_results
 
 def derives_closures' {σ: Type}
   (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
-  leave rs (ps (enter rs))
+  Leave.deriveLeaves rs (ps (Enter.deriveEnter rs))
 
 def derives_closure {σ: Type}
   (p: σ -> Bool) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
-  let symbols: Vec σ (Symbol.nums rs) := enter rs
+  let symbols: Vec σ (Symbol.nums rs) := Enter.deriveEnter rs
   let pred_results: Vec Bool (Symbol.nums rs) := Vec.map symbols p
-  leave rs pred_results
+  Leave.deriveLeaves rs pred_results
 
 def derive_closure {σ: Type}
   (p: σ -> Bool) (r: Regex σ): Regex σ :=
-  let symbols: Vec σ (Symbol.nums #vec[r]) := enter #vec[r]
+  let symbols: Vec σ (Symbol.nums #vec[r]) := Enter.deriveEnter #vec[r]
   let pred_results: Vec Bool (Symbol.nums #vec[r]) := Vec.map symbols p
-  let res := (leave #vec[r] pred_results)
+  let res := (Leave.deriveLeaves #vec[r] pred_results)
   match res with
   | Vec.cons res' Vec.nil => res'
 
@@ -423,8 +413,8 @@ theorem Symbol_derives_is_derives_preds
   simp only
   rw [<- h]
   unfold derives_preds
-  unfold leave
-  unfold enter
+  unfold Leave.deriveLeaves
+  unfold Enter.deriveEnter
   simp only
 
 theorem Symbol_derives_preds_is_derives_closures

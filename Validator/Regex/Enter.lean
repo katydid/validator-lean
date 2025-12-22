@@ -1,8 +1,8 @@
 import Validator.Std.Vec
 
+import Validator.Regex.Extract
 import Validator.Regex.Num
 import Validator.Regex.Regex
-import Validator.Regex.Symbol
 
 namespace Enter
 
