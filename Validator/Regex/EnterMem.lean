@@ -3,7 +3,6 @@ import Std
 import Validator.Std.Debug
 
 import Validator.Regex.Regex
-import Validator.Regex.Symbol
 
 import Validator.Regex.Enter
 

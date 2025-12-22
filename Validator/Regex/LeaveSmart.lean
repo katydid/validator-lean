@@ -2,7 +2,9 @@ import Validator.Std.Vec
 
 import Validator.Regex.Regex
 import Validator.Regex.Smart
-import Validator.Regex.Symbol
+import Validator.Regex.Num
+import Validator.Regex.Extract
+import Validator.Regex.Leave
 
 namespace LeaveSmart
 

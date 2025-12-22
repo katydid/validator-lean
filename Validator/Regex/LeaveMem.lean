@@ -4,7 +4,6 @@ import Validator.Std.Debug
 import Validator.Std.Vec
 
 import Validator.Regex.Regex
-import Validator.Regex.Symbol
 import Validator.Regex.LeaveSmart
 
 def hashRulesAndNulls {l: Nat} [Hashable σ] (x: (xs: Vec (Regex σ) l) × (Vec Bool (Symbol.nums xs))): UInt64 :=

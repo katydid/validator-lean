@@ -1,13 +1,10 @@
 import Validator.Std.Vec
 
 import Validator.Regex.Regex
-import Validator.Hedge.Grammar
-import Validator.Hedge.IfExpr
-import Validator.Regex.Symbol
 
 namespace ImperativeEnter
 
-def enter (x: Rule n φ) (res: List (IfExpr n φ) := []): List (IfExpr n φ) :=
+def enter (x: Regex σ) (res: List σ := []): List σ :=
   match x with
   | Regex.emptyset => res
   | Regex.emptystr => res
@@ -19,5 +16,5 @@ def enter (x: Rule n φ) (res: List (IfExpr n φ) := []): List (IfExpr n φ) :=
     else enter y res
   | Regex.star y => enter y res
 
-def deriveEnter (xs: List (Rule n φ)): List (IfExpr n φ) :=
+def deriveEnter (xs: List (Regex σ)): List σ :=
   List.flatten (List.map ImperativeEnter.enter xs)
