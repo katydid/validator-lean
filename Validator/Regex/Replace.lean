@@ -26,7 +26,6 @@ def replaceFrom (r: RegexID n) (xs: Vec σ n): Regex σ :=
 def replacesFrom (rs: Vec (RegexID n) l) (xs: Vec σ n): Vec (Regex σ) l :=
   Vec.map rs (fun r => replaceFrom r xs)
 
-
 theorem replace_cast_both (r: RegexID n) (xs: Vec σ n) (h: n = l):
   replace r xs (by omega) = replace (RegexID.cast r h) (Vec.cast xs h) (by omega) := by
   subst h

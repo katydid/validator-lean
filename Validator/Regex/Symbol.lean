@@ -12,33 +12,6 @@ import Validator.Regex.RegexID
 import Validator.Regex.Replace
 import Validator.Regex.Room
 
--- I want to define a map function over a regular expression:
-
--- inductive Regex (σ: Type) where
---   | emptyset
---   | emptystr
---   | symbol (s: σ)
---   | or (p q: Regex σ)
---   | concat (p q: Regex σ)
---   | star (p: Regex σ)
---   deriving DecidableEq, Ord, Repr, Hashable
-
--- def Regex.map (r: Regex σ) (f: σ -> σ'): Regex σ' :=
---   match r with
---   | emptyset => emptyset
---   | emptystr => emptystr
---   | symbol s => symbol (f s)
---   | or r1 r2 => or (r1.map f) (r2.map f)
---   | concat r1 r2 => concat (r1.map f) (r2.map f)
---   | star r1 => star (r1.map f)
-
--- But I want to split the function application of the functor up into three steps:
--- 1. extract
--- 2. modify
--- 3. replace
-
--- We want to prove the theorem that if the function is id then replace (id (extract r)) = r
-
 namespace Symbol
 
 def derives {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=

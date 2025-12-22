@@ -1,6 +1,43 @@
 import Validator.Regex.Extract
 import Validator.Regex.Replace
 
+-- In Map.lean we have defined a map function over a regular expression:
+
+-- inductive Regex (σ: Type) where
+--   | emptyset
+--   | emptystr
+--   | symbol (s: σ)
+--   | or (p q: Regex σ)
+--   | concat (p q: Regex σ)
+--   | star (p: Regex σ)
+--   deriving DecidableEq, Ord, Repr, Hashable
+
+-- def Regex.map (r: Regex σ) (f: σ -> σ'): Regex σ' :=
+--   match r with
+--   | emptyset => emptyset
+--   | emptystr => emptystr
+--   | symbol s => symbol (f s)
+--   | or r1 r2 => or (r1.map f) (r2.map f)
+--   | concat r1 r2 => concat (r1.map f) (r2.map f)
+--   | star r1 => star (r1.map f)
+
+-- In this file we prove that if we split function application of the functor up into three steps:
+-- 1. extract
+-- 2. apply function
+-- 3. replace
+-- it is the same as Regex.map
+
+-- Also if we have a Vector of regexes, then we can split up the maps function into three steps:
+-- 1. extracts
+-- 2. map function
+-- 3. replaces
+
+-- We have proved functor properties:
+-- * r = replaceFrom (extractFrom r).1 (extractFrom r).2
+-- * Regex.map r f = replaceFrom (extractFrom r).1 (Vec.map (extractFrom r).2 f)
+-- * rs = replacesFrom (extracts rs acc).1 (extracts rs acc).2
+-- * Regex.maps rs f = replacesFrom (extractsFrom rs).1 (Vec.map (extractsFrom rs).2 f)
+
 namespace Symbol
 
 theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
@@ -88,7 +125,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
     rw [<- ih1 acc]
 
 theorem extract_replace_is_id (r: Regex σ) (acc: Vec σ l):
-  r = replace (extract r acc).1 (extract r acc).2 (by omega):= by
+  r = replace (extract r acc).1 (extract r acc).2 (by omega) := by
   rw [<- replaceFrom]
   rw [<- extract_replaceFrom_is_id]
 
