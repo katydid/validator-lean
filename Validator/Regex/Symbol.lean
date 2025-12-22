@@ -1372,10 +1372,10 @@ theorem Symbol_derives_is_fmap
 theorem Symbol_derives_is_Regex_derives
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool)
   (r: Vec (Regex σ) l) (a: α):
-  Symbol.derives Φ r a = Regex.derives Φ r a := by
+  Symbol.derives Φ r a = Regex.map_derive Φ r a := by
   rw [Symbol_derives_is_fmap]
   unfold Symbol.derive
-  unfold Regex.derives
+  unfold Regex.map_derive
   congr
   funext r
   rw [<- extractFrom_replaceFrom_is_fmap]

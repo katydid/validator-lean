@@ -82,8 +82,14 @@ def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): R
       (onlyif (null r1) (derive Φ r2 a))
   | star r1 => concat (derive Φ r1 a) (star r1)
 
-def derives (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
+def map_derive (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
   Vec.map rs (fun r => derive Φ r a)
+
+def fold_derive (Φ: σ -> α -> Bool) (r: Regex σ) (xs: List α): Regex σ :=
+  (List.foldl (derive Φ) r) xs
+
+def validate (Φ: σ -> α -> Bool) (r: Regex σ) (xs: List α): Bool :=
+  null (fold_derive Φ r xs)
 
 -- We prove that for each regular expression the denotation holds for the specific language definition:
 -- * Regex.denote Φ Regex.emptyset = Language.emptyset
@@ -122,6 +128,8 @@ theorem denote_star_n' {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ
 theorem denote_star_n {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ):
   denote Φ (star r) = Language.star_n (denote Φ r) := by
   simp only [denote]
+
+-- Commutes proofs
 
 theorem null_commutes {σ: Type} {α: Type} (Φ: σ -> α -> Prop) (r: Regex σ):
   ((null r) = true) = Language.null (denote Φ r) := by
@@ -207,3 +215,29 @@ theorem derive_commutesb {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex 
   congr
   funext s a
   simp only [Bool.decide_eq_true]
+
+theorem derives_commutes {α: Type} (Φ: σ -> α -> Prop) [DecidableRel Φ] (r: Regex σ) (xs: List α):
+  denote Φ (fold_derive (fun s a => Φ s a) r xs) = Language.derives (denote Φ r) xs := by
+  unfold fold_derive
+  rw [Language.derives_foldl]
+  induction xs generalizing r with
+  | nil =>
+    simp only [List.foldl_nil]
+  | cons x xs ih =>
+    simp only [List.foldl_cons]
+    have h := derive_commutes Φ r x
+    have ih' := ih (derive (fun s a => Φ s a) r x)
+    rw [h] at ih'
+    exact ih'
+
+theorem validate_commutes {α: Type} (Φ: σ -> α -> Prop) [DecidableRel Φ] (r: Regex σ) (xs: List α):
+  (validate (fun s a => Φ s a) r xs = true) = (denote Φ r) xs := by
+  rw [<- Language.validate (denote Φ r) xs]
+  unfold validate
+  rw [<- derives_commutes]
+  rw [<- null_commutes]
+
+-- decidableDenote shows that the derivative algorithm is decidable
+-- https://leanprover.zulipchat.com/#narrow/channel/270676-lean4/topic/restricting.20axioms
+def decidableDenote (Φ: σ -> α -> Prop) [DecidableRel Φ] (r: Regex σ): DecidablePred (denote Φ r) :=
+  fun xs => decidable_of_decidable_of_eq (validate_commutes Φ r xs)
