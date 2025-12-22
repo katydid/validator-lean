@@ -2,6 +2,7 @@ import Validator.Std.Vec
 
 import Validator.Regex.Regex
 import Validator.Regex.Map
+import Validator.Regex.Num
 import Validator.Regex.Pair
 
 -- I want to define a map function over a regular expression:
@@ -35,30 +36,6 @@ namespace Symbol
 
 abbrev RegexID n := Regex (Fin n)
 
-@[reducible, simp]
-def num (r: Regex σ): Nat :=
-  match r with
-  | Regex.emptyset => 0
-  | Regex.emptystr => 0
-  | Regex.symbol _ => 1
-  | Regex.or r1 r2 => num r1 + num r2
-  | Regex.concat r1 r2 => num r1 + num r2
-  | Regex.star r1 => num r1
-
-def nums (xs: Vec (Regex σ) l): Nat :=
-  Vec.foldl (· + ·) 0 (Vec.map xs num)
-
-theorem nums_add:
-  num x + nums xs = nums (Vec.cons x xs) := by
-  simp only [nums]
-  simp only [Vec.map]
-  simp only [Vec.foldl]
-  nth_rewrite 2 [Nat.add_comm]
-  rw [Vec.foldl_nat_add]
-
-def nums_list (xs: List (Regex σ)): Nat :=
-  List.foldl (· + ·) 0 (List.map num xs)
-
 def RegexID.add {n: Nat} (m: Nat) (r: RegexID n): RegexID (n + m) :=
   Regex.map r (fun s => (Fin.castLE (by omega) s))
 
@@ -82,24 +59,24 @@ def RegexID.casts_rw (rs: Vec (RegexID n) l) (h: n = m): Vec (RegexID m) l := by
 def RegexID.castsLE (rs: Vec (RegexID n) l) (h: n ≤ m): Vec (RegexID m) l :=
   Vec.map rs (fun r => RegexID.castLE r h)
 
-abbrev RegexID.add_assoc (r: RegexID (n + num r1 + num r2)): RegexID (n + (num r1 + num r2)) :=
-  have h : (n + num r1 + num r2) = n + (num r1 + num r2) := by
+abbrev RegexID.add_assoc (r: RegexID (n + Symbol.num r1 + Symbol.num r2)): RegexID (n + (Symbol.num r1 + Symbol.num r2)) :=
+  have h : (n + Symbol.num r1 + Symbol.num r2) = n + (Symbol.num r1 + Symbol.num r2) := by
     rw [<- Nat.add_assoc]
   RegexID.cast r h
 
-def RegexID.add_or (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.or r1 r2)) :=
+def RegexID.add_or (r: RegexID (n + Symbol.num r1 + Symbol.num r2)): RegexID (n + Symbol.num (Regex.or r1 r2)) :=
   RegexID.add_assoc r
 
-def RegexID.add_concat (r: RegexID (n + num r1 + num r2)): RegexID (n + num (Regex.concat r1 r2)) :=
+def RegexID.add_concat (r: RegexID (n + Symbol.num r1 + Symbol.num r2)): RegexID (n + Symbol.num (Regex.concat r1 r2)) :=
   RegexID.add_assoc r
 
-def Vec.cast_or (xs: Vec σ (n + num r1 + num r2)): Vec σ (n + num (Regex.or r1 r2)) :=
-  have h : (n + num r1 + num r2) = (n + num (Regex.or r1 r2)) := by
+def Vec.cast_or (xs: Vec σ (n + Symbol.num r1 + Symbol.num r2)): Vec σ (n + Symbol.num (Regex.or r1 r2)) :=
+  have h : (n + Symbol.num r1 + Symbol.num r2) = (n + Symbol.num (Regex.or r1 r2)) := by
     rw [<- Nat.add_assoc]
   Vec.cast xs h
 
-def Vec.cast_concat (xs: Vec σ (n + num r1 + num r2)): Vec σ (n + num (Regex.concat r1 r2)) :=
-  have h : (n + num r1 + num r2) = (n + num (Regex.concat r1 r2)) := by
+def Vec.cast_concat (xs: Vec σ (n + Symbol.num r1 + Symbol.num r2)): Vec σ (n + Symbol.num (Regex.concat r1 r2)) :=
+  have h : (n + Symbol.num r1 + Symbol.num r2) = (n + Symbol.num (Regex.concat r1 r2)) := by
     rw [<- Nat.add_assoc]
   Vec.cast xs h
 
@@ -122,27 +99,27 @@ def replace (r: RegexID n) (xs: Vec σ l) (h: n <= l): Regex σ :=
 def replaceFrom (r: RegexID n) (xs: Vec σ n): Regex σ :=
   replace r xs (le_refl n)
 
-def extract (r: Regex σ) (acc: Vec σ n): RegexID (n + num r) × Vec σ (n + num r) :=
+def extract (r: Regex σ) (acc: Vec σ n): RegexID (n + Symbol.num r) × Vec σ (n + Symbol.num r) :=
   match r with
   | Regex.emptyset => (Regex.emptyset, acc)
   | Regex.emptystr => (Regex.emptystr, acc)
   | Regex.symbol s => (Regex.symbol (Fin.mk n (by
-      simp only [num]
+      simp only [Symbol.num]
       omega
     )), Vec.snoc acc s)
   | Regex.or r1 r2 =>
     let (er1, acc1) := extract r1 acc
     let (er2, acc2) := extract r2 acc1
-    (Regex.or (RegexID.add_or (RegexID.add (num r2) er1)) (RegexID.add_or er2), Vec.cast_or acc2)
+    (Regex.or (RegexID.add_or (RegexID.add (Symbol.num r2) er1)) (RegexID.add_or er2), Vec.cast_or acc2)
   | Regex.concat r1 r2 =>
     let (er1, acc1) := extract r1 acc
     let (er2, acc2) := extract r2 acc1
-    (Regex.concat (RegexID.add_concat (RegexID.add (num r2) er1)) (RegexID.add_concat er2), Vec.cast_concat acc2)
+    (Regex.concat (RegexID.add_concat (RegexID.add (Symbol.num r2) er1)) (RegexID.add_concat er2), Vec.cast_concat acc2)
   | Regex.star r1 =>
     let (er1, acc1) := extract r1 acc
     (Regex.star er1, acc1)
 
-def extractFrom (r: Regex σ): RegexID (num r) × Vec σ (num r) :=
+def extractFrom (r: Regex σ): RegexID (Symbol.num r) × Vec σ (Symbol.num r) :=
   match extract r Vec.nil with
   | (r', xs) => (RegexID.cast r' (by omega), Vec.cast xs (by omega))
 
@@ -157,44 +134,44 @@ def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): R
     )
 
 def derive' {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
-  let (r', symbols): (RegexID (num r) × Vec σ (num r)) := extractFrom r
-  let pred_results: Vec Bool (num r) := Vec.map symbols (fun s => Φ s a)
-  let replaces: Vec (σ × Bool) (num r) := Vec.zip symbols pred_results
+  let (r', symbols): (RegexID (Symbol.num r) × Vec σ (Symbol.num r)) := extractFrom r
+  let pred_results: Vec Bool (Symbol.num r) := Vec.map symbols (fun s => Φ s a)
+  let replaces: Vec (σ × Bool) (Symbol.num r) := Vec.zip symbols pred_results
   let replaced: Regex (σ × Bool) := replaceFrom r' replaces
   Regex.Pair.derive replaced
 
 def extracts (xs: Vec (Regex σ) nregex) (acc: Vec σ nacc):
-  (Vec (RegexID (nacc + nums xs)) nregex) × (Vec σ (nacc + nums xs)) :=
+  (Vec (RegexID (nacc + Symbol.nums xs)) nregex) × (Vec σ (nacc + Symbol.nums xs)) :=
   match xs with
   | Vec.nil =>
     ( Vec.nil, acc )
   | @Vec.cons _ nregex x xs =>
     let (regexid, acc1) := Symbol.extract x acc
     let (regexids, accs) := extracts xs acc1
-    let regexid': RegexID (nacc + nums (Vec.cons x xs)) :=
-      RegexID.cast (RegexID.add (nums xs) regexid) (by rw [<- nums_add]; ac_rfl)
-    let regexesids' : Vec (RegexID (nacc + nums (Vec.cons x xs))) nregex :=
-      RegexID.casts regexids (by rw [<- nums_add]; ac_rfl)
-    let regexidcons: Vec (RegexID (nacc + nums (Vec.cons x xs))) (nregex + 1) :=
+    let regexid': RegexID (nacc + Symbol.nums (Vec.cons x xs)) :=
+      RegexID.cast (RegexID.add (Symbol.nums xs) regexid) (by rw [<- Symbol.nums_add]; ac_rfl)
+    let regexesids' : Vec (RegexID (nacc + Symbol.nums (Vec.cons x xs))) nregex :=
+      RegexID.casts regexids (by rw [<- Symbol.nums_add]; ac_rfl)
+    let regexidcons: Vec (RegexID (nacc + Symbol.nums (Vec.cons x xs))) (nregex + 1) :=
       Vec.cast (Vec.cons regexid' regexesids') (by simp only)
-    let accs' : (Vec σ (nacc + nums (Vec.cons x xs))) :=
-      Vec.cast accs (by rw [<- nums_add]; ac_rfl)
+    let accs' : (Vec σ (nacc + Symbol.nums (Vec.cons x xs))) :=
+      Vec.cast accs (by rw [<- Symbol.nums_add]; ac_rfl)
     (regexidcons, accs')
 
 def extractsFrom (xs: Vec (Regex σ) nregex):
-  (Vec (RegexID (nums xs)) nregex) × (Vec σ (nums xs)) :=
+  (Vec (RegexID (Symbol.nums xs)) nregex) × (Vec σ (Symbol.nums xs)) :=
   let (xs0, symbols0) := extracts xs Vec.nil
-  let symbols': Vec σ (nums xs) := Vec.cast symbols0 (by ac_rfl)
-  let xs': Vec (RegexID (nums xs)) nregex := RegexID.casts xs0 (by ac_rfl)
+  let symbols': Vec σ (Symbol.nums xs) := Vec.cast symbols0 (by ac_rfl)
+  let xs': Vec (RegexID (Symbol.nums xs)) nregex := RegexID.casts xs0 (by ac_rfl)
   (xs', symbols')
 
 def replacesFrom (rs: Vec (RegexID n) l) (xs: Vec σ n): Vec (Regex σ) l :=
   Vec.map rs (fun r => replaceFrom r xs)
 
 def derives {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
-  let (rs', symbols): (Vec (RegexID (nums rs)) l × Vec σ (nums rs)) := Symbol.extractsFrom rs
-  let pred_results: Vec Bool (nums rs) := Vec.map symbols (fun s => Φ s a)
-  let replaces: Vec (σ × Bool) (nums rs) := Vec.zip symbols pred_results
+  let (rs', symbols): (Vec (RegexID (Symbol.nums rs)) l × Vec σ (Symbol.nums rs)) := Symbol.extractsFrom rs
+  let pred_results: Vec Bool (Symbol.nums rs) := Vec.map symbols (fun s => Φ s a)
+  let replaces: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip symbols pred_results
   let replaced: Vec (Regex (σ × Bool)) l := replacesFrom rs' replaces
   Regex.Pair.derives replaced
 
@@ -202,26 +179,26 @@ def leave
   (rs: Vec (Regex σ) l)
   (ps: Vec Bool (Symbol.nums rs))
   : (Vec (Regex σ) l) :=
-  let replaces: Vec (σ × Bool) (nums rs) := Vec.zip (Symbol.extractsFrom rs).2 ps
+  let replaces: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip (Symbol.extractsFrom rs).2 ps
   let replaced: Vec (Regex (σ × Bool)) l := replacesFrom (Symbol.extractsFrom rs).1 replaces
   Regex.Pair.derives replaced
 
-def enter (rs: Vec (Regex σ) l): Vec σ (nums rs) :=
-  let (_, symbols): (Vec (RegexID (nums rs)) l × Vec σ (nums rs)) := Symbol.extractsFrom rs
+def enter (rs: Vec (Regex σ) l): Vec σ (Symbol.nums rs) :=
+  let (_, symbols): (Vec (RegexID (Symbol.nums rs)) l × Vec σ (Symbol.nums rs)) := Symbol.extractsFrom rs
   symbols
 
 -- derives_preds unlike derives takes a predicate that works out the full vector of predicates.
 -- This gives the predicate control over the evaluation order of α, for example α is a tree, we can first evaluate the same label, before traversing down.
 def derives_preds {σ: Type} {α: Type}
   (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
-  let symbols: Vec σ (nums rs) := enter rs
-  let pred_results: Vec Bool (nums rs) := ps symbols a
+  let symbols: Vec σ (Symbol.nums rs) := enter rs
+  let pred_results: Vec Bool (Symbol.nums rs) := ps symbols a
   leave rs pred_results
 
 def derives_closures {σ: Type}
   (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
-  let symbols: Vec σ (nums rs) := enter rs
-  let pred_results: Vec Bool (nums rs) := ps symbols
+  let symbols: Vec σ (Symbol.nums rs) := enter rs
+  let pred_results: Vec Bool (Symbol.nums rs) := ps symbols
   leave rs pred_results
 
 def derives_closures' {σ: Type}
@@ -230,14 +207,14 @@ def derives_closures' {σ: Type}
 
 def derives_closure {σ: Type}
   (p: σ -> Bool) (rs: Vec (Regex σ) l): Vec (Regex σ) l :=
-  let symbols: Vec σ (nums rs) := enter rs
-  let pred_results: Vec Bool (nums rs) := Vec.map symbols p
+  let symbols: Vec σ (Symbol.nums rs) := enter rs
+  let pred_results: Vec Bool (Symbol.nums rs) := Vec.map symbols p
   leave rs pred_results
 
 def derive_closure {σ: Type}
   (p: σ -> Bool) (r: Regex σ): Regex σ :=
-  let symbols: Vec σ (nums #vec[r]) := enter #vec[r]
-  let pred_results: Vec Bool (nums #vec[r]) := Vec.map symbols p
+  let symbols: Vec σ (Symbol.nums #vec[r]) := enter #vec[r]
+  let pred_results: Vec Bool (Symbol.nums #vec[r]) := Vec.map symbols p
   let res := (leave #vec[r] pred_results)
   match res with
   | Vec.cons res' Vec.nil => res'
@@ -252,34 +229,6 @@ def derive_closure' {σ: Type}
         (fun s => (s, p s))
       )
     )
-
-theorem nums_nil {σ: Type}:
-  nums (@Vec.nil (Regex σ)) = 0 := by
-  unfold nums
-  rfl
-
-theorem nums_zero {σ: Type} (xs: Vec (Regex σ) 0):
-  nums xs = 0 := by
-  unfold nums
-  cases xs with
-  | nil =>
-  simp only [Vec.map_nil]
-  simp only [Vec.foldl_nil]
-
-theorem nums_is_nums_list (xs: Vec (Regex σ) l):
-  nums xs = nums_list xs.toList := by
-  simp only [nums]
-  simp only [nums_list]
-  induction xs with
-  | nil =>
-    simp only [Vec.toList, Vec.map_nil, Vec.foldl_nil, List.map_nil, List.foldl_nil]
-  | cons x xs ih =>
-    simp only [Vec.toList, Vec.foldl, Vec.map, List.map, List.foldl]
-    nth_rewrite 1 [Nat.add_comm]
-    rw [Vec.foldl_assoc]
-    rw [ih]
-    nth_rewrite 2 [Nat.add_comm]
-    rw [List.foldl_assoc]
 
 theorem RegexID.cast_rfl (r: RegexID n): RegexID.cast r rfl = r := by
   rfl
@@ -402,9 +351,9 @@ theorem extract_append_toList (acc: Vec σ n) (r: Regex σ):
   Vec.toList (extract r acc).2 = Vec.toList (Vec.append acc (extract r Vec.nil).2) := by
   induction r generalizing acc n  with
   | emptyset =>
-    simp only [num, Nat.add_zero, extract, Vec.append_nil, Vec.cast_toList]
+    simp only [Symbol.num, Nat.add_zero, extract, Vec.append_nil, Vec.cast_toList]
   | emptystr =>
-    simp only [num, Nat.add_zero, extract, Vec.append_nil, Vec.cast_toList]
+    simp only [Symbol.num, Nat.add_zero, extract, Vec.append_nil, Vec.cast_toList]
   | symbol s =>
     simp only [extract, Vec.snoc]
     rw [Vec.snoc_append]
@@ -453,7 +402,7 @@ theorem extract_append (acc: Vec σ l) (r: Regex σ):
 theorem extract_take_toList (acc: Vec σ l):
   (Vec.toList
     (Vec.take
-      (l + num r1)
+      (l + Symbol.num r1)
       (extract r2
       (extract r1 acc).2).2
     )
@@ -468,7 +417,7 @@ theorem extract_take_toList (acc: Vec σ l):
 
 theorem extract_take (acc: Vec σ l):
   (Vec.take
-    (l + num r1)
+    (l + Symbol.num r1)
     (extract r2
       (extract r1 acc).2).2
   )
@@ -483,7 +432,7 @@ theorem extract_take (acc: Vec σ l):
 theorem extract_take_toList_fmap (acc: Vec σ l):
   (Vec.toList
     (Vec.take
-      (l + num r1)
+      (l + Symbol.num r1)
       (Vec.map
         (extract r2
         (extract r1 acc).2).2
@@ -509,7 +458,7 @@ theorem extract_take_toList_fmap (acc: Vec σ l):
 
 theorem extract_take_fmap (acc: Vec α l) (f: α -> β):
   (Vec.take
-    (l + num r1)
+    (l + Symbol.num r1)
     (Vec.map
       (extract r2
         (extract r1 acc).2).2
@@ -550,7 +499,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
     have hh1 :
       r1 =
         (replace
-          (RegexID.add_or (RegexID.add (num r2) (extract r1 acc).1))
+          (RegexID.add_or (RegexID.add (Symbol.num r2) (extract r1 acc).1))
           (Vec.cast_or (extract r2 (extract r1 acc).2).2)
           hr
         ) := by
@@ -581,7 +530,7 @@ theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
     have hh1 :
       r1 =
         (replace
-          (RegexID.add_concat (RegexID.add (num r2) (extract r1 acc).1))
+          (RegexID.add_concat (RegexID.add (Symbol.num r2) (extract r1 acc).1))
           (Vec.cast_concat (extract r2 (extract r1 acc).2).2)
           hr
         ) := by
@@ -624,18 +573,18 @@ theorem extractFrom_replaceFrom_is_id (r: Regex σ):
   rw [<- extract_replace_is_id r Vec.nil]
 
 theorem nums_cons_is_add:
-  nums (Vec.cons x xs) = num x + nums xs
+  Symbol.nums (Vec.cons x xs) = Symbol.num x + Symbol.nums xs
   := by
-  simp only [nums]
+  simp only [Symbol.nums]
   simp only [Vec.map]
   simp only [Vec.foldl]
   nth_rewrite 1 [Nat.add_comm]
   rw [Vec.foldl_assoc]
 
 theorem RegexID.cons_cast:
-  Vec (RegexID (nacc + nums (Vec.cons x xs))) n
-  = Vec (RegexID (nacc + num x + nums xs)) n := by
-  simp only [nums]
+  Vec (RegexID (nacc + Symbol.nums (Vec.cons x xs))) n
+  = Vec (RegexID (nacc + Symbol.num x + Symbol.nums xs)) n := by
+  simp only [Symbol.nums]
   simp only [Vec.map]
   simp only [Vec.foldl]
   nth_rewrite 2 [Nat.add_comm]
@@ -644,17 +593,17 @@ theorem RegexID.cons_cast:
 
 theorem extracts_nil (acc: Vec σ nacc):
   extracts (@Vec.nil (Regex σ)) acc = (RegexID.casts Vec.nil (by
-    simp only [nums_nil]
+    simp only [Symbol.nums_nil]
     rfl
   ), Vec.cast acc (by
-    simp only [nums_nil]
+    simp only [Symbol.nums_nil]
     simp only [add_zero]
   )) := by
   simp only [extracts]
   rfl
 
 theorem extracts_zero_nil (xs: Vec (Regex σ) 0):
-  extracts xs Vec.nil = (Vec.nil (α := RegexID (0 + nums xs)), Vec.cast (Vec.nil (α := σ)) (by simp only [nums_zero])) := by
+  extracts xs Vec.nil = (Vec.nil (α := RegexID (0 + Symbol.nums xs)), Vec.cast (Vec.nil (α := σ)) (by simp only [Symbol.nums_zero])) := by
   cases xs
   simp only [extracts_nil]
   congr
@@ -689,7 +638,7 @@ theorem extract_replaceFrom_is_fmap (r: Regex α) (acc: Vec α l) (f: α -> β):
     have hh1 :
       Regex.map r1 f =
         (replace
-          (RegexID.add_or (RegexID.add (num r2) (extract r1 acc).1))
+          (RegexID.add_or (RegexID.add (Symbol.num r2) (extract r1 acc).1))
           (Vec.map (Vec.cast_or (extract r2 (extract r1 acc).2).2) f)
           hr
         ) := by
@@ -724,7 +673,7 @@ theorem extract_replaceFrom_is_fmap (r: Regex α) (acc: Vec α l) (f: α -> β):
     have hh1 :
       Regex.map r1 f =
         (replace
-          (RegexID.add_concat (RegexID.add (num r2) (extract r1 acc).1))
+          (RegexID.add_concat (RegexID.add (Symbol.num r2) (extract r1 acc).1))
           (Vec.map (Vec.cast_concat (extract r2 (extract r1 acc).2).2) f)
           hr
         ) := by
@@ -804,51 +753,18 @@ theorem replacesFrom_cast_both (rs: Vec (RegexID n) l) (ss: Vec σ n) (h: n = m)
   simp only [Vec.cast_rfl]
   simp only [RegexID.casts_rfl]
 
-theorem num_map (r: Regex α) (f: α -> β):
-  num (Regex.map r f) = num r := by
-  fun_induction num with
-  | case1 =>
-    simp only [Regex.map, num]
-  | case2 =>
-    simp only [Regex.map, num]
-  | case3 =>
-    simp only [Regex.map, num]
-  | case4 r1 r2 hr1 hr2 =>
-    simp only [Regex.map, num, hr1, hr2]
-  | case5 r1 r2 hr1 hr2 =>
-    simp only [Regex.map, num, hr1, hr2]
-  | case6 r1 hr1 =>
-    simp only [Regex.map, hr1]
-
-theorem nums_map (rs: Vec (Regex α) l) (f: α -> β):
-  nums (Regex.maps rs f) = nums rs := by
-  simp only [Regex.maps]
-  simp only [nums]
-  induction rs with
-  | nil =>
-    simp only [Vec.map_nil]
-  | @cons l r rs ih =>
-    simp only [Vec.map]
-    simp only [Vec.foldl]
-    rw [num_map]
-    nth_rewrite 1 [Nat.add_comm]
-    rw [Vec.foldl_assoc]
-    rw [ih]
-    nth_rewrite 2 [Nat.add_comm]
-    rw [Vec.foldl_assoc]
-
-theorem extract_lift_cast (r: Regex α) (acc: Vec α n) (h1: n + num r = l + num r) (h2: n = l):
+theorem extract_lift_cast (r: Regex α) (acc: Vec α n) (h1: n + Symbol.num r = l + Symbol.num r) (h2: n = l):
   (Vec.cast (extract r acc).2 h1) = (extract r (Vec.cast acc h2)).2 := by
   subst h2
   rfl
 
-theorem extract_lift_cast_1 (r: Regex α) (acc: Vec α n) (h1: n + num r = l + num r) (h2: n = l):
+theorem extract_lift_cast_1 (r: Regex α) (acc: Vec α n) (h1: n + Symbol.num r = l + Symbol.num r) (h2: n = l):
   RegexID.cast (extract r acc).1 h1 = (extract r (Vec.cast acc h2)).1 := by
   subst h2
   rfl
 
 theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
-  (extract (Regex.map r f) (Vec.map acc f)).2 = Vec.cast (Vec.map (extract r acc).2 f) (by rw [num_map]) := by
+  (extract (Regex.map r f) (Vec.map acc f)).2 = Vec.cast (Vec.map (extract r acc).2 f) (by rw [Symbol.num_map]) := by
   generalize_proofs hr
   fun_induction extract with
   | case1 =>
@@ -861,7 +777,7 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
     rfl
   | case3 =>
     apply Vec.eq
-    simp only [extract, Regex.map, num]
+    simp only [extract, Regex.map, Symbol.num]
     rw [Vec.cast_toList]
     rw [Vec.snoc_map]
   | case4 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 => -- or
@@ -874,15 +790,15 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
       rw [he2]
     rw [hacc2]
     rw [hacc1] at ih2
-    have ih1' := ih1 (by rw [num_map])
+    have ih1' := ih1 (by rw [Symbol.num_map])
     clear ih1
-    have ih2' := ih2 (by rw [num_map])
+    have ih2' := ih2 (by rw [Symbol.num_map])
     clear ih2
     simp only [extract]
     simp only [Vec.cast_or]
     rw [ih1']
-    have hh: n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
-      repeat rw [num_map]
+    have hh: n + Symbol.num r1 + Symbol.num (r2.map f) = n + Symbol.num (r1.map f) + Symbol.num (r2.map f) := by
+      repeat rw [Symbol.num_map]
     rw [<- extract_lift_cast (h1 := hh)]
     rw [ih2']
     apply Vec.eq
@@ -898,15 +814,15 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
       rw [he2]
     rw [hacc2]
     rw [hacc1] at ih2
-    have ih1' := ih1 (by rw [num_map])
+    have ih1' := ih1 (by rw [Symbol.num_map])
     clear ih1
-    have ih2' := ih2 (by rw [num_map])
+    have ih2' := ih2 (by rw [Symbol.num_map])
     clear ih2
     simp only [extract]
     simp only [Vec.cast_concat]
     rw [ih1']
-    have hh: n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
-      repeat rw [num_map]
+    have hh: n + Symbol.num r1 + Symbol.num (r2.map f) = n + Symbol.num (r1.map f) + Symbol.num (r2.map f) := by
+      repeat rw [Symbol.num_map]
     rw [<- extract_lift_cast (h1 := hh)]
     rw [ih2']
     apply Vec.eq
@@ -914,16 +830,16 @@ theorem extract_is_fmap_2 (r: Regex α) (acc: Vec α n) (f: α -> β):
     congr 1
     simp only [Vec.cast_cast]
   | case6 acc r1 er1 acc1 he ih1 => -- star
-    simp only [Nat.add_left_cancel_iff, Regex.map, num] at *
+    simp only [Nat.add_left_cancel_iff, Regex.map, Symbol.num] at *
     have hacc1 : acc1 = (extract r1 acc).2 := by
       rw [he]
     rw [hacc1]
     rw [<- ih1]
     rfl
-    rw [num_map]
+    rw [Symbol.num_map]
 
 theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
-  (extract (Regex.map r f) (Vec.map acc f)).1 = RegexID.cast (extract r acc).1 (by simp only [num_map]) := by
+  (extract (Regex.map r f) (Vec.map acc f)).1 = RegexID.cast (extract r acc).1 (by simp only [Symbol.num_map]) := by
   generalize_proofs hr
   fun_induction extract with
   | case1 =>
@@ -951,12 +867,12 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
 
     subst_vars
 
-    have hr1: n + num r1 = n + num (r1.map f) := by
-      rw [num_map]
+    have hr1: n + Symbol.num r1 = n + Symbol.num (r1.map f) := by
+      rw [Symbol.num_map]
     have ih1' := ih1 hr1
     clear ih1
-    have hr2: n + num r1 + num r2 = n + num r1 + num (r2.map f) := by
-      rw [num_map]
+    have hr2: n + Symbol.num r1 + Symbol.num r2 = n + Symbol.num r1 + Symbol.num (r2.map f) := by
+      rw [Symbol.num_map]
     have ih2' := ih2 hr2
     clear ih2
 
@@ -966,8 +882,8 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
     rw [ih1']
     rw [extract_is_fmap_2]
     generalize_proofs
-    have hhlift : n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
-      repeat rw [num_map]
+    have hhlift : n + Symbol.num r1 + Symbol.num (r2.map f) = n + Symbol.num (r1.map f) + Symbol.num (r2.map f) := by
+      repeat rw [Symbol.num_map]
     have hlift := extract_lift_cast_1 (r := r2.map f) (acc := Vec.map (extract r1 acc).2 f) (h2 := hr1) (h1 := hhlift)
     rw [<- hlift]
     clear hlift
@@ -982,8 +898,8 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
     unfold RegexID.cast_map
     simp only [Regex.map_map]
     congr 1
-    · simp only [num, Fin.castLE_castLE, Regex.map_map]
-    · simp only [num, Fin.castLE_castLE, Regex.map_map]
+    · simp only [Symbol.num, Fin.castLE_castLE, Regex.map_map]
+    · simp only [Symbol.num, Fin.castLE_castLE, Regex.map_map]
   | case5 acc r1 r2 er1 acc1 he1 er2 acc2 he2 ih1 ih2 =>
     rename_i n
 
@@ -1003,12 +919,12 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
 
     subst_vars
 
-    have hr1: n + num r1 = n + num (r1.map f) := by
-      rw [num_map]
+    have hr1: n + Symbol.num r1 = n + Symbol.num (r1.map f) := by
+      rw [Symbol.num_map]
     have ih1' := ih1 hr1
     clear ih1
-    have hr2: n + num r1 + num r2 = n + num r1 + num (r2.map f) := by
-      rw [num_map]
+    have hr2: n + Symbol.num r1 + Symbol.num r2 = n + Symbol.num r1 + Symbol.num (r2.map f) := by
+      rw [Symbol.num_map]
     have ih2' := ih2 hr2
     clear ih2
 
@@ -1018,8 +934,8 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
     rw [ih1']
     rw [extract_is_fmap_2]
     generalize_proofs
-    have hhlift : n + num r1 + num (r2.map f) = n + num (r1.map f) + num (r2.map f) := by
-      repeat rw [num_map]
+    have hhlift : n + Symbol.num r1 + Symbol.num (r2.map f) = n + Symbol.num (r1.map f) + Symbol.num (r2.map f) := by
+      repeat rw [Symbol.num_map]
     have hlift := extract_lift_cast_1 (r := r2.map f) (acc := Vec.map (extract r1 acc).2 f) (h2 := hr1) (h1 := hhlift)
     rw [<- hlift]
     rw [ih2']
@@ -1031,8 +947,8 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
     unfold RegexID.cast_map
     simp only [Regex.map_map]
     congr 1
-    · simp only [num, Fin.castLE_castLE, Regex.map_map]
-    · simp only [num, Fin.castLE_castLE, Regex.map_map]
+    · simp only [Symbol.num, Fin.castLE_castLE, Regex.map_map]
+    · simp only [Symbol.num, Fin.castLE_castLE, Regex.map_map]
   | case6 acc r1 er1 acc1 he1 ih1 =>
     rename_i n
 
@@ -1044,8 +960,8 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
 
     subst_vars
 
-    have hr1: n + num r1 = n + num (r1.map f) := by
-      rw [num_map]
+    have hr1: n + Symbol.num r1 = n + Symbol.num (r1.map f) := by
+      rw [Symbol.num_map]
     have ih1' := ih1 hr1
     clear ih1
 
@@ -1059,7 +975,7 @@ theorem extract_is_fmap_1 (r: Regex α) (acc: Vec α n) (f: α -> β):
     unfold RegexID.cast_map
     simp only [Regex.map]
 
-theorem extracts_lift_cast (rs: Vec (Regex α) m) (acc: Vec α n) (h1: n + nums rs = l + nums rs) (h2: n = l):
+theorem extracts_lift_cast (rs: Vec (Regex α) m) (acc: Vec α n) (h1: n + Symbol.nums rs = l + Symbol.nums rs) (h2: n = l):
   (Vec.cast (extracts rs acc).2 h1) = (extracts rs (Vec.cast acc h2)).2 := by
   subst h2
   rfl
@@ -1068,7 +984,7 @@ theorem extracts_fmap2 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
   (Vec.map (extracts rs acc).2 f)
   = (Vec.cast (extracts (Regex.maps rs f) (Vec.map acc f)).2 (by
     rw [Nat.add_right_inj]
-    apply nums_map
+    apply Symbol.nums_map
   )) := by
   generalize_proofs h
   induction rs generalizing n acc with
@@ -1081,8 +997,8 @@ theorem extracts_fmap2 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
     rw [Vec.map_toList]
   | @cons l r rs ih =>
     simp only [extracts]
-    have h' : n + num r + nums (Regex.maps rs f) = n + num r + nums rs := by
-      simp only [nums_map]
+    have h' : n + Symbol.num r + Symbol.nums (Regex.maps rs f) = n + Symbol.num r + Symbol.nums rs := by
+      simp only [Symbol.nums_map]
     have ih' := ih ((extract r acc).2) h'
     apply Vec.eq
     repeat rw [Vec.toList_cast]
@@ -1098,7 +1014,7 @@ theorem extracts_fmap2 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
     rw [<- extracts_lift_cast]
     repeat rw [Vec.toList_cast]
     congr 1
-    simp only [num_map]
+    simp only [Symbol.num_map]
 
 theorem RegexID.casts_symm:
   RegexID.casts rs1 h = rs2
@@ -1154,7 +1070,7 @@ theorem extracts_append (acc: Vec α n) (xs: Vec (Regex α) l):
     rw [Vec.cast_cast]
 
 theorem extracts_take (r: Regex α) (acc: Vec α n) (rs: Vec (Regex α) l):
-  (Vec.take (n + num r) (extracts rs (extract r acc).2).2)
+  (Vec.take (n + Symbol.num r) (extracts rs (extract r acc).2).2)
     = Vec.cast (extract r acc).2 (by omega) := by
   rw [extracts_append]
   rw [Vec.take_lift_cast]
@@ -1216,7 +1132,7 @@ theorem RegexID.add_zero:
   simp_all only [Fin.castLE_refl]
   simp only [Regex.map_id]
 
-theorem replaceFrom_append {r: Regex α} {xs: Vec α (n + num r)} {acc: Vec α n} {ys: Vec α m}:
+theorem replaceFrom_append {r: Regex α} {xs: Vec α (n + Symbol.num r)} {acc: Vec α n} {ys: Vec α m}:
   replaceFrom (RegexID.add m (extract r acc).1) (Vec.append xs ys)
   = replaceFrom (extract r acc).1 xs := by
   unfold replaceFrom
@@ -1226,7 +1142,7 @@ theorem replaceFrom_append {r: Regex α} {xs: Vec α (n + num r)} {acc: Vec α n
   rw [replace_cast_symbols]
 
 theorem replaceFrom_extracts_cons:
-  replaceFrom (RegexID.add (nums rs) (extract r acc).1) (((extract r acc).2.append ((extracts rs Vec.nil).2.cast h)))
+  replaceFrom (RegexID.add (Symbol.nums rs) (extract r acc).1) (((extract r acc).2.append ((extracts rs Vec.nil).2.cast h)))
   = replaceFrom (extract r acc).1 (extract r acc).2
   := by
   rw [replaceFrom_append]
@@ -1257,22 +1173,6 @@ theorem RegexID.casts_casts (xs: Vec (RegexID n1) l) (h12: n1 = n2) (h23: n2 = n
   subst h12 h23
   simp only [RegexID.casts_rfl]
 
-theorem nums_map_map:
-  nums rs = nums (rs.map fun r => r.map f) := by
-  simp only [nums]
-  induction rs with
-  | nil =>
-    simp only [Vec.map_nil]
-  | @cons l r rs ih =>
-    simp only [Vec.map]
-    simp only [Vec.foldl]
-    nth_rewrite 1 [Nat.add_comm]
-    nth_rewrite 2 [Nat.add_comm]
-    rw [Vec.foldl_assoc]
-    rw [Vec.foldl_assoc]
-    rw [ih]
-    rw [num_map]
-
 theorem RegexID.add_cast_is_castLE (r: RegexID n) (h: n = m):
   (RegexID.add k (RegexID.cast r h)) = RegexID.castLE r (by omega) := by
   simp only [RegexID.add, RegexID.cast]
@@ -1295,7 +1195,7 @@ theorem RegexID.casts_is_casts_rw:
 
 theorem extracts_fmap1 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
   (extracts rs acc).1
-  = (RegexID.casts (extracts (Regex.maps rs f) (Vec.map acc f)).1 (by simp only [nums_map])) := by
+  = (RegexID.casts (extracts (Regex.maps rs f) (Vec.map acc f)).1 (by simp only [Symbol.nums_map])) := by
   simp only [Regex.maps]
   generalize_proofs h
   rw [RegexID.casts_symm.mpr]
@@ -1329,9 +1229,9 @@ theorem extracts_fmap1 (rs: Vec (Regex α) l) (acc: Vec α n) (f: α -> β):
 
     simp only [<- Vec.map_cast]
 
-    have ih' : n + num (r.map f) + nums (rs.map fun r => r.map f) = n + num (r.map f) + nums rs := by
+    have ih' : n + Symbol.num (r.map f) + Symbol.nums (rs.map fun r => r.map f) = n + Symbol.num (r.map f) + Symbol.nums rs := by
       simp only [Nat.add_left_cancel_iff]
-      rw [<- nums_map_map]
+      rw [<- Symbol.nums_map_map]
     rw [<- ih (h := ih')]
     clear ih
     generalize_proofs h9

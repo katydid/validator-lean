@@ -1,9 +1,10 @@
 import Validator.Std.Vec
 
+import Validator.Regex.Num
 import Validator.Regex.Regex
+import Validator.Regex.Symbol
 import Validator.Hedge.Grammar
 import Validator.Hedge.IfExpr
-import Validator.Regex.Symbol
 
 namespace Enter
 
