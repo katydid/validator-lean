@@ -140,3 +140,12 @@ theorem replacesFrom_cons (rs: Vec (RegexID n) l) (xs: Vec σ n):
   := by
   simp only [replacesFrom]
   simp only [Vec.map]
+
+theorem replaceFrom_append (e: RegexID n) {xs: Vec α n} {ys: Vec α m}:
+  replaceFrom (RegexID.add m e) (Vec.append xs ys)
+  = replaceFrom e xs := by
+  unfold replaceFrom
+  rw [← replace_regexid_add e (xs.append ys)]
+  rw [← replace_take e (xs.append ys)]
+  rw [Vec.take_append xs ys]
+  rw [replace_cast_symbols]
