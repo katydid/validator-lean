@@ -125,6 +125,35 @@ def foldl {α : Type u} {β : Type v} (f : α → β → α) : (init : α) → V
   | a, nil      => a
   | a, cons b l => foldl f (f a b) l
 
+theorem foldl_nil:
+  foldl f init Vec.nil = init := by
+  simp only [foldl]
+
+@[simp, grind =] theorem foldl_cons {xs : Vec α l} {f : β → α → β} {b : β} :
+  (Vec.cons x xs).foldl f b = xs.foldl f (f b x) := rfl
+
+theorem foldl_assoc {op : α → α → α} [ha : Std.Associative op] :
+    ∀ {xs : Vec α l} {a₁ a₂}, xs.foldl op (op a₁ a₂) = op a₁ (xs.foldl op a₂)
+  | nil, a₁, a₂ => rfl
+  | Vec.cons x xs, a₁, a₂ => by
+    simp only [foldl_cons, ha.assoc]
+    rw [foldl_assoc]
+
+theorem foldl_nat_add (xs: Vec Nat l):
+  Vec.foldl (· + ·) (acc + z) xs = acc + Vec.foldl (· + ·) z xs := by
+  rw [foldl_assoc]
+
+theorem foldl_nat_add' (xs: Vec Nat l):
+  Vec.foldl (· + ·) (acc + z) xs = acc + Vec.foldl (· + ·) z xs := by
+  induction xs generalizing z with
+  | nil =>
+    repeat rw [foldl_nil]
+  | @cons l x xs ih =>
+    simp +arith only [foldl]
+    simp only at ih
+    rw [<- ih]
+    ac_rfl
+
 theorem eq (xs ys: Vec α n) (h: Vec.toList xs = Vec.toList ys): xs = ys := by
   induction xs with
   | nil =>

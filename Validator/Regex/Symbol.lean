@@ -46,14 +46,18 @@ def num (r: Regex σ): Nat :=
   | Regex.star r1 => num r1
 
 def nums (xs: Vec (Regex σ) l): Nat :=
-  match xs with
-  | Vec.nil => 0
-  | Vec.cons x xs => nums xs + num x
+  Vec.foldl (· + ·) 0 (Vec.map xs num)
+
+theorem nums_add:
+  num x + nums xs = nums (Vec.cons x xs) := by
+  simp only [nums]
+  simp only [Vec.map]
+  simp only [Vec.foldl]
+  nth_rewrite 2 [Nat.add_comm]
+  rw [Vec.foldl_nat_add]
 
 def nums_list (xs: List (Regex σ)): Nat :=
-  match xs with
-  | [] => 0
-  | x::xs => nums_list xs + num x
+  List.foldl (· + ·) 0 (List.map num xs)
 
 def RegexID.add {n: Nat} (m: Nat) (r: RegexID n): RegexID (n + m) :=
   Regex.map r (fun s => (Fin.castLE (by omega) s))
@@ -168,13 +172,13 @@ def extracts (xs: Vec (Regex σ) nregex) (acc: Vec σ nacc):
     let (regexid, acc1) := Symbol.extract x acc
     let (regexids, accs) := extracts xs acc1
     let regexid': RegexID (nacc + nums (Vec.cons x xs)) :=
-      RegexID.cast (RegexID.add (nums xs) regexid) (by simp only [nums]; ac_rfl)
+      RegexID.cast (RegexID.add (nums xs) regexid) (by rw [<- nums_add]; ac_rfl)
     let regexesids' : Vec (RegexID (nacc + nums (Vec.cons x xs))) nregex :=
-      RegexID.casts regexids (by simp only [nums]; ac_rfl)
+      RegexID.casts regexids (by rw [<- nums_add]; ac_rfl)
     let regexidcons: Vec (RegexID (nacc + nums (Vec.cons x xs))) (nregex + 1) :=
       Vec.cast (Vec.cons regexid' regexesids') (by simp only)
     let accs' : (Vec σ (nacc + nums (Vec.cons x xs))) :=
-      Vec.cast accs (by simp only [nums]; ac_rfl)
+      Vec.cast accs (by rw [<- nums_add]; ac_rfl)
     (regexidcons, accs')
 
 def extractsFrom (xs: Vec (Regex σ) nregex):
@@ -257,19 +261,25 @@ theorem nums_nil {σ: Type}:
 theorem nums_zero {σ: Type} (xs: Vec (Regex σ) 0):
   nums xs = 0 := by
   unfold nums
-  -- aesop?
-  split
-  next l xs heq => simp_all only
-  next l xs_1 n x xs_2 heq heq_1 => simp_all only [Nat.right_eq_add, Nat.add_eq_zero_iff, one_ne_zero, and_false]
+  cases xs with
+  | nil =>
+  simp only [Vec.map_nil]
+  simp only [Vec.foldl_nil]
 
 theorem nums_is_nums_list (xs: Vec (Regex σ) l):
   nums xs = nums_list xs.toList := by
+  simp only [nums]
+  simp only [nums_list]
   induction xs with
   | nil =>
-    simp only [nums, Vec.toList, nums_list]
+    simp only [Vec.toList, Vec.map_nil, Vec.foldl_nil, List.map_nil, List.foldl_nil]
   | cons x xs ih =>
-    simp only [nums, Vec.toList, nums_list]
+    simp only [Vec.toList, Vec.foldl, Vec.map, List.map, List.foldl]
+    nth_rewrite 1 [Nat.add_comm]
+    rw [Vec.foldl_assoc]
     rw [ih]
+    nth_rewrite 2 [Nat.add_comm]
+    rw [List.foldl_assoc]
 
 theorem RegexID.cast_rfl (r: RegexID n): RegexID.cast r rfl = r := by
   rfl
@@ -617,12 +627,19 @@ theorem nums_cons_is_add:
   nums (Vec.cons x xs) = num x + nums xs
   := by
   simp only [nums]
-  ac_rfl
+  simp only [Vec.map]
+  simp only [Vec.foldl]
+  nth_rewrite 1 [Nat.add_comm]
+  rw [Vec.foldl_assoc]
 
 theorem RegexID.cons_cast:
   Vec (RegexID (nacc + nums (Vec.cons x xs))) n
   = Vec (RegexID (nacc + num x + nums xs)) n := by
   simp only [nums]
+  simp only [Vec.map]
+  simp only [Vec.foldl]
+  nth_rewrite 2 [Nat.add_comm]
+  rw [Vec.foldl_assoc]
   ac_rfl
 
 theorem extracts_nil (acc: Vec σ nacc):
@@ -806,15 +823,19 @@ theorem num_map (r: Regex α) (f: α -> β):
 theorem nums_map (rs: Vec (Regex α) l) (f: α -> β):
   nums (Regex.maps rs f) = nums rs := by
   simp only [Regex.maps]
+  simp only [nums]
   induction rs with
   | nil =>
-    simp only [Vec.map]
-    rfl
+    simp only [Vec.map_nil]
   | @cons l r rs ih =>
     simp only [Vec.map]
-    simp only [nums]
-    rw [ih]
+    simp only [Vec.foldl]
     rw [num_map]
+    nth_rewrite 1 [Nat.add_comm]
+    rw [Vec.foldl_assoc]
+    rw [ih]
+    nth_rewrite 2 [Nat.add_comm]
+    rw [Vec.foldl_assoc]
 
 theorem extract_lift_cast (r: Regex α) (acc: Vec α n) (h1: n + num r = l + num r) (h2: n = l):
   (Vec.cast (extract r acc).2 h1) = (extract r (Vec.cast acc h2)).2 := by
@@ -1238,13 +1259,17 @@ theorem RegexID.casts_casts (xs: Vec (RegexID n1) l) (h12: n1 = n2) (h23: n2 = n
 
 theorem nums_map_map:
   nums rs = nums (rs.map fun r => r.map f) := by
+  simp only [nums]
   induction rs with
   | nil =>
-    simp only [Vec.map]
-    rfl
+    simp only [Vec.map_nil]
   | @cons l r rs ih =>
     simp only [Vec.map]
-    simp only [nums]
+    simp only [Vec.foldl]
+    nth_rewrite 1 [Nat.add_comm]
+    nth_rewrite 2 [Nat.add_comm]
+    rw [Vec.foldl_assoc]
+    rw [Vec.foldl_assoc]
     rw [ih]
     rw [num_map]
 
