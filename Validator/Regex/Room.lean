@@ -1,5 +1,5 @@
 import Validator.Regex.Enter
-import Validator.Regex.Functor
+import Validator.Regex.Drawer
 import Validator.Regex.Leave
 import Validator.Regex.Num
 import Validator.Regex.Regex
@@ -51,7 +51,7 @@ theorem derive_unapplied_is_derive_unapplied_unfolded (Φ: σ -> α -> Bool) (r:
   unfold flip
   simp only [Enter.enter, Leave.leave]
 
-theorem Room_derive_unapplied_unfolded_is_Regex_derive
+theorem derive_unapplied_unfolded_is_Regex_derive
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
   Room.derive_unapplied_unfolded Φ r a = Regex.derive Φ r a := by
   unfold Room.derive_unapplied_unfolded
@@ -60,12 +60,12 @@ theorem Room_derive_unapplied_unfolded_is_Regex_derive
   rw [<- Symbol.extractFrom_replaceFrom_is_fmap]
   rw [Regex.Point.derive_is_point_derive]
 
-theorem Room_derive_unfolded_is_derive_unapplied_unfolded
+theorem derive_unfolded_is_derive_unapplied_unfolded
   (p: σ -> Bool) (r: Regex σ) (a: α):
   Room.derive_unfolded p r = Room.derive_unapplied_unfolded (fun s _ => p s) r a := by
   rfl
 
-theorem Room_derive_unapplied_unfolded_is_derive_unfolded
+theorem derive_unapplied_unfolded_is_derive_unfolded
   (p: σ -> α -> Bool) (r: Regex σ) (a: α):
   Room.derive_unapplied_unfolded p r a = Room.derive_unfolded (fun s => p s a) r := by
   rfl
