@@ -2,7 +2,7 @@ import Validator.Std.Hedge
 import Validator.Std.List
 import Validator.Std.Vec
 
-import Validator.Expr.Pred
+import Validator.Pred.AnyEq
 import Validator.Regex.Regex
 import Validator.Regex.Elem
 import Validator.Regex.Language
@@ -53,30 +53,30 @@ def Grammar.emptyset: Grammar 0 φ :=
 def Grammar.emptystr: Grammar 0 φ :=
   Grammar.mk Regex.emptystr #vec[]
 
-example : Grammar 5 (Pred String) := Grammar.mk
+example : Grammar 5 (AnyEq.Pred String) := Grammar.mk
   -- start := ("html", Html)
-  (start := Regex.symbol (Pred.eq "html", 0))
+  (start := Regex.symbol (AnyEq.Pred.eq "html", 0))
   -- production rules
   (prods := #vec[
     -- Html -> ("head", Head) · ("body", Body)
     Regex.concat
-      (Regex.symbol (Pred.eq "head", 1))
-      (Regex.symbol (Pred.eq "body", 2))
+      (Regex.symbol (AnyEq.Pred.eq "head", 1))
+      (Regex.symbol (AnyEq.Pred.eq "body", 2))
     -- Head -> ("title", Text) | ε
     , Regex.or
-      (Regex.symbol (Pred.eq "title", 3))
+      (Regex.symbol (AnyEq.Pred.eq "title", 3))
       Regex.emptystr
     -- Body -> ("p", Text)*
-    , Regex.star (Regex.symbol (Pred.eq "p", 3))
+    , Regex.star (Regex.symbol (AnyEq.Pred.eq "p", 3))
     -- Text -> (., Empty)
-    , Regex.symbol (Pred.any, 4)
+    , Regex.symbol (AnyEq.Pred.any, 4)
     -- Empty -> ε
     , Regex.emptystr
   ])
 
-def example_grammar: Grammar 1 (Pred Char) :=
+def example_grammar: Grammar 1 (AnyEq.Pred Char) :=
   Grammar.mk
-    (Regex.or Regex.emptystr (Regex.symbol (Pred.eq 'a', 0)))
+    (Regex.or Regex.emptystr (Regex.symbol (AnyEq.Pred.eq 'a', 0)))
     #vec[Regex.emptystr]
 
 #guard

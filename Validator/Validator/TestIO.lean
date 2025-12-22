@@ -21,7 +21,7 @@ unsafe def run [DecidableEq φ] [Hashable φ]
 
 -- runTwice is used to check if the cache was hit on the second run
 def runTwice [DecidableEq α] [Hashable α] [DecidableEq β]
-  (f: TreeParserIO.Impl n (Pred α) α β) (t: Hedge.Node α): EIO String β := do
+  (f: TreeParserIO.Impl n (AnyEq.Pred α) α β) (t: Hedge.Node α): EIO String β := do
   let initial := TreeParserIO.Impl.mk (TreeParser.ParserState.mk' t)
   let (res1, updated) <- StateT.run f initial
   _ <- TreeParserIO.EIO.println "start second run"
@@ -33,8 +33,8 @@ def runTwice [DecidableEq α] [Hashable α] [DecidableEq β]
 -- runTwice is used to check if the cache was hit on the second run
 unsafe def runTwice'
   [DecidableEq α] [Hashable α]
-  (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  unsafeEIO (runTwice (n := n) (validate G Pred.evalb G.start) t)
+  (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+  unsafeEIO (runTwice (n := n) (validate G AnyEq.Pred.evalb G.start) t)
 
 open TokenTree (node)
 
@@ -44,23 +44,23 @@ open TokenTree (node)
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 1)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptystr]
 --   )
 --   (node "a" [])
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 1)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptystr]
 --   )
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 2)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
---       (Regex.symbol (Pred.eq (Token.string "b"), 1))
+--       (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
 --       , Regex.emptystr
 --     ]
 --   )
@@ -68,11 +68,11 @@ open TokenTree (node)
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 2)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
---         (Regex.symbol (Pred.eq (Token.string "b"), 1))
---         (Regex.symbol (Pred.eq (Token.string "c"), 1))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 1))
 --       )
 --       , Regex.emptystr
 --     ]
@@ -81,14 +81,14 @@ open TokenTree (node)
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 3)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
---         (Regex.symbol (Pred.eq (Token.string "b"), 1))
---         (Regex.symbol (Pred.eq (Token.string "c"), 2))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 2))
 --       )
 --       , Regex.emptystr
---       , (Regex.symbol (Pred.eq (Token.string "d"), 1))
+--       , (Regex.symbol (AnyEq.Pred.eq (Token.string "d"), 1))
 --     ]
 --   )
 --   (node "a" [node "b" [], node "c" [node "d" []]])
@@ -96,21 +96,21 @@ open TokenTree (node)
 -- -- try to engage skip using emptyset, since it is unescapable
 -- #eval runTwice'
 --   (Grammar.mk (n := 1)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptyset]
 --   )
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 4)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
---         (Regex.symbol (Pred.eq (Token.string "b"), 3))
---         (Regex.symbol (Pred.eq (Token.string "c"), 2))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 3))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 2))
 --       )
 --       , Regex.emptystr
---       , (Regex.symbol (Pred.eq (Token.string "d"), 1))
+--       , (Regex.symbol (AnyEq.Pred.eq (Token.string "d"), 1))
 --       , Regex.emptyset
 --     ]
 --   )
@@ -118,10 +118,10 @@ open TokenTree (node)
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 2)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
---         (Regex.symbol (Pred.eq (Token.string "b"), 1))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
 --         Regex.emptyset
 --       )
 --       , Regex.emptystr
@@ -131,11 +131,11 @@ open TokenTree (node)
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 3)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
---         (Regex.symbol (Pred.eq (Token.string "b"), 1))
---         (Regex.symbol (Pred.eq (Token.string "c"), 2))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 2))
 --       )
 --       , Regex.emptystr
 --       , Regex.emptyset
@@ -145,14 +145,14 @@ open TokenTree (node)
 
 -- #eval runTwice'
 --   (Grammar.mk (n := 4)
---     (Regex.symbol (Pred.eq (Token.string "a"), 0))
+--     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
---         (Regex.symbol (Pred.eq (Token.string "b"), 0))
---         (Regex.symbol (Pred.eq (Token.string "c"), 1))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 0))
+--         (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 1))
 --       )
 --       , Regex.emptystr
---       , (Regex.symbol (Pred.eq (Token.string "d"), 2))
+--       , (Regex.symbol (AnyEq.Pred.eq (Token.string "d"), 2))
 --       , Regex.emptyset
 --     ]
 --   )

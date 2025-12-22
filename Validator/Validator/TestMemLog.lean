@@ -17,18 +17,18 @@ def validate {m} [DecidableEq φ] [ValidateM m n φ α]
 
 def run
   [DecidableEq α] [Hashable α]
-  (G: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
-  TreeParserMemLogM.run' (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t
+  (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
+  TreeParserMemLogM.run' (n := n) (φ := AnyEq.Pred α) (validate G AnyEq.Pred.evalb G.start) t
 
 -- Tests
 
 def testCacheIsHitOnSecondRun
   [DecidableEq α] [Hashable α]
-  (G: Grammar n (Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
-  match TreeParserMemLogM.run (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t with
+  (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): (List String × Except String Bool) :=
+  match TreeParserMemLogM.run (n := n) (φ := AnyEq.Pred α) (validate G AnyEq.Pred.evalb G.start) t with
   | EStateM.Result.error err state1 => (state1.logs, Except.error err)
   | EStateM.Result.ok res1 state1 =>
-    match TreeParserMemLogM.runPopulatedMem (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t state1.enter state1.leave with
+    match TreeParserMemLogM.runPopulatedMem (n := n) (φ := AnyEq.Pred α) (validate G AnyEq.Pred.evalb G.start) t state1.enter state1.leave with
     | EStateM.Result.error err state2 => (state1.logs ++ state2.logs, Except.error err)
     | EStateM.Result.ok res2 state2 =>
       if res1 ≠ res2
@@ -39,8 +39,8 @@ def testCacheIsHitOnSecondRun
 -- This tests that given an empty cache the test does actually fail.
 def testThatTestCacheBreaksWithEmptyCache
   [DecidableEq α] [Hashable α]
-  (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  TreeParserMemTestM.run' (n := n) (φ := Pred α) (validate G Pred.evalb G.start) t
+  (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+  TreeParserMemTestM.run' (n := n) (φ := AnyEq.Pred α) (validate G AnyEq.Pred.evalb G.start) t
 
 open TokenTree (node)
 
@@ -58,7 +58,7 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 1)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
   (node "a" []) =
@@ -85,7 +85,7 @@ open TokenTree (node)
 
 #guard testThatTestCacheBreaksWithEmptyCache
   (Grammar.mk (n := 1)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
   (node "a" []) =
@@ -93,7 +93,7 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 1)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
@@ -128,9 +128,9 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 2)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
-      (Regex.symbol (Pred.eq (Token.string "b"), 1))
+      (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
   )
@@ -166,11 +166,11 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 2)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 1))
-        (Regex.symbol (Pred.eq (Token.string "c"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 1))
       )
       , Regex.emptystr
     ]
@@ -219,14 +219,14 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 3)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 1))
-        (Regex.symbol (Pred.eq (Token.string "c"), 2))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 2))
       )
       , Regex.emptystr
-      , (Regex.symbol (Pred.eq (Token.string "d"), 1))
+      , (Regex.symbol (AnyEq.Pred.eq (Token.string "d"), 1))
     ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =
@@ -282,7 +282,7 @@ open TokenTree (node)
 -- try to engage skip using emptyset, since it is unescapable
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 1)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
@@ -317,14 +317,14 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 4)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 3))
-        (Regex.symbol (Pred.eq (Token.string "c"), 2))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 3))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 2))
       )
       , Regex.emptystr
-      , (Regex.symbol (Pred.eq (Token.string "d"), 1))
+      , (Regex.symbol (AnyEq.Pred.eq (Token.string "d"), 1))
       , Regex.emptyset
     ]
   )
@@ -364,10 +364,10 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 2)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
         Regex.emptyset
       )
       , Regex.emptystr
@@ -409,11 +409,11 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 3)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 1))
-        (Regex.symbol (Pred.eq (Token.string "c"), 2))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 2))
       )
       , Regex.emptystr
       , Regex.emptyset
@@ -471,14 +471,14 @@ open TokenTree (node)
 
 #guard testCacheIsHitOnSecondRun
   (Grammar.mk (n := 4)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 0))
-        (Regex.symbol (Pred.eq (Token.string "c"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 0))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 1))
       )
       , Regex.emptystr
-      , (Regex.symbol (Pred.eq (Token.string "d"), 2))
+      , (Regex.symbol (AnyEq.Pred.eq (Token.string "d"), 2))
       , Regex.emptyset
     ]
   )

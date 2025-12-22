@@ -8,7 +8,7 @@ import Validator.Std.Hedge
 import Validator.Parser.TokenTree
 
 import Validator.Hedge.Grammar
-import Validator.Expr.Pred
+import Validator.Pred.AnyEq
 import Validator.Regex.Regex
 
 namespace Original
@@ -53,8 +53,8 @@ partial def validate
   (x: Rule n φ) (hedge: Hedge α): Bool :=
   Rule.null (List.foldl (derive G Φ) x hedge)
 
-def run [DecidableEq α] (G: Grammar n (Pred α)) (t: Hedge.Node α): Except String Bool :=
-  Except.ok (validate G Pred.evalb G.start [t])
+def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+  Except.ok (validate G AnyEq.Pred.evalb G.start [t])
 
 -- Tests
 
@@ -67,7 +67,7 @@ open TokenTree (node)
 
 #guard run
   (Grammar.mk (n := 1)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
   (node "a" []) =
@@ -75,7 +75,7 @@ open TokenTree (node)
 
 #guard run
   (Grammar.mk (n := 1)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
   (node "a" [node "b" []]) =
@@ -83,9 +83,9 @@ open TokenTree (node)
 
 #guard run
   (Grammar.mk (n := 2)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
-      (Regex.symbol (Pred.eq (Token.string "b"), 1))
+      (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
       , Regex.emptystr
     ]
   )
@@ -94,11 +94,11 @@ open TokenTree (node)
 
 #guard run
   (Grammar.mk (n := 2)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 1))
-        (Regex.symbol (Pred.eq (Token.string "c"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 1))
       )
       , Regex.emptystr
     ]
@@ -108,14 +108,14 @@ open TokenTree (node)
 
 #guard run
   (Grammar.mk (n := 3)
-    (Regex.symbol (Pred.eq (Token.string "a"), 0))
+    (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
-        (Regex.symbol (Pred.eq (Token.string "b"), 1))
-        (Regex.symbol (Pred.eq (Token.string "c"), 2))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
+        (Regex.symbol (AnyEq.Pred.eq (Token.string "c"), 2))
       )
       , Regex.emptystr
-      , (Regex.symbol (Pred.eq (Token.string "d"), 1))
+      , (Regex.symbol (AnyEq.Pred.eq (Token.string "d"), 1))
     ]
   )
   (node "a" [node "b" [], node "c" [node "d" []]]) =

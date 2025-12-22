@@ -1,7 +1,7 @@
-import Validator.Expr.Pred
+import Validator.Pred.AnyEq
 import Validator.Parser.Token
 
-abbrev TokenPred := Pred Token
+abbrev TokenPred := AnyEq.Pred Token
 
 instance : Ord TokenPred := inferInstance
 
@@ -14,4 +14,4 @@ instance : Hashable TokenPred := inferInstance
 namespace TokenPred
 
 def eqStr (s: String): TokenPred :=
-  Pred.eq (Token.string s)
+  AnyEq.Pred.eq (Token.string s)

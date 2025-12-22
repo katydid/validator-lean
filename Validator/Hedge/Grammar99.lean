@@ -2,7 +2,7 @@ import Validator.Std.Hedge
 import Validator.Std.Vec
 
 import Validator.Hedge.Grammar
-import Validator.Expr.Pred
+import Validator.Pred.AnyEq
 import Validator.Regex.Elem
 import Validator.Regex.Regex
 import Validator.Regex.Language
