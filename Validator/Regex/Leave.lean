@@ -6,6 +6,14 @@ import Validator.Regex.Replace
 
 namespace Leave
 
+def leave
+  (r: Regex σ)
+  (ps: Vec Bool (Symbol.num r))
+  : Regex σ :=
+  let replaces: Vec (σ × Bool) (Symbol.num r) := Vec.zip (Symbol.extractFrom r).2 ps
+  let replaced: Regex (σ × Bool) := Symbol.replaceFrom (Symbol.extractFrom r).1 replaces
+  Regex.Point.derive replaced
+
 -- leaves takes a vector of expressions and vector of bools.
 -- The vectors of bools represent the nullability of the derived child expressions.
 -- Each bool will then replace each symbol expression with either an emptystr or emptyset.
