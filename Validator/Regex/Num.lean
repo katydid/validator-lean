@@ -103,3 +103,12 @@ theorem nums_map_map:
     rw [Vec.foldl_assoc]
     rw [ih]
     rw [num_map]
+
+theorem nums_cons_is_add:
+  nums (Vec.cons x xs) = num x + nums xs
+  := by
+  simp only [nums]
+  simp only [Vec.map]
+  simp only [Vec.foldl]
+  nth_rewrite 1 [Nat.add_comm]
+  rw [Vec.foldl_assoc]

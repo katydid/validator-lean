@@ -5,5 +5,6 @@ import Validator.Regex.Map
 import Validator.Regex.Num
 import Validator.Regex.Pair
 import Validator.Regex.Regex
+import Validator.Regex.RegexID
 import Validator.Regex.Smart
 import Validator.Regex.Symbol
