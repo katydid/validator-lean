@@ -3,7 +3,7 @@ import Validator.Std.Vec
 import Validator.Regex.Extract
 import Validator.Regex.Map
 import Validator.Regex.Num
-import Validator.Regex.Pair
+import Validator.Regex.Point
 import Validator.Regex.Regex
 import Validator.Regex.RegexID
 import Validator.Regex.Replace
@@ -38,7 +38,7 @@ import Validator.Regex.Replace
 namespace Symbol
 
 def derive {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
-  Regex.Pair.derive
+  Regex.Point.derive
     (replaceFrom
       (extractFrom r).1
       (Vec.map
@@ -52,14 +52,14 @@ def derive' {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): 
   let pred_results: Vec Bool (Symbol.num r) := Vec.map symbols (fun s => Φ s a)
   let replaces: Vec (σ × Bool) (Symbol.num r) := Vec.zip symbols pred_results
   let replaced: Regex (σ × Bool) := replaceFrom r' replaces
-  Regex.Pair.derive replaced
+  Regex.Point.derive replaced
 
 def derives {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
   let (rs', symbols): (Vec (RegexID (Symbol.nums rs)) l × Vec σ (Symbol.nums rs)) := Symbol.extractsFrom rs
   let pred_results: Vec Bool (Symbol.nums rs) := Vec.map symbols (fun s => Φ s a)
   let replaces: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip symbols pred_results
   let replaced: Vec (Regex (σ × Bool)) l := replacesFrom rs' replaces
-  Regex.Pair.derives replaced
+  Regex.Point.derives replaced
 
 def leave
   (rs: Vec (Regex σ) l)
@@ -67,7 +67,7 @@ def leave
   : (Vec (Regex σ) l) :=
   let replaces: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip (Symbol.extractsFrom rs).2 ps
   let replaced: Vec (Regex (σ × Bool)) l := replacesFrom (Symbol.extractsFrom rs).1 replaces
-  Regex.Pair.derives replaced
+  Regex.Point.derives replaced
 
 def enter (rs: Vec (Regex σ) l): Vec σ (Symbol.nums rs) :=
   let (_, symbols): (Vec (RegexID (Symbol.nums rs)) l × Vec σ (Symbol.nums rs)) := Symbol.extractsFrom rs
@@ -107,7 +107,7 @@ def derive_closure {σ: Type}
 
 def derive_closure' {σ: Type}
   (p: σ -> Bool) (r: Regex σ): Regex σ :=
-  Regex.Pair.derive
+  Regex.Point.derive
     (replaceFrom
       (extractFrom r).1
       (Vec.map
@@ -332,7 +332,7 @@ theorem Symbol_derive_is_Regex_derive
   Symbol.derive Φ r a = Regex.derive Φ r a := by
   unfold Symbol.derive
   rw [<- extractFrom_replaceFrom_is_fmap]
-  rw [Regex.Pair.derive_is_pair_derive]
+  rw [Regex.Point.derive_is_point_derive]
 
 theorem replaceFrom_append {r: Regex α} {xs: Vec α (n + Symbol.num r)} {acc: Vec α n} {ys: Vec α m}:
   replaceFrom (RegexID.add m (extract r acc).1) (Vec.append xs ys)
@@ -391,11 +391,11 @@ theorem Symbol_derives_is_fmap
   Symbol.derives Φ rs a = Vec.map rs (fun r => Symbol.derive Φ r a) := by
   unfold Symbol.derives
   simp only
-  unfold Regex.Pair.derives
+  unfold Regex.Point.derives
   unfold Symbol.derive
   nth_rewrite 2 [<- Vec.map_map]
   nth_rewrite 1 [<- Vec.map_map]
-  apply (congrArg (fun xs => Vec.map xs Regex.Pair.derive))
+  apply (congrArg (fun xs => Vec.map xs Regex.Point.derive))
   rw [<- Vec.zip_map]
   -- rewrites under the closure
   simp only [<- extractFrom_replaceFrom_is_fmap]
@@ -413,7 +413,7 @@ theorem Symbol_derives_is_Regex_derives
   congr
   funext r
   rw [<- extractFrom_replaceFrom_is_fmap]
-  rw [Regex.Pair.derive_is_pair_derive]
+  rw [Regex.Point.derive_is_point_derive]
 
 theorem Symbol_derives_is_derives_preds
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α)

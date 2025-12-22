@@ -18,7 +18,7 @@ def deriveLeaves
   let (regexes, symbols) := Symbol.extractsFrom xs
   let res: Vec ((φ × Ref n) × Bool) (Symbol.nums xs) := Vec.zip symbols ns
   let res': Vec (Regex ((φ × Ref n) × Bool)) l := Symbol.replacesFrom regexes res
-  Regex.Smart.derive_pairs res'
+  Regex.Smart.derive_points res'
 
 def deriveLeaveM [Monad m] {n: Nat} {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Symbol.nums xs)): m (Rules n φ l) := do
   return deriveLeaves xs ns
