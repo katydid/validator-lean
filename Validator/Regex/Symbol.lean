@@ -15,11 +15,10 @@ import Validator.Regex.Room
 namespace Symbol
 
 def derives {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α): Vec (Regex σ) l :=
-  let (rs', symbols): (Vec (RegexID (Symbol.nums rs)) l × Vec σ (Symbol.nums rs)) := Symbol.extractsFrom rs
+  let symbols: Vec σ (Symbol.nums rs) := Enter.enters rs
   let pred_results: Vec Bool (Symbol.nums rs) := Vec.map symbols (fun s => Φ s a)
-  let replaces: Vec (σ × Bool) (Symbol.nums rs) := Vec.zip symbols pred_results
-  let replaced: Vec (Regex (σ × Bool)) l := replacesFrom rs' replaces
-  Regex.Point.derives replaced
+  let res: Vec (Regex σ) l := Leave.leaves rs pred_results
+  res
 
 -- derives_preds unlike derives takes a predicate that works out the full vector of predicates.
 -- This gives the predicate control over the evaluation order of α, for example α is a tree, we can first evaluate the same label, before traversing down.
@@ -47,11 +46,16 @@ def derives_closure {σ: Type}
 
 theorem Symbol_derives_is_fmap
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
-  Symbol.derives Φ rs a = Vec.map rs (fun r => Room.derive_unapplied_unfolded Φ r a) := by
+  Symbol.derives Φ rs a = Vec.map rs (fun r => Room.derive_unapplied Φ r a) := by
   unfold Symbol.derives
+  unfold Enter.enters
+  unfold Leave.leaves
   simp only
   unfold Regex.Point.derives
-  unfold Room.derive_unapplied_unfolded
+  unfold Room.derive_unapplied
+  unfold Enter.enter
+  unfold Leave.leave
+  unfold flip
   nth_rewrite 2 [<- Vec.map_map]
   nth_rewrite 1 [<- Vec.map_map]
   apply (congrArg (fun xs => Vec.map xs Regex.Point.derive))
@@ -67,11 +71,13 @@ theorem Symbol_derives_is_Regex_derives
   (r: Vec (Regex σ) l) (a: α):
   Symbol.derives Φ r a = Regex.map_derive Φ r a := by
   rw [Symbol_derives_is_fmap]
-  unfold Room.derive_unapplied_unfolded
+  unfold Room.derive_unapplied
+  unfold flip
+  unfold Enter.enter
+  unfold Leave.leave
   unfold Regex.map_derive
   congr
   funext r
-  simp only
   simp only [<- Vec.zip_map]
   rw [<- extractFrom_replaceFrom_is_fmap]
   rw [Regex.Point.derive_is_point_derive]
