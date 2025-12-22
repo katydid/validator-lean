@@ -1,5 +1,6 @@
 import Validator.Regex.Closure
 import Validator.Regex.Elem
+import Validator.Regex.Extract
 import Validator.Regex.Language
 import Validator.Regex.Map
 import Validator.Regex.Num

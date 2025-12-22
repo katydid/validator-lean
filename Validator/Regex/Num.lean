@@ -112,3 +112,13 @@ theorem nums_cons_is_add:
   simp only [Vec.foldl]
   nth_rewrite 1 [Nat.add_comm]
   rw [Vec.foldl_assoc]
+
+def Vec.cast_or (xs: Vec σ (n + num r1 + num r2)): Vec σ (n + num (Regex.or r1 r2)) :=
+  have h : (n + num r1 + num r2) = (n + num (Regex.or r1 r2)) := by
+    rw [<- Nat.add_assoc]
+  Vec.cast xs h
+
+def Vec.cast_concat (xs: Vec σ (n + num r1 + num r2)): Vec σ (n + num (Regex.concat r1 r2)) :=
+  have h : (n + num r1 + num r2) = (n + num (Regex.concat r1 r2)) := by
+    rw [<- Nat.add_assoc]
+  Vec.cast xs h
