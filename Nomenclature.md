@@ -31,6 +31,7 @@
 * ℝ (real number type)
 * s (symbol variable name)
 * σ (symbol type parameter)
+* u, v (type universes)
 * xs, ys, zs (generic list variable names)
 * x, y, z (generic first element of a list variable name)
 * Z, ℤ (integers)

@@ -4,7 +4,7 @@ import Batteries.Tactic.GeneralizeProofs
 import Mathlib.Tactic.NthRewrite
 import Mathlib.Tactic.RewriteSearch
 
-inductive Vec (α: Type): Nat -> Type where
+inductive Vec (α: Type u): Nat -> Type u where
   | nil : Vec α 0
   | cons {n: Nat} (x: α) (xs: Vec α n): Vec α (n + 1)
   deriving DecidableEq, Ord, Repr, Hashable
@@ -121,6 +121,10 @@ def head (xs: Vec α (Nat.succ l)): α :=
   match xs with
   | Vec.cons x _ => x
 
+def foldl {α : Type u} {β : Type v} (f : α → β → α) : (init : α) → Vec β l → α
+  | a, nil      => a
+  | a, cons b l => foldl f (f a b) l
+
 theorem eq (xs ys: Vec α n) (h: Vec.toList xs = Vec.toList ys): xs = ys := by
   induction xs with
   | nil =>
@@ -138,11 +142,11 @@ theorem eq (xs ys: Vec α n) (h: Vec.toList xs = Vec.toList ys): xs = ys := by
         -- aesop?
         simp_all only [List.cons.injEq, forall_const]
 
-theorem cast_rfl {α: Type} (xs: Vec α n) (h: n = n):
+theorem cast_rfl {α: Type u} (xs: Vec α n) (h: n = n):
   cast xs h = xs := by
   rfl
 
-theorem cast_toList_nil {α: Type} (h: 0 = n):
+theorem cast_toList_nil {α: Type u} (h: 0 = n):
   (cast (@Vec.nil α) h).toList = [] := by
   cases n with
   | zero =>
@@ -233,7 +237,7 @@ theorem toList_map (xs: Vec α n) (f: α -> β):
     rewrite [List.map]
     rfl
 
-theorem cons_cast {α: Type} {l n: Nat} (x: α) (xs: Vec α l) (h: l = n):
+theorem cons_cast {α: Type u} {l n: Nat} (x: α) (xs: Vec α l) (h: l = n):
   (Vec.cons x (Vec.cast xs h)) = Vec.cast (Vec.cons x xs) (by omega) := by
   subst h
   rfl
@@ -377,7 +381,7 @@ theorem snoc_append (xs: Vec α l):
     rw [ih]
     rfl
 
-theorem snoc_get {n: Nat} {α: Type} (xs: Vec α n) (y: α):
+theorem snoc_get {n: Nat} {α: Type u} (xs: Vec α n) (y: α):
   Vec.get (Vec.snoc xs y) (Fin.mk n (by omega)) = y := by
   induction xs with
   | nil =>
@@ -398,7 +402,7 @@ theorem snoc_map (xs: Vec α l) (f: α -> β):
     simp only [snoc, map]
     rw [ih]
 
-theorem get_map {β : Type} (xs : Vec α n) (f : α → β) (i : Fin n) :
+theorem get_map {β : Type v} (xs : Vec α n) (f : α → β) (i : Fin n) :
   (Vec.map xs f).get i = f (xs.get i) := by
   induction xs with
   | nil =>
@@ -591,7 +595,7 @@ def smallest [DecidableEq α] [LT α] [DecidableLT α] (xs: Vec α l) (y: α): O
           simp only [Nat.add_lt_add_iff_right, Fin.is_lt]
         ⟩
 
-theorem zip_map {α: Type} {β: Type} (f: α -> β) (xs: Vec α l):
+theorem zip_map {α: Type u} {β: Type v} (f: α -> β) (xs: Vec α l):
   (Vec.map xs (fun x => (x, f x))) =
   (Vec.zip xs (Vec.map xs f)) := by
   induction xs with
