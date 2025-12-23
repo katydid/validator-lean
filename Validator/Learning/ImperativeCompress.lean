@@ -93,7 +93,7 @@ def derive [DecidableEq φ]
   else
     match t with
     | Hedge.Node.mk label children =>
-      let ifexprs: List (IfExpr n φ) := ImperativeEnter.deriveEnter xs
+      let ifexprs: List (Symbol n φ) := ImperativeEnter.deriveEnter xs
       -- Vec.map (fun x => eval g x t) ifExprs
       let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval G Φ x label) ifexprs
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.

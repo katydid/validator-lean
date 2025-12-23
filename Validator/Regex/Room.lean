@@ -18,6 +18,12 @@ def derive {σ: Type}
   let pred_results: Vec Bool (Symbol.num r) := Vec.map symbols Φ
   Leave.leave r pred_results
 
+def derive_distrib {σ: Type}
+  (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (r: Regex σ): Regex σ :=
+  let symbols: Vec σ (Symbol.num r) := Enter.enter r
+  let pred_results: Vec Bool (Symbol.num r) := ps symbols
+  Leave.leave r pred_results
+
 def derive_unapplied {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α): Regex σ :=
   let symbols: Vec σ (Symbol.num r) := Enter.enter r
   let pred_results: Vec Bool (Symbol.num r) := Vec.map symbols (flip Φ a)
@@ -145,7 +151,7 @@ theorem derives_is_derives_unapplied_distrib
   unfold Enter.enters
   simp only
 
-theorem derives_unapplied_distrib_isderives_distrib
+theorem derives_unapplied_distrib_is_derives_distrib
   {σ: Type} {α: Type} (ps: {n: Nat} -> Vec σ n -> α -> Vec Bool n) (rs: Vec (Regex σ) l) (a: α):
   Room.derives_unapplied_distrib ps rs a = Room.derives_distrib (fun ss => ps ss a) rs := by
   rfl

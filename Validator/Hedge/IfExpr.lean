@@ -3,15 +3,13 @@ import Validator.Std.Vec
 import Validator.Regex.Regex
 import Validator.Hedge.Grammar
 
-abbrev IfExpr n φ := (φ × Fin n)
-
-abbrev IfExprs n φ l := Vec (IfExpr n φ) l
+abbrev IfExprs n φ l := Vec (Symbol n φ) l
 
 namespace IfExpr
 
 def eval {α: Type}
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (ifExpr: IfExpr n φ) (t: α): Rule n φ :=
+  (ifExpr: Symbol n φ) (t: α): Rule n φ :=
   match ifExpr with
   | (cnd, thn) =>
     if Φ cnd t

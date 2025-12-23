@@ -34,7 +34,7 @@ def derive
     match tree with
     | Hedge.Node.mk label children =>
       -- enters is one of our two new memoizable functions.
-      let ifexprs: List (IfExpr n φ) := ImperativeEnter.deriveEnter xs
+      let ifexprs: List (Symbol n φ) := ImperativeEnter.deriveEnter xs
       -- childxs = expressions to evaluate on children.
       let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval G Φ x label) ifexprs
       -- dchildxs = derivatives of children. The ' is for the exception it is wrapped in.
