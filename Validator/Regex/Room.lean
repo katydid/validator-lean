@@ -4,6 +4,7 @@ import Validator.Regex.Enter
 import Validator.Regex.Drawer
 import Validator.Regex.Leave
 import Validator.Regex.Num
+import Validator.Regex.Partial
 import Validator.Regex.Regex
 
 -- room, since we enter and leave
@@ -46,17 +47,31 @@ def derives_unapplied_distrib {σ: Type} {α: Type}
   let pred_results: Vec Bool (Symbol.nums rs) := ps symbols a
   Leave.leaves rs pred_results
 
-theorem derives_is_derives_unapplied
-  {σ: Type} {α: Type} (p: σ -> Bool) (rs: Vec (Regex σ) l) (a: α):
-  Room.derives p rs = Room.derives_unapplied (fun s _ => p s) rs a := by
-  rfl
-
 theorem derives_unapplied_is_derives
   {σ: Type} {α: Type} (p: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
   Room.derives_unapplied p rs a = Room.derives (fun s => p s a) rs := by
   rfl
 
-theorem derives_unapplied_is_fmap
+theorem derives_is_map
+  {σ: Type} (Φ: σ -> Bool) (rs: Vec (Regex σ) l):
+  Room.derives Φ rs = Vec.map rs (fun r => Room.derive Φ r) := by
+  unfold Room.derives
+  unfold Enter.enters
+  unfold Leave.leaves
+  simp only
+  unfold Regex.Point.derives
+  unfold Room.derive
+  unfold Enter.enter
+  unfold Leave.leave
+  nth_rewrite 3 [<- Vec.map_map]
+  apply (congrArg (fun xs => Vec.map xs Regex.Point.derive))
+  rw [<- Vec.zip_map]
+  rw [<- Symbol.extractsFrom_replacesFrom_is_fmap]
+  unfold Regex.maps
+  simp only [<- Vec.zip_map]
+  simp only [<- Symbol.extractFrom_replaceFrom_is_fmap]
+
+theorem derives_unapplied_is_map
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (rs: Vec (Regex σ) l) (a: α):
   Room.derives_unapplied Φ rs a = Vec.map rs (fun r => Room.derive_unapplied Φ r a) := by
   unfold Room.derives_unapplied
@@ -69,20 +84,33 @@ theorem derives_unapplied_is_fmap
   unfold Leave.leave
   unfold flip
   nth_rewrite 2 [<- Vec.map_map]
-  nth_rewrite 1 [<- Vec.map_map]
   apply (congrArg (fun xs => Vec.map xs Regex.Point.derive))
-  rw [Vec.map_id]
   rw [<- Vec.zip_map]
   rw [<- Symbol.extractsFrom_replacesFrom_is_fmap]
   unfold Regex.maps
   simp only [<- Vec.zip_map]
   simp only [<- Symbol.extractFrom_replaceFrom_is_fmap]
 
+theorem derives_is_Partial_map_derive
+  {σ: Type} (Φ: σ -> Bool)
+  (r: Vec (Regex σ) l):
+  Room.derives Φ r = Regex.Partial.map_derive Φ r := by
+  rw [derives_is_map]
+  unfold Room.derive
+  unfold Enter.enter
+  unfold Leave.leave
+  unfold Regex.Partial.map_derive
+  congr
+  funext r
+  simp only [<- Vec.zip_map]
+  rw [<- Symbol.extractFrom_replaceFrom_is_fmap]
+  rw [Regex.Partial.derive_is_point_derive]
+
 theorem derives_unapplied_is_Regex_map_derive
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool)
   (r: Vec (Regex σ) l) (a: α):
   Room.derives_unapplied Φ r a = Regex.map_derive Φ r a := by
-  rw [derives_unapplied_is_fmap]
+  rw [derives_unapplied_is_map]
   unfold Room.derive_unapplied
   unfold flip
   unfold Enter.enter

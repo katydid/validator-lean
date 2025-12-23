@@ -24,8 +24,8 @@ def derive {σ: Type} (r: Regex (σ × Bool)): Regex σ :=
   | star r1 =>
       concat (derive r1) (star (first r1))
 
-theorem map_first (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
-  first (Regex.map r (fun s => (s, Φ s a))) = r := by
+theorem map_first (Φ: σ -> Bool) (r: Regex σ):
+  first (Regex.map r (fun s => (s, Φ s))) = r := by
   induction r with
   | emptyset =>
     simp only [Regex.map, first]

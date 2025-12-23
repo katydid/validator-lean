@@ -55,8 +55,8 @@ theorem map_map (r: Regex α) (f: α -> β) (g: β -> σ):
     simp only [map]
     rw [ih1]
 
-theorem map_null {σ α} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
-  (map r (fun s => (s, Φ s a))).null = r.null := by
+theorem map_null {σ} (Φ: σ -> Bool) (r: Regex σ):
+  (map r (fun s => (s, Φ s))).null = r.null := by
   induction r with
   | emptyset =>
     simp only [map, Regex.null]
