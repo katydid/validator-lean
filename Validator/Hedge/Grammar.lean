@@ -309,49 +309,42 @@ def Rule.denote_onlyif {α: Type}
 theorem Rule.null_commutes {α: Type}
   (G: Grammar n φ) (Φ: φ -> α -> Bool) (x: Rule n φ):
   ((Rule.null x) = true) = Regex.Language.null (denote G Φ x) := by
+  unfold Rule.null
   induction x with
   | emptyset =>
     rw [denote_emptyset]
     rw [Regex.Language.null_emptyset]
-    unfold Rule.null
     unfold Regex.null
     apply Bool.false_eq_true
   | emptystr =>
     rw [denote_emptystr]
     rw [Regex.Language.null_emptystr]
-    unfold Rule.null
     unfold Regex.null
     simp only
   | symbol s =>
     obtain ⟨p, children⟩ := s
     rw [denote_symbol]
     rw [Hedge.Language.null_tree]
-    unfold Rule.null
     unfold Regex.null
     apply Bool.false_eq_true
   | or p q ihp ihq =>
     rw [denote_or]
     rw [Regex.Language.null_or]
-    unfold Rule.null
     unfold Regex.null
     rw [<- ihp]
     rw [<- ihq]
-    unfold Rule.null
     unfold Regex.null
     rw [Bool.or_eq_true]
   | concat p q ihp ihq =>
     rw [denote_concat]
     rw [Regex.Language.null_concat_append]
-    unfold Rule.null
     unfold Regex.null
     rw [<- ihp]
     rw [<- ihq]
-    unfold Rule.null
     unfold Regex.null
     rw [Bool.and_eq_true]
   | star r ih =>
     rw [denote_star]
     rw [Regex.Language.null_star_append]
-    unfold Rule.null
     unfold Regex.null
     simp only
