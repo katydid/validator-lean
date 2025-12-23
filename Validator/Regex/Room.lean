@@ -2,6 +2,7 @@ import Validator.Std.Vec
 
 import Validator.Regex.Enter
 import Validator.Regex.Drawer
+import Validator.Regex.Language
 import Validator.Regex.Leave
 import Validator.Regex.Num
 import Validator.Regex.Partial
@@ -52,7 +53,7 @@ theorem derives_unapplied_is_derives
   Room.derives_unapplied p rs a = Room.derives (fun s => p s a) rs := by
   rfl
 
-theorem derives_is_map
+theorem derives_is_map_derive
   {σ: Type} (Φ: σ -> Bool) (rs: Vec (Regex σ) l):
   Room.derives Φ rs = Vec.map rs (fun r => Room.derive Φ r) := by
   unfold Room.derives
@@ -91,20 +92,26 @@ theorem derives_unapplied_is_map
   simp only [<- Vec.zip_map]
   simp only [<- Symbol.extractFrom_replaceFrom_is_fmap]
 
+theorem derive_is_Partial_derive
+  {σ: Type} (Φ: σ -> Bool)
+  (r: Regex σ):
+  Room.derive Φ r = Regex.Partial.derive Φ r := by
+  unfold Room.derive
+  unfold Enter.enter
+  unfold Leave.leave
+  simp only
+  simp only [<- Vec.zip_map]
+  rw [<- Symbol.extractFrom_replaceFrom_is_fmap]
+  rw [Regex.Partial.derive_is_point_derive]
+
 theorem derives_is_Partial_map_derive
   {σ: Type} (Φ: σ -> Bool)
   (r: Vec (Regex σ) l):
   Room.derives Φ r = Regex.Partial.map_derive Φ r := by
-  rw [derives_is_map]
-  unfold Room.derive
-  unfold Enter.enter
-  unfold Leave.leave
+  rw [derives_is_map_derive]
+  simp only [derive_is_Partial_derive]
   unfold Regex.Partial.map_derive
   congr
-  funext r
-  simp only [<- Vec.zip_map]
-  rw [<- Symbol.extractFrom_replaceFrom_is_fmap]
-  rw [Regex.Partial.derive_is_point_derive]
 
 theorem derives_unapplied_is_Regex_map_derive
   {σ: Type} {α: Type} (Φ: σ -> α -> Bool)
@@ -151,3 +158,10 @@ theorem derives_distrib_is_derives_unapplied_distrib
 theorem derives_distrib_nil:
   Room.derives_distrib ps Vec.nil = Vec.nil := by
   rfl
+
+theorem derive_commutesb {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
+  Regex.denote (fun s a => Φ s a) (Room.derive (fun s => Φ s a) r)
+  = Regex.Language.derive (Regex.denote (fun s a => Φ s a) r) a := by
+  rw [derive_is_Partial_derive]
+  rw [<- Regex.Partial.derive_is_partial_derive]
+  rw [<- Regex.derive_commutesb]
