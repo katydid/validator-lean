@@ -258,7 +258,7 @@ theorem denote_list_star_n {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Rege
   rw [denote_list_star_n_iff]
 
 -- Given the above theorems it is easy to prove that the definition of denote_list is the equivalent to Regex.denote:
-theorem denote_list_is_Regex.denote {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ):
+theorem denote_list_is_Regex_denote {α: Type} {σ: Type} (Φ: σ -> α -> Prop) (r: Regex σ):
   denote_list Φ r = Regex.denote Φ r := by
   induction r with
   | emptyset =>

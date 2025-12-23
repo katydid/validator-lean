@@ -13,8 +13,50 @@ abbrev Hedge α := List (Hedge.Node α)
 
 namespace Hedge
 
+-- Node is a Labelled Tree.
+
+instance [Ord α]: LE (Node α) where
+  le x y := (Ord.compare x y).isLE
+
+instance [Ord α]: LT (Node α) where
+  lt x y := (Ord.compare x y).isLT
+
+def Node.getLabel (t: Node α): α :=
+  match t with
+  | Node.mk l _ => l
+
+def Node.getLabels (t: Node α): List α :=
+  match t with
+  | Node.mk l children => l :: List.flatMap Node.getLabels children
+
+def Node.getChildren (t: Node α): Hedge α :=
+  match t with
+  | Node.mk _ c => c
+
+def getAttachedChildren (t: Hedge.Node α): List {x // x ∈ t.getChildren} :=
+  match t with
+  | Node.mk _ c => c.attach
+
 def node {α: Type} (label: α) (children: Hedge α): Hedge.Node α :=
   Hedge.Node.mk label children
+
+abbrev LabelElem (x: α) (xs: Hedge α) := x ∈ List.flatMap Node.getLabels xs
+
+abbrev LabelIn {α: Type} (xs: Hedge α) := {
+    a: α
+    // LabelElem a xs
+  }
+
+def LabelIn.mk {α: Type} (y: α) (xs: Hedge α) (property : LabelElem y xs) : LabelIn xs :=
+  (Subtype.mk y property)
+
+def LabelIn.self {α: Type} (x: Hedge.Node α) : LabelIn [x] :=
+  (Subtype.mk x.getLabel (by
+    cases x with
+    | mk label children =>
+    simp only [LabelElem, List.flatMap_cons, Node.getLabels, List.flatMap_nil, List.append_nil, Node.getLabel,
+      List.mem_cons, List.mem_flatMap, true_or]
+  ))
 
 example: Hedge String := [
   node "html" [
@@ -38,6 +80,7 @@ example: Hedge String := [
 def Node.text (s: String) (children: Hedge (Option String)):
   Hedge.Node (Option String) :=
   node (Option.some s) children
+
 def Node.elem (children: Hedge (Option String)):
   Hedge.Node (Option String) :=
   node Option.none children
@@ -57,26 +100,6 @@ example: Hedge (Option String) := [
     ]
   ]
 ]
-
--- Node is a Labelled Tree.
-
-instance [Ord α]: LE (Node α) where
-  le x y := (Ord.compare x y).isLE
-
-instance [Ord α]: LT (Node α) where
-  lt x y := (Ord.compare x y).isLT
-
-def Node.getLabel (t: Node α): α :=
-  match t with
-  | Node.mk l _ => l
-
-def Node.getChildren (t: Node α): Hedge α :=
-  match t with
-  | Node.mk _ c => c
-
-def getAttachedChildren (t: Hedge.Node α): List {x // x ∈ t.getChildren} :=
-  match t with
-  | Node.mk _ c => c.attach
 
 mutual
 def Node.hasDecEq [DecidableEq α]: (a b : Node α) → Decidable (Eq a b)
@@ -220,3 +243,27 @@ theorem elem_is_leq_sizeOf {α: Type} [SizeOf α] {x: Hedge.Node α} {ys: Hedge 
   | tail =>
     simp only [List.cons.sizeOf_spec]
     omega
+
+theorem labelin_take_is_labelelem {xs: Hedge α} (y: Hedge.LabelIn (List.take n xs)):
+  LabelElem y.val xs := by
+  obtain ⟨y, hy⟩ := y
+  simp only
+  rw [List.list_take_drop_n n xs]
+  unfold LabelElem at *
+  unfold List.flatMap
+  rw [List.map_append]
+  rw [List.flatten_append]
+  rw [List.mem_append]
+  exact Or.inl hy
+
+theorem labelin_drop_is_labelelem {xs: Hedge α} (y: Hedge.LabelIn (List.drop n xs)):
+  LabelElem y.val xs := by
+  obtain ⟨y, hy⟩ := y
+  simp only
+  rw [List.list_take_drop_n n xs]
+  unfold LabelElem at *
+  unfold List.flatMap
+  rw [List.map_append]
+  rw [List.flatten_append]
+  rw [List.mem_append]
+  exact Or.inr hy
