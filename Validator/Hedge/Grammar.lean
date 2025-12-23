@@ -85,7 +85,7 @@ private def example_grammar: Grammar 1 (AnyEq.Pred Char) :=
   example_grammar.lookup (Fin.mk 0 (by omega))
   = Regex.emptystr
 
-theorem simp_denote_rule' {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r: Rule n φ) (xs: Hedge α):
+theorem simp_denote_rule_iff {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r: Rule n φ) (xs: Hedge α):
   (Regex.Elem.denote_elem r xs (fun (pred, ref) x' =>
     match x' with
     | Subtype.mk x _hx =>
@@ -110,7 +110,7 @@ theorem simp_denote_rule {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r:
     ∃ label children, x'.val = Hedge.Node.mk label children /\ Φ pred label /\ Rule.denote G Φ (G.lookup ref) children
   ) := by
   nth_rewrite 1 [Rule.denote]
-  rw [simp_denote_rule']
+  rw [simp_denote_rule_iff]
   congr
   ext s xs'
   obtain ⟨pred, ref⟩ := s
@@ -141,7 +141,7 @@ theorem Rule.denote_emptystr {α: Type} {G: Grammar n φ} {Φ: φ -> α -> Bool}
   unfold Rule.denote
   simp [Regex.Elem.denote_elem_emptystr]
 
-theorem denote_rule_symbol' {n: Nat} {α: Type} {φ: Type}
+theorem denote_rule_symbol_iff {n: Nat} {α: Type} {φ: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {p: φ}
   {ref: Ref n} {xs: Hedge α}:
   Rule.denote G Φ (Regex.symbol (p, ref)) xs
@@ -210,7 +210,7 @@ theorem Rule.denote_symbol {n: Nat} {α: Type} {φ: Type}
   Rule.denote G Φ (Regex.symbol (p, ref))
   = Hedge.Language.tree (Φ p) (Rule.denote G Φ (G.lookup ref)) := by
   funext xs
-  rw [denote_rule_symbol']
+  rw [denote_rule_symbol_iff]
 
 theorem Rule.denote_or {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r1 r2: Rule n φ}:
@@ -239,7 +239,7 @@ theorem Rule.denote_concat {n: Nat} {α: Type}
   funext xs
   rw [Regex.Language.concat_n_is_concat]
 
-theorem denote_rule_star_n' {n: Nat} {α: Type}
+theorem denote_rule_star_n_iff {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ} (xs: Hedge α):
   Rule.denote G Φ (Regex.star r) xs
   <->
@@ -263,7 +263,7 @@ theorem denote_rule_star_n' {n: Nat} {α: Type}
     simp only
     simp only [List.ElemOf.mk]
     simp
-    rw [<- denote_rule_star_n']
+    rw [<- denote_rule_star_n_iff]
     rw [Rule.denote]
   termination_by xs.length
   decreasing_by
@@ -276,7 +276,7 @@ theorem Rule.denote_star_n {n: Nat} {α: Type}
   =
   Regex.Language.star_n (Rule.denote G Φ r) := by
   funext xs
-  rw [denote_rule_star_n']
+  rw [denote_rule_star_n_iff]
 
 theorem Rule.denote_star {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ}:
@@ -284,7 +284,7 @@ theorem Rule.denote_star {n: Nat} {α: Type}
   =
   Regex.Language.star_append (Rule.denote G Φ r) := by
   funext xs
-  rw [denote_rule_star_n']
+  rw [denote_rule_star_n_iff]
   rw [Regex.Language.star_append_is_star_n]
 
 def Rule.denote_onlyif {α: Type}
