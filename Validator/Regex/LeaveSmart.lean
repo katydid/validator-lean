@@ -6,7 +6,7 @@ import Validator.Regex.Num
 import Validator.Regex.Extract
 import Validator.Regex.Leave
 
-namespace LeaveSmart
+namespace Regex.LeaveSmart
 
 -- leaves takes a vector of expressions and vector of bools.
 -- The vectors of bools represent the nullability of the derived child expressions.

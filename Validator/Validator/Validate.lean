@@ -25,13 +25,13 @@ namespace Validate
 
 def deriveEnter [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (xs: Rules n φ l): m (Rules n φ (Symbol.nums xs)) := do
+  (xs: Rules n φ l): m (Rules n φ (Regex.Symbol.nums xs)) := do
   let token <- Parser.token
-  let enters <- Enter.DeriveEnter.deriveEnter xs
+  let enters <- Regex.Enter.DeriveEnter.deriveEnter xs
   return IfExpr.evals G Φ enters token
 
-def deriveLeaveM [ValidateM m (Symbol n φ) α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
-  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
+def deriveLeaveM [ValidateM m (Symbol n φ) α] (xs: Rules n φ l) (cs: Rules n φ (Regex.Symbol.nums xs)): m (Rules n φ l) :=
+  Regex.Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
 
 def deriveValue [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
@@ -50,17 +50,17 @@ partial def derive [DecidableEq φ] [ValidateM m (Symbol n φ) α]
       match <- Parser.next with
       | Hint.value => deriveValue G Φ childxs -- derive child value
       | Hint.enter =>
-        let ⟨_, cchildxs, indices⟩ <- Compress.compressM childxs -- NEW: compress
+        let ⟨_, cchildxs, indices⟩ <- Regex.Compress.compressM childxs -- NEW: compress
         let cdchildxs <- derive G Φ cchildxs -- derive children, until return from a Hint.leave
-        Compress.expandM indices cdchildxs -- NEW: expand
+        Regex.Compress.expandM indices cdchildxs -- NEW: expand
       | hint => throw s!"unexpected {hint}"
     let xsLeave <- deriveLeaveM (α := α) xs dchildxs -- derive leave field
     derive G Φ xsLeave -- deriv next
   | Hint.value => deriveValue G Φ xs >>= derive G Φ -- derive value and then derive next
   | Hint.enter =>
-    let ⟨_, cchildxs, indices⟩ <- Compress.compressM xs -- NEW: compress
+    let ⟨_, cchildxs, indices⟩ <- Regex.Compress.compressM xs -- NEW: compress
     let cdchildxs <- derive G Φ cchildxs -- derive children, until return from a Hint.leave
-    let dchildxs <- Compress.expandM indices cdchildxs -- NEW: expand
+    let dchildxs <- Regex.Compress.expandM indices cdchildxs -- NEW: expand
     derive G Φ dchildxs -- derive next
   | Hint.leave => return xs -- never happens at the top
   | Hint.eof => return xs -- only happens at the top

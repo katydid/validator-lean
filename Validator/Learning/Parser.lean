@@ -24,13 +24,13 @@ namespace Parser
 
 def deriveEnter [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (xs: Rules n φ l): m (Rules n φ (Symbol.nums xs)) := do
-  let enters <- Enter.DeriveEnter.deriveEnter xs
+  (xs: Rules n φ l): m (Rules n φ (Regex.Symbol.nums xs)) := do
+  let enters <- Regex.Enter.DeriveEnter.deriveEnter xs
   let token <- Parser.token
   return IfExpr.evals G Φ enters token
 
-def deriveLeaveM [DecidableEq φ] [ValidateM m (Symbol n φ) α] (xs: Rules n φ l) (cs: Rules n φ (Symbol.nums xs)): m (Rules n φ l) :=
-  Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
+def deriveLeaveM [DecidableEq φ] [ValidateM m (Symbol n φ) α] (xs: Rules n φ l) (cs: Rules n φ (Regex.Symbol.nums xs)): m (Rules n φ l) :=
+  Regex.Leave.DeriveLeaveM.deriveLeaveM xs (Vec.map cs Rule.null)
 
 def deriveValue [DecidableEq φ] [ValidateM m (Symbol n φ) α]
   (G: Grammar n φ) (Φ: φ -> α -> Bool)

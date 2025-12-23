@@ -20,11 +20,11 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance : Enter.DeriveEnter (Impl α) (Symbol n φ) where
-  deriveEnter xs := return Enter.enters xs
+instance : Regex.Enter.DeriveEnter (Impl α) (Symbol n φ) where
+  deriveEnter xs := return Regex.Enter.enters xs
 
-instance : Leave.DeriveLeaveM (Impl α) (Symbol n φ) where
-  deriveLeaveM xs ns := LeaveSmart.deriveLeaveM xs ns
+instance : Regex.Leave.DeriveLeaveM (Impl α) (Symbol n φ) where
+  deriveLeaveM xs ns := Regex.LeaveSmart.deriveLeaveM xs ns
 
 instance [DecidableEq φ] [DecidableEq α]: ValidateM (Impl α) (Symbol n φ) α where
   -- all instances have been created, so no implementations are required here

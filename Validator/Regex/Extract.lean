@@ -2,7 +2,7 @@ import Validator.Regex.Num
 import Validator.Regex.Regex
 import Validator.Regex.RegexID
 
-namespace Symbol
+namespace Regex.Symbol
 
 def extract (r: Regex σ) (acc: Vec σ n): RegexID (n + Symbol.num r) × Vec σ (n + Symbol.num r) :=
   match r with

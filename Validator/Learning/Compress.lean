@@ -28,15 +28,15 @@ def derive [DecidableEq φ]
   else
     match t with
     | Hedge.Node.mk label children =>
-      let ifexprs: IfExprs n φ (Symbol.nums xs) := Enter.enters xs
-      let childxs: Rules n φ (Symbol.nums xs) := IfExpr.evals G Φ ifexprs label
+      let ifexprs: IfExprs n φ (Regex.Symbol.nums xs) := Regex.Enter.enters xs
+      let childxs: Rules n φ (Regex.Symbol.nums xs) := IfExpr.evals G Φ ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
-      let ⟨n, cchildxs, indices⟩ := Compress.compress childxs
+      let ⟨n, cchildxs, indices⟩ := Regex.Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.
       let cdchildxs := List.foldl (derive G Φ) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
-      let dchildxs := Compress.expand indices cdchildxs
-      LeaveSmart.leaves xs (Vec.map dchildxs Rule.null)
+      let dchildxs := Regex.Compress.expand indices cdchildxs
+      Regex.LeaveSmart.leaves xs (Vec.map dchildxs Rule.null)
 
 def derivs [DecidableEq φ]
   (G: Grammar n φ) (Φ : φ → α → Bool)

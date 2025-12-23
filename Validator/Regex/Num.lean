@@ -1,7 +1,7 @@
 import Validator.Regex.Map
 import Validator.Regex.Regex
 
-namespace Symbol
+namespace Regex.Symbol
 
 @[reducible, simp]
 def num (r: Regex σ): Nat :=

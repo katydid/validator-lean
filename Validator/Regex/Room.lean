@@ -10,7 +10,7 @@ import Validator.Regex.Regex
 
 -- room, since we enter and leave
 -- Also this a power in One Piece, which seems appropriate: https://onepiece.fandom.com/wiki/Ope_Ope_no_Mi
-namespace Room
+namespace Regex.Room
 
 def derive {σ: Type}
   (Φ: σ -> Bool) (r: Regex σ): Regex σ :=

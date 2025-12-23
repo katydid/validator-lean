@@ -2,7 +2,7 @@ import Validator.Std.Vec
 
 import Validator.Regex.Regex
 
-namespace Compress
+namespace Regex.Compress
 
 inductive Index n where
  | val (i: Fin n)

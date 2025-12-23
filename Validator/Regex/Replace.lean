@@ -2,7 +2,7 @@ import Validator.Regex.Num
 import Validator.Regex.Regex
 import Validator.Regex.RegexID
 
-namespace Symbol
+namespace Regex.Symbol
 
 def replace (r: RegexID n) (xs: Vec σ l) (h: n <= l): Regex σ :=
   match r with

@@ -6,7 +6,7 @@ import Validator.Regex.Regex
 
 import Validator.Regex.Enter
 
-abbrev EnterMem.EnterMap σ [DecidableEq σ] [Hashable σ] :=
+abbrev Regex.EnterMem.EnterMap σ [DecidableEq σ] [Hashable σ] :=
   Std.ExtDHashMap
     Nat
     (fun l =>
@@ -17,13 +17,13 @@ abbrev EnterMem.EnterMap σ [DecidableEq σ] [Hashable σ] :=
         )
     )
 
-def EnterMem.EnterMap.mk [DecidableEq σ] [Hashable σ] : EnterMap σ := Std.ExtDHashMap.emptyWithCapacity
+def Regex.EnterMem.EnterMap.mk [DecidableEq σ] [Hashable σ] : Regex.EnterMem.EnterMap σ := Std.ExtDHashMap.emptyWithCapacity
 
 class EnterMem (m: Type -> Type u) (σ: Type) [DecidableEq σ] [Hashable σ] where
-  getEnter : m (EnterMem.EnterMap σ)
-  setEnter : (EnterMem.EnterMap σ) → m Unit
+  getEnter : m (Regex.EnterMem.EnterMap σ)
+  setEnter : (Regex.EnterMem.EnterMap σ) → m Unit
 
-namespace EnterMem
+namespace Regex.EnterMem
 
 def get? [DecidableEq σ] [Hashable σ] (m: EnterMem.EnterMap σ) (xs: Vec (Regex σ) l): Option (Vec σ (Symbol.nums xs)) :=
   match m.get? l with

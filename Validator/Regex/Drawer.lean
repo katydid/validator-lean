@@ -38,7 +38,7 @@ import Validator.Regex.Replace
 -- * rs = replacesFrom (extracts rs acc).1 (extracts rs acc).2
 -- * Regex.maps rs f = replacesFrom (extractsFrom rs).1 (Vec.map (extractsFrom rs).2 f)
 
-namespace Symbol
+namespace Regex.Symbol
 
 theorem extract_replaceFrom_is_id (r: Regex σ) (acc: Vec σ l):
   r = replaceFrom (extract r acc).1 (extract r acc).2 := by

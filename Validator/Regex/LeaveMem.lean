@@ -6,13 +6,13 @@ import Validator.Std.Vec
 import Validator.Regex.Regex
 import Validator.Regex.LeaveSmart
 
-def hashRulesAndNulls {l: Nat} [Hashable σ] (x: (xs: Vec (Regex σ) l) × (Vec Bool (Symbol.nums xs))): UInt64 :=
+def hashRulesAndNulls {l: Nat} [Hashable σ] (x: (xs: Vec (Regex σ) l) × (Vec Bool (Regex.Symbol.nums xs))): UInt64 :=
   mixHash (hash x.1) (hash x.2)
 
-instance (σ: Type) (l: Nat) [Hashable σ] : Hashable ((xs: Vec (Regex σ) l) × (Vec Bool (Symbol.nums xs))) where
+instance (σ: Type) (l: Nat) [Hashable σ] : Hashable ((xs: Vec (Regex σ) l) × (Vec Bool (Regex.Symbol.nums xs))) where
   hash := hashRulesAndNulls
 
-abbrev LeaveMem.LeaveMap σ [DecidableEq σ] [Hashable σ] :=
+abbrev Regex.LeaveMem.LeaveMap σ [DecidableEq σ] [Hashable σ] :=
   Std.ExtDHashMap
     Nat
     (fun l =>
@@ -21,13 +21,13 @@ abbrev LeaveMem.LeaveMap σ [DecidableEq σ] [Hashable σ] :=
         (Vec (Regex σ) l)
     )
 
-def LeaveMem.LeaveMap.mk [DecidableEq σ] [Hashable σ]: LeaveMap σ := Std.ExtDHashMap.emptyWithCapacity
+def Regex.LeaveMem.LeaveMap.mk [DecidableEq σ] [Hashable σ]: Regex.LeaveMem.LeaveMap σ := Std.ExtDHashMap.emptyWithCapacity
 
 class LeaveMem (m: Type -> Type u) (σ: Type) [DecidableEq σ] [Hashable σ] where
-  getLeave : m (LeaveMem.LeaveMap σ)
-  setLeave : LeaveMem.LeaveMap σ → m Unit
+  getLeave : m (Regex.LeaveMem.LeaveMap σ)
+  setLeave : Regex.LeaveMem.LeaveMap σ → m Unit
 
-namespace LeaveMem
+namespace Regex.LeaveMem
 
 def get? [DecidableEq σ] [Hashable σ]
   (m: LeaveMem.LeaveMap σ)

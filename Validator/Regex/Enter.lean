@@ -4,7 +4,7 @@ import Validator.Regex.Extract
 import Validator.Regex.Num
 import Validator.Regex.Regex
 
-namespace Enter
+namespace Regex.Enter
 
 def enter (x: Regex σ): Vec σ (Symbol.num x) :=
   (Symbol.extractFrom x).2

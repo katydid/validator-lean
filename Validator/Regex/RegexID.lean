@@ -1,7 +1,7 @@
 import Validator.Regex.Regex
 import Validator.Regex.Num
 
-namespace Symbol
+namespace Regex.Symbol
 
 abbrev RegexID n := Regex (Fin n)
 
