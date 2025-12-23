@@ -46,6 +46,34 @@ theorem derive_is_partial_derive (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
     simp only [Regex.derive, Regex.Partial.derive]
     rw [ih1]
 
+theorem derive_emptyset {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (a: α):
+  Regex.Partial.derive (flip Φ a) emptyset = emptyset := by
+  simp only [Regex.Partial.derive]
+
+theorem derive_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (a: α):
+  Regex.Partial.derive (flip Φ a) emptystr = emptyset := by
+  simp only [Regex.Partial.derive]
+
+theorem derive_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (s: σ) (a: α):
+  Regex.Partial.derive (flip Φ a) (symbol s) = onlyif (Φ s a) emptystr := by
+  simp only [Regex.Partial.derive]
+  simp only [flip]
+
+theorem derive_or {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r1 r2: Regex σ) (a: α):
+  Regex.Partial.derive (flip Φ a) (or r1 r2) = or (Regex.Partial.derive (flip Φ a) r1) (Regex.Partial.derive (flip Φ a) r2) := by
+  simp only [Regex.Partial.derive]
+
+theorem derive_concat {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r1 r2: Regex σ) (a: α):
+  Regex.Partial.derive (flip Φ a) (concat r1 r2)
+    = or
+      (concat (Regex.Partial.derive (flip Φ a) r1) r2)
+      (onlyif (null r1) (Regex.Partial.derive (flip Φ a) r2)) := by
+  simp only [Regex.Partial.derive]
+
+theorem derive_star {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r1: Regex σ) (a: α):
+  Regex.Partial.derive (flip Φ a) (star r1) = concat (Regex.Partial.derive (flip Φ a) r1) (star r1) := by
+  simp only [Regex.Partial.derive]
+
 theorem derive_commutesb {σ: Type} {α: Type} (Φ: σ -> α -> Bool) (r: Regex σ) (a: α):
   denote (fun s a => Φ s a) (Regex.Partial.derive (fun s => Φ s a) r) = Language.derive (denote (fun s a => Φ s a) r) a := by
   rw [<- derive_is_partial_derive]

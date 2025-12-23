@@ -95,6 +95,35 @@ def fold_derive (Φ: σ -> α -> Bool) (r: Regex σ) (xs: List α): Regex σ :=
 def validate (Φ: σ -> α -> Bool) (r: Regex σ) (xs: List α): Bool :=
   null (fold_derive Φ r xs)
 
+-- derive theorems
+
+theorem derive_emptyset {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (a: α):
+  derive Φ emptyset a = emptyset := by
+  simp only [derive]
+
+theorem derive_emptystr {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (a: α):
+  derive Φ emptystr a = emptyset := by
+  simp only [derive]
+
+theorem derive_symbol {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (s: σ) (a: α):
+  derive Φ (symbol s) a = onlyif (Φ s a) emptystr := by
+  simp only [derive]
+
+theorem derive_or {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r1 r2: Regex σ) (a: α):
+  derive Φ (or r1 r2) a = or (derive Φ r1 a) (derive Φ r2 a) := by
+  simp only [derive]
+
+theorem derive_concat {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r1 r2: Regex σ) (a: α):
+  derive Φ (concat r1 r2) a
+    = or
+      (concat (derive Φ r1 a) r2)
+      (onlyif (null r1) (derive Φ r2 a)) := by
+  simp only [derive]
+
+theorem derive_star {α: Type} {σ: Type} (Φ: σ -> α -> Bool) (r1: Regex σ) (a: α):
+  derive Φ (star r1) a = concat (derive Φ r1 a) (star r1) := by
+  simp only [derive]
+
 -- We prove that for each regular expression the denotation holds for the specific language definition:
 -- * Regex.denote Φ Regex.emptyset = Language.emptyset
 -- * Regex.denote Φ Regex.emptystr = Language.emptystr
