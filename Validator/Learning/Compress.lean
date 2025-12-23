@@ -21,36 +21,36 @@ namespace Compress
 
 -- deriv is the same as Basic's deriv function, except that it includes the use of the compress and expand functions.
 def derive [DecidableEq φ]
-  (G: Grammar n φ) (Φ : φ → α → Bool)
-  (xs: Rules n φ l) (t: Hedge.Node α): Rules n φ l :=
+  (G: Hedge.Grammar n φ) (Φ : φ → α → Bool)
+  (xs: Hedge.Grammar.Rules n φ l) (t: Hedge.Node α): Hedge.Grammar.Rules n φ l :=
   if List.all xs.toList Regex.unescapable
   then xs
   else
     match t with
     | Hedge.Node.mk label children =>
-      let ifexprs: IfExprs n φ (Regex.Symbol.nums xs) := Regex.Enter.enters xs
-      let childxs: Rules n φ (Regex.Symbol.nums xs) := IfExpr.evals G Φ ifexprs label
+      let ifexprs: Hedge.Grammar.Symbols n φ (Regex.Symbol.nums xs) := Regex.Enter.enters xs
+      let childxs: Hedge.Grammar.Rules n φ (Regex.Symbol.nums xs) := Hedge.Grammar.evalifs G Φ ifexprs label
       -- cchildxs = compressed expressions to evaluate on children.
       let ⟨n, cchildxs, indices⟩ := Regex.Compress.compress childxs
       -- cdchildxs = compressed derivatives of children.
       let cdchildxs := List.foldl (derive G Φ) cchildxs children
       -- dchildxs = uncompressed derivatives of children.
       let dchildxs := Regex.Compress.expand indices cdchildxs
-      Regex.LeaveSmart.leaves xs (Vec.map dchildxs Rule.null)
+      Regex.LeaveSmart.leaves xs (Vec.map dchildxs Hedge.Grammar.Rule.null)
 
 def derivs [DecidableEq φ]
-  (G: Grammar n φ) (Φ : φ → α → Bool)
-  (x: Rule n φ) (hedge: Hedge α): Rule n φ :=
+  (G: Hedge.Grammar n φ) (Φ : φ → α → Bool)
+  (x: Hedge.Grammar.Rule n φ) (hedge: Hedge α): Hedge.Grammar.Rule n φ :=
   let dxs := List.foldl (derive G Φ) (Vec.cons x Vec.nil) hedge
   dxs.head
 
 def validate [DecidableEq φ]
-  (G: Grammar n φ) (Φ : φ → α → Bool)
-  (x: Rule n φ) (hedge: Hedge α): Bool :=
+  (G: Hedge.Grammar n φ) (Φ : φ → α → Bool)
+  (x: Hedge.Grammar.Rule n φ) (hedge: Hedge α): Bool :=
   let dx := derivs G Φ x hedge
-  Rule.null dx
+  Hedge.Grammar.Rule.null dx
 
-def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Bool :=
+def run [DecidableEq α] (G: Hedge.Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Bool :=
   validate G AnyEq.Pred.evalb G.start [t]
 
 -- Tests
@@ -58,12 +58,12 @@ def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Bool
 open TokenTree (node)
 
 #guard run
-  (Grammar.singleton Regex.emptyset)
+  (Hedge.Grammar.singleton Regex.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]])
   = false
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -71,7 +71,7 @@ open TokenTree (node)
   = true
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -79,7 +79,7 @@ open TokenTree (node)
   = false
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
@@ -90,7 +90,7 @@ open TokenTree (node)
   = true
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -104,7 +104,7 @@ open TokenTree (node)
   = true
 
 #guard run
-  (Grammar.mk (n := 3)
+  (Hedge.Grammar.mk (n := 3)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat

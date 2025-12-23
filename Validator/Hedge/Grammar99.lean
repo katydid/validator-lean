@@ -1,7 +1,7 @@
 import Validator.Std.Hedge
 import Validator.Std.Vec
 
-import Validator.Hedge.Grammar
+import Validator.Hedge.Types
 import Validator.Pred.AnyEq
 import Validator.Regex.Elem
 import Validator.Regex.Regex
@@ -18,15 +18,15 @@ import Validator.Regex.Language
 --     rf is a regular expression comprising non-terminals.
 
 structure Grammar99 (n: Nat) (φ: Type) where
-  start: Regex (Ref n)
-  prods: Vec (φ × Regex (Ref n)) n
+  start: Regex (Hedge.Grammar.Ref n)
+  prods: Vec (φ × Regex (Hedge.Grammar.Ref n)) n
 
-def Grammar99.lookup (G: Grammar99 n φ) (ref: Fin n): φ × Regex (Ref n) :=
+def Grammar99.lookup (G: Grammar99 n φ) (ref: Fin n): φ × Regex (Hedge.Grammar.Ref n) :=
   Vec.get G.prods ref
 
 def Grammar99.denote_prod {α: Type}
   (G: Grammar99 n φ) (Φ: φ -> α -> Bool)
-  (pred: φ) (r: Regex (Ref n)) (xs: Hedge α): Prop :=
+  (pred: φ) (r: Regex (Hedge.Grammar.Ref n)) (xs: Hedge α): Prop :=
   match xs with
   | [Hedge.Node.mk label children] =>
     Φ pred label /\
@@ -46,7 +46,7 @@ def Grammar99.denote_prod {α: Type}
 
 def Grammar99.denote_start {α: Type}
   (G: Grammar99 n φ) (Φ: φ -> α -> Bool)
-  (r: Regex (Ref n)) (xs: Hedge α): Prop :=
+  (r: Regex (Hedge.Grammar.Ref n)) (xs: Hedge α): Prop :=
   Regex.Elem.denote_elem r xs (fun ref x' =>
     match (G.lookup ref) with
     | (pred', r') =>
@@ -62,7 +62,7 @@ namespace Grammar99
 
 def convert99'
   (g99: Grammar99 n φ)
-  (r: Regex (Ref n)): Rule n φ :=
+  (r: Regex (Hedge.Grammar.Ref n)): Hedge.Grammar.Rule n φ :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptystr
@@ -71,12 +71,12 @@ def convert99'
   | Regex.concat p q => Regex.concat (convert99' g99 p) (convert99' g99 q)
   | Regex.star p => Regex.star (convert99' g99 p)
 
-def convert99 (g99: Grammar99 n φ): Grammar n φ :=
+def convert99 (g99: Grammar99 n φ): Hedge.Grammar n φ :=
   match g99 with
   | Grammar99.mk start prods =>
-    Grammar.mk (convert99' g99 start) (Vec.map prods (fun (_, rref) => convert99' g99 rref))
+    Hedge.Grammar.mk (convert99' g99 start) (Vec.map prods (fun (_, rref) => convert99' g99 rref))
 
-def convert' (G: Grammar n φ) (r: Regex (φ × Ref n)): Regex (Ref n) :=
+def convert' (G: Hedge.Grammar n φ) (r: Regex (Hedge.Grammar.Symbol n φ)): Regex (Hedge.Grammar.Ref n) :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptystr

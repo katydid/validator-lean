@@ -70,8 +70,8 @@ theorem decreasing_symbol {α: Type} {σ: Type} [SizeOf σ] (r1 r2: Regex σ) (l
   omega
 
 def Rule.derive
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (r: Rule n φ) (x: Hedge.Node α): Rule n φ :=
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (r: Hedge.Grammar.Rule n φ) (x: Hedge.Node α): Hedge.Grammar.Rule n φ :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
@@ -81,7 +81,7 @@ def Rule.derive
       Regex.onlyif
         (
           Φ p label
-          /\ Rule.null (List.foldl (Rule.derive G Φ) (G.lookup ref) children)
+          /\ Hedge.Grammar.Rule.null (List.foldl (Rule.derive G Φ) (G.lookup ref) children)
         )
         Regex.emptystr
   | Regex.or r1 r2 =>
@@ -89,7 +89,7 @@ def Rule.derive
   | Regex.concat r1 r2 =>
     Regex.or
       (Regex.concat (Rule.derive G Φ r1 x) r2)
-      (Regex.onlyif (Rule.null r1) (Rule.derive G Φ r2 x))
+      (Regex.onlyif (Hedge.Grammar.Rule.null r1) (Rule.derive G Φ r2 x))
   | Regex.star r1 =>
     Regex.concat (Rule.derive G Φ r1 x) (Regex.star r1)
   -- Lean cannot guess how the recursive function terminates,
@@ -115,16 +115,16 @@ def Rule.derive
     · apply decreasing_star
 
 def Rule.derive'
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (r: Rule n φ) (x: Hedge.Node α): Rule n φ :=
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (r: Hedge.Grammar.Rule n φ) (x: Hedge.Node α): Hedge.Grammar.Rule n φ :=
   Rule.derive G (fun p a => Φ p a) r x
 
 def validate
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (r: Rule n φ) (hedge: Hedge α): Bool :=
-  Rule.null (List.foldl (Rule.derive' G Φ) r hedge)
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (r: Hedge.Grammar.Rule n φ) (hedge: Hedge α): Bool :=
+  Hedge.Grammar.Rule.null (List.foldl (Rule.derive' G Φ) r hedge)
 
-def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (G: Hedge.Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate G AnyEq.Pred.evalb G.start [t])
 
 -- Tests
@@ -132,12 +132,12 @@ def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Exce
 open TokenTree (node)
 
 #guard run
-  (Grammar.singleton Regex.emptyset)
+  (Hedge.Grammar.singleton Regex.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -145,7 +145,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -153,7 +153,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
@@ -164,7 +164,7 @@ open TokenTree (node)
   = Except.ok true
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -178,7 +178,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 3)
+  (Hedge.Grammar.mk (n := 3)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -193,27 +193,27 @@ open TokenTree (node)
   Except.ok true
 
 theorem derive_commutes {α: Type} {φ: Type}
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (r: Rule n φ) (x: Hedge.Node α):
-  Rule.denote G Φ (Rule.derive' G Φ r x) = Regex.Language.derive (Rule.denote G Φ r) x := by
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (r: Hedge.Grammar.Rule n φ) (x: Hedge.Node α):
+  Hedge.Grammar.Rule.denote G Φ (Rule.derive' G Φ r x) = Regex.Language.derive (Hedge.Grammar.Rule.denote G Φ r) x := by
   unfold Rule.derive'
   fun_induction (Rule.derive G (fun p a => Φ p a)) r x with
   | case1 => -- emptyset
-    rw [Rule.denote_emptyset]
+    rw [Hedge.Grammar.Rule.denote_emptyset]
     rw [Regex.Language.derive_emptyset]
   | case2 => -- emptystr
-    rw [Rule.denote_emptyset]
-    rw [Rule.denote_emptystr]
+    rw [Hedge.Grammar.Rule.denote_emptyset]
+    rw [Hedge.Grammar.Rule.denote_emptystr]
     rw [Regex.Language.derive_emptystr]
   | case3 p childRef label children ih =>
-    rw [Rule.denote_symbol]
+    rw [Hedge.Grammar.Rule.denote_symbol]
     rw [Hedge.Language.derive_tree]
-    rw [Rule.denote_onlyif]
-    rw [Rule.denote_emptystr]
+    rw [Hedge.Grammar.Rule.denote_onlyif]
+    rw [Hedge.Grammar.Rule.denote_emptystr]
     apply (congrArg fun x => Regex.Language.onlyif x Regex.Language.emptystr)
     congr
     generalize (G.lookup childRef) = childExpr
-    rw [Rule.null_commutes]
+    rw [Hedge.Grammar.Rule.null_commutes]
     unfold Regex.Language.null
     induction children generalizing childExpr with
     | nil =>
@@ -233,25 +233,25 @@ theorem derive_commutes {α: Type} {φ: Type}
         rw [List.mem_cons]
         apply Or.inr hchild
   | case4 x p q ihp ihq => -- or
-    rw [Rule.denote_or]
-    rw [Rule.denote_or]
+    rw [Hedge.Grammar.Rule.denote_or]
+    rw [Hedge.Grammar.Rule.denote_or]
     unfold Regex.Language.or
     rw [ihp]
     rw [ihq]
     rfl
   | case5 x p q ihp ihq => -- concat
-    rw [Rule.denote_concat]
-    rw [Rule.denote_or]
-    rw [Rule.denote_concat]
-    rw [Rule.denote_onlyif]
+    rw [Hedge.Grammar.Rule.denote_concat]
+    rw [Hedge.Grammar.Rule.denote_or]
+    rw [Hedge.Grammar.Rule.denote_concat]
+    rw [Hedge.Grammar.Rule.denote_onlyif]
     rw [Regex.Language.derive_concat_append]
     rw [<- ihp]
     rw [<- ihq]
-    congrm (Regex.Language.or (Regex.Language.concat_append (Rule.denote G Φ (Rule.derive G (fun p a => Φ p a) p x)) (Rule.denote G Φ q)) ?_)
-    rw [Rule.null_commutes]
+    congrm (Regex.Language.or (Regex.Language.concat_append (Hedge.Grammar.Rule.denote G Φ (Rule.derive G (fun p a => Φ p a) p x)) (Hedge.Grammar.Rule.denote G Φ q)) ?_)
+    rw [Hedge.Grammar.Rule.null_commutes]
   | case6 x r ih => -- star
-    rw [Rule.denote_star]
-    rw [Rule.denote_concat]
-    rw [Rule.denote_star]
+    rw [Hedge.Grammar.Rule.denote_star]
+    rw [Hedge.Grammar.Rule.denote_concat]
+    rw [Hedge.Grammar.Rule.denote_star]
     rw [Regex.Language.derive_star_append]
     rw [ih]

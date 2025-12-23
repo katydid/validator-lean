@@ -20,13 +20,13 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance : Regex.Enter.DeriveEnter (Impl α) (Symbol n φ) where
+instance : Regex.Enter.DeriveEnter (Impl α) (Hedge.Grammar.Symbol n φ) where
   deriveEnter xs := return Regex.Enter.enters xs
 
-instance : Regex.Leave.DeriveLeaveM (Impl α) (Symbol n φ) where
+instance : Regex.Leave.DeriveLeaveM (Impl α) (Hedge.Grammar.Symbol n φ) where
   deriveLeaveM xs ns := Regex.LeaveSmart.deriveLeaveM xs ns
 
-instance [DecidableEq φ] [DecidableEq α]: ValidateM (Impl α) (Symbol n φ) α where
+instance [DecidableEq φ] [DecidableEq α]: ValidateM (Impl α) (Hedge.Grammar.Symbol n φ) α where
   -- all instances have been created, so no implementations are required here
 
 def run' (x: Impl α β) (t: Hedge.Node α): Except String β :=

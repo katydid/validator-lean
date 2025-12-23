@@ -14,8 +14,8 @@ namespace TreeParserMemTestM
 
 structure State (n: Nat) (φ: Type) (α: Type) [DecidableEq φ] [Hashable φ] where
   parser: TreeParser.ParserState α
-  enter: Regex.EnterMem.EnterMap (Symbol n φ)
-  leave: Regex.LeaveMem.LeaveMap (Symbol n φ)
+  enter: Regex.EnterMem.EnterMap (Hedge.Grammar.Symbol n φ)
+  leave: Regex.LeaveMem.LeaveMap (Hedge.Grammar.Symbol n φ)
   logs: List String
 
 abbrev Impl n (φ: Type) (α: Type) [DecidableEq φ] [Hashable φ] β := EStateM String (State n φ α) β
@@ -56,18 +56,18 @@ instance
   skip := Parser.skip
   token := Parser.token
 
-instance [DecidableEq φ] [Hashable φ]: EnterMem (Impl n φ α) (Symbol n φ) where
-  getEnter : Impl n φ α (Regex.EnterMem.EnterMap (Symbol n φ)) := do
+instance [DecidableEq φ] [Hashable φ]: EnterMem (Impl n φ α) (Hedge.Grammar.Symbol n φ) where
+  getEnter : Impl n φ α (Regex.EnterMem.EnterMap (Hedge.Grammar.Symbol n φ)) := do
     let s <- EStateM.get
     return s.enter
-  setEnter : Regex.EnterMem.EnterMap (Symbol n φ) → Impl n φ α PUnit :=
+  setEnter : Regex.EnterMem.EnterMap (Hedge.Grammar.Symbol n φ) → Impl n φ α PUnit :=
     fun enter => do
       let s <- EStateM.get
       set (State.mk s.parser enter s.leave s.logs)
 
 -- This should just follow from the instance declared in EnterMem, but we spell it out just in case.
-instance [DecidableEq φ] [Hashable φ]: Regex.Enter.DeriveEnter (Impl n φ α) (Symbol n φ) where
-  deriveEnter {l: Nat} (xs: Rules n φ l): Impl n φ α (IfExprs n φ (Regex.Symbol.nums xs)) := do
+instance [DecidableEq φ] [Hashable φ]: Regex.Enter.DeriveEnter (Impl n φ α) (Hedge.Grammar.Symbol n φ) where
+  deriveEnter {l: Nat} (xs: Hedge.Grammar.Rules n φ l): Impl n φ α (Hedge.Grammar.Symbols n φ (Regex.Symbol.nums xs)) := do
     let memoized <- EnterMem.getEnter
     match Regex.EnterMem.get? memoized xs with
     | Option.none =>
@@ -76,18 +76,18 @@ instance [DecidableEq φ] [Hashable φ]: Regex.Enter.DeriveEnter (Impl n φ α) 
       Debug.debug "test cache hit"
       return value
 
-instance [DecidableEq φ] [Hashable φ]: LeaveMem (Impl n φ α) (Symbol n φ) where
-  getLeave : Impl n φ α (Regex.LeaveMem.LeaveMap (Symbol n φ)) := do
+instance [DecidableEq φ] [Hashable φ]: LeaveMem (Impl n φ α) (Hedge.Grammar.Symbol n φ) where
+  getLeave : Impl n φ α (Regex.LeaveMem.LeaveMap (Hedge.Grammar.Symbol n φ)) := do
     let s <- EStateM.get
     return s.leave
-  setLeave : Regex.LeaveMem.LeaveMap (Symbol n φ) → Impl n φ α PUnit :=
+  setLeave : Regex.LeaveMem.LeaveMap (Hedge.Grammar.Symbol n φ) → Impl n φ α PUnit :=
     fun leave => do
       let s <- EStateM.get
       set (State.mk s.parser s.enter leave s.logs)
 
 -- This should just follow from the instance declared in LeaveMem, but we spell it out just in case.
-instance [DecidableEq φ] [Hashable φ]: Regex.Leave.DeriveLeaveM (Impl n φ α) (Symbol n φ) where
-  deriveLeaveM {l: Nat} (xs: Rules n φ l) (ns: Vec Bool (Regex.Symbol.nums xs)): Impl n φ α (Rules n φ l) := do
+instance [DecidableEq φ] [Hashable φ]: Regex.Leave.DeriveLeaveM (Impl n φ α) (Hedge.Grammar.Symbol n φ) where
+  deriveLeaveM {l: Nat} (xs: Hedge.Grammar.Rules n φ l) (ns: Vec Bool (Regex.Symbol.nums xs)): Impl n φ α (Hedge.Grammar.Rules n φ l) := do
     let memoized <- LeaveMem.getLeave
     match Regex.LeaveMem.get? memoized ⟨xs, ns⟩ with
     | Option.none =>
@@ -96,12 +96,12 @@ instance [DecidableEq φ] [Hashable φ]: Regex.Leave.DeriveLeaveM (Impl n φ α)
       Debug.debug "test cache hit"
       return value
 
-instance [DecidableEq φ] [Hashable φ]: ValidateM (Impl n φ α) (Symbol n φ) α where
+instance [DecidableEq φ] [Hashable φ]: ValidateM (Impl n φ α) (Hedge.Grammar.Symbol n φ) α where
   -- all instances have been created, so no implementations are required here
 
 def runPopulatedMem
   [DecidableEq φ] [Hashable φ]
-  (f: Impl n φ α β) (t: Hedge.Node α) (e: Regex.EnterMem.EnterMap (Symbol n φ)) (l: Regex.LeaveMem.LeaveMap (Symbol n φ)): EStateM.Result String (State n φ α) β :=
+  (f: Impl n φ α β) (t: Hedge.Node α) (e: Regex.EnterMem.EnterMap (Hedge.Grammar.Symbol n φ)) (l: Regex.LeaveMem.LeaveMap (Hedge.Grammar.Symbol n φ)): EStateM.Result String (State n φ α) β :=
   EStateM.run f (State.mk (TreeParser.ParserState.mk' t) e l [])
 
 def run'

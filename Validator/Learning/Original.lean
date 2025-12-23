@@ -16,7 +16,7 @@ namespace Original
 -- foldLoop is a more readable version of List.foldl for imperative programmers:
 -- Imperative programmers can imagine that `Id (Expr α)` = `Expr α`, because it does.
 -- The Id wrapper just adds a monad wrapper to enable the do notation, so that we can use the for loop in Lean.
-private def foldLoop (deriv: Rule n φ -> Hedge.Node α -> Rule n φ) (start: Rule n φ) (hedge: Hedge α): Id (Rule n φ) := do
+private def foldLoop (deriv: Hedge.Grammar.Rule n φ -> Hedge.Node α -> Hedge.Grammar.Rule n φ) (start: Hedge.Grammar.Rule n φ) (hedge: Hedge α): Id (Hedge.Grammar.Rule n φ) := do
   let mut res := start
   for tree in hedge do
     res := deriv res tree
@@ -27,8 +27,8 @@ private def foldLoop (deriv: Rule n φ -> Hedge.Node α -> Rule n φ) (start: Ru
 -- Note we need to use `partial`, since Lean cannot automatically figure out that the derive function terminates.
 -- In OriginalTotal we show how to remove this, by manually proving that it in fact does terminate.
 partial def derive
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (x: Rule n φ) (tree: Hedge.Node α): Rule n φ :=
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (x: Hedge.Grammar.Rule n φ) (tree: Hedge.Node α): Hedge.Grammar.Rule n φ :=
   match x with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
@@ -49,11 +49,11 @@ partial def derive
   | Regex.star y => Regex.concat (derive G Φ y tree) (Regex.star y)
 
 partial def validate
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (x: Rule n φ) (hedge: Hedge α): Bool :=
-  Rule.null (List.foldl (derive G Φ) x hedge)
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (x: Hedge.Grammar.Rule n φ) (hedge: Hedge α): Bool :=
+  Hedge.Grammar.Rule.null (List.foldl (derive G Φ) x hedge)
 
-def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (G: Hedge.Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
   Except.ok (validate G AnyEq.Pred.evalb G.start [t])
 
 -- Tests
@@ -61,12 +61,12 @@ def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Exce
 open TokenTree (node)
 
 #guard run
-  (Grammar.singleton Regex.emptyset)
+  (Hedge.Grammar.singleton Regex.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -74,7 +74,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -82,7 +82,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
@@ -93,7 +93,7 @@ open TokenTree (node)
   = Except.ok true
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -107,7 +107,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 3)
+  (Hedge.Grammar.mk (n := 3)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat

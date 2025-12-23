@@ -2,13 +2,12 @@ import Validator.Std.Vec
 
 import Validator.Regex.Regex
 import Validator.Hedge.Grammar
+import Validator.Hedge.Types
 
-abbrev IfExprs n φ l := Vec (Symbol n φ) l
+namespace Hedge.Grammar
 
-namespace IfExpr
-
-def eval {α: Type}
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
+def evalif {α: Type}
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
   (ifExpr: Symbol n φ) (t: α): Rule n φ :=
   match ifExpr with
   | (cnd, thn) =>
@@ -16,14 +15,14 @@ def eval {α: Type}
     then G.lookup thn
     else Regex.emptyset
 
-def evals {α: Type} {n: Nat}
+def evalifs {α: Type} {n: Nat}
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (ifExprs: IfExprs n φ l) (t: α): Rules n φ l :=
-  Vec.map ifExprs (fun x => eval G Φ x t)
+  (ifExprs: Symbols n φ l) (t: α): Rules n φ l :=
+  Vec.map ifExprs (fun x => evalif G Φ x t)
 
-theorem evals_nil_is_nil {α: Type} {n: Nat}
+theorem evalifs_nil_is_nil {α: Type} {n: Nat}
   (G: Grammar n φ) (Φ: φ -> α -> Bool)
   (a: α):
-  evals G Φ (n := n) Vec.nil a = Vec.nil := by
-  unfold evals
+  evalifs G Φ (n := n) Vec.nil a = Vec.nil := by
+  unfold evalifs
   simp only [Vec.map_nil]

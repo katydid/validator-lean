@@ -10,12 +10,12 @@ import Validator.Learning.Parser
 
 namespace Memoize
 
-def validate {m} [DecidableEq φ] [ValidateM m (Symbol n φ) α]
-  (G: Grammar n φ) (Φ : φ → α → Bool)
-  (x: Rule n φ): m Bool :=
+def validate {m} [DecidableEq φ] [ValidateM m (Hedge.Grammar.Symbol n φ) α]
+  (G: Hedge.Grammar n φ) (Φ : φ → α → Bool)
+  (x: Hedge.Grammar.Rule n φ): m Bool :=
   Parser.validate G Φ x
 
-def run [DecidableEq α] [Hashable α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] [Hashable α] (G: Hedge.Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
   TreeParserMemM.run' (n := n) (φ := AnyEq.Pred α) (validate G AnyEq.Pred.evalb G.start) t
 
 -- Tests
@@ -23,12 +23,12 @@ def run [DecidableEq α] [Hashable α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.
 open TokenTree (node)
 
 #guard run
-  (Grammar.singleton Regex.emptyset)
+  (Hedge.Grammar.singleton Regex.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -36,7 +36,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -44,7 +44,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
@@ -55,7 +55,7 @@ open TokenTree (node)
   = Except.ok true
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -69,7 +69,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 3)
+  (Hedge.Grammar.mk (n := 3)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -85,7 +85,7 @@ open TokenTree (node)
 
 -- try to engage skip using emptyset, since it is unescapable
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptyset]
   )
@@ -93,7 +93,7 @@ open TokenTree (node)
   = Except.ok false
 
 #guard run
-  (Grammar.mk (n := 4)
+  (Hedge.Grammar.mk (n := 4)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -109,7 +109,7 @@ open TokenTree (node)
   = Except.ok false
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -123,7 +123,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 3)
+  (Hedge.Grammar.mk (n := 3)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -138,7 +138,7 @@ open TokenTree (node)
   = Except.ok false
 
 #guard run
-  (Grammar.mk (n := 4)
+  (Hedge.Grammar.mk (n := 4)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat

@@ -6,53 +6,54 @@ import Validator.Pred.AnyEq
 import Validator.Regex.Regex
 import Validator.Regex.Elem
 import Validator.Regex.Language
+import Validator.Hedge.Types
 import Validator.Hedge.Language
 
--- ## Definition 3.2.3: Regular Hedge Grammar
---   𝐺 = (𝑁, 𝑇, 𝑆, 𝑃)
---   𝑁 a finite set of non-terminals
---   𝑇 a finite set of terminals
---   𝑆 the start symbol of a regular hedge grammar is a regular expression comprising pairs of nonterminals and terminals (a regular expression over N × T)
---   𝑃 a set of production rules of a regular hedge grammar are of the form X → r such that r is a regular expression over N × T.
+namespace Hedge.Grammar
 
--- n = the number of non-terminals
-abbrev Ref (n: Nat) := Fin n -- non-terminal
-
-abbrev Symbol (n: Nat) (φ: Type) := (φ × Ref n)
-
-abbrev Rule (n: Nat) (φ: Type) := Regex (Symbol n φ)
-
-abbrev Rules (n: Nat) (φ: Type) (l: Nat) :=
-  Vec (Rule n φ) l
-
-def hashVector [Hashable α] (xs: Vec α n): UInt64 :=
-  hash xs.toList
-
-instance (α: Type) (n: Nat) [Hashable α] : Hashable (Vec α n) where
-  hash := hashVector
-
-def hashRules {n: Nat} {φ: Type} {l: Nat} [Hashable φ] (xs: Rules n φ l): UInt64 :=
-  hash xs.toList
-
-instance (n: Nat) (φ: Type) (l: Nat) [Hashable φ] : Hashable (Rules n φ l) where
-  hash := hashRules
-
-structure Grammar (n: Nat) (φ: Type) where
-  start: Rule n φ
-  prods: Vec (Rule n φ) n
-
-def Grammar.lookup {n: Nat} {φ: Type}
+def lookup {n: Nat} {φ: Type}
   (G: Grammar n φ) (ref: Fin n): Rule n φ :=
   Vec.get G.prods ref
 
-def Grammar.singleton (x: Rule 0 φ): Grammar 0 φ  :=
+def singleton (x: Rule 0 φ): Grammar 0 φ  :=
   Grammar.mk x #vec[]
 
-def Grammar.emptyset: Grammar 0 φ :=
-  Grammar.mk Regex.emptyset #vec[]
+def emptyset: Grammar 0 φ :=
+  singleton Regex.emptyset
 
-def Grammar.emptystr: Grammar 0 φ :=
-  Grammar.mk Regex.emptystr #vec[]
+def emptystr: Grammar 0 φ :=
+  singleton Regex.emptystr
+
+def Rule.null (r: Rule n φ): Bool :=
+  Regex.null r
+
+def null (G: Grammar n φ): Bool :=
+  Rule.null G.start
+
+theorem Rule.denote_decreasing {x: Hedge.Node α} {xs: Hedge α} (h: x ∈ xs):
+  sizeOf x.getChildren < sizeOf xs := by
+  cases x with
+  | mk label children =>
+  simp only [Hedge.Node.getChildren]
+  have h := Hedge.elem_is_leq_sizeOf h
+  simp only [Hedge.Node.mk.sizeOf_spec] at h
+  simp +arith only at h
+  omega
+
+def Rule.denote {α: Type}
+  (G: Grammar n φ) (Φ: φ -> α -> Bool)
+  (r: Hedge.Grammar.Rule n φ) (xs: Hedge α): Prop :=
+  Regex.Elem.denote_elem r xs (fun (pred, ref) x' =>
+    match x' with
+    | Subtype.mk x _hx =>
+        Φ pred x.getLabel
+        /\ Rule.denote G Φ (G.lookup ref) x.getChildren
+  )
+  termination_by xs
+  decreasing_by exact (Rule.denote_decreasing _hx)
+
+def denote {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (xs: Hedge α): Prop :=
+  Rule.denote G Φ G.start xs
 
 example : Grammar 5 (AnyEq.Pred String) := Grammar.mk
   -- start := ("html", Html)
@@ -75,7 +76,7 @@ example : Grammar 5 (AnyEq.Pred String) := Grammar.mk
     , Regex.emptystr
   ])
 
-def example_grammar: Grammar 1 (AnyEq.Pred Char) :=
+private def example_grammar: Grammar 1 (AnyEq.Pred Char) :=
   Grammar.mk
     (Regex.or Regex.emptystr (Regex.symbol (AnyEq.Pred.eq 'a', 0)))
     #vec[Regex.emptystr]
@@ -83,31 +84,6 @@ def example_grammar: Grammar 1 (AnyEq.Pred Char) :=
 #guard
   example_grammar.lookup (Fin.mk 0 (by omega))
   = Regex.emptystr
-
-theorem Rule.denote_decreasing {x: Hedge.Node α} {xs: Hedge α} (h: x ∈ xs):
-  sizeOf x.getChildren < sizeOf xs := by
-  cases x with
-  | mk label children =>
-  simp only [Hedge.Node.getChildren]
-  have h := Hedge.elem_is_leq_sizeOf h
-  simp only [Hedge.Node.mk.sizeOf_spec] at h
-  simp +arith only at h
-  omega
-
-def Rule.denote {α: Type}
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (r: Rule n φ) (xs: Hedge α): Prop :=
-  Regex.Elem.denote_elem r xs (fun (pred, ref) x' =>
-    match x' with
-    | Subtype.mk x _hx =>
-        Φ pred x.getLabel
-        /\ Rule.denote G Φ (G.lookup ref) x.getChildren
-  )
-  termination_by xs
-  decreasing_by exact (Rule.denote_decreasing _hx)
-
-def Grammar.denote {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (xs: Hedge α): Prop :=
-  Rule.denote G Φ G.start xs
 
 theorem simp_denote_rule' {α: Type} (G: Grammar n φ) (Φ: φ -> α -> Bool) (r: Rule n φ) (xs: Hedge α):
   (Regex.Elem.denote_elem r xs (fun (pred, ref) x' =>
@@ -329,12 +305,6 @@ def Rule.denote_onlyif {α: Type}
     simp only [Regex.Language.emptyset, false_iff, not_and]
     intro hc'
     contradiction
-
-def Rule.null (r: Rule n φ): Bool :=
-  Regex.null r
-
-def Grammar.null (G: Grammar n φ): Bool :=
-  Rule.null G.start
 
 theorem Rule.null_commutes {α: Type}
   (G: Grammar n φ) (Φ: φ -> α -> Bool) (x: Rule n φ):

@@ -9,13 +9,13 @@ import Validator.Validator.ValidateM
 namespace TestIO
 
 def validate {m}
-  [DecidableEq φ] [ValidateM m (Symbol n φ) α]
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (x: Rule n φ): m Bool :=
+  [DecidableEq φ] [ValidateM m (Hedge.Grammar.Symbol n φ) α]
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (x: Hedge.Grammar.Rule n φ): m Bool :=
   Validate.validate G Φ x
 
 unsafe def run [DecidableEq φ] [Hashable φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
   (t: Hedge.Node α): Except String Bool :=
   unsafeEIO (TreeParserIO.run' (n := n) (φ := φ) (validate G Φ G.start) t)
 
@@ -33,31 +33,31 @@ def runTwice [DecidableEq α] [Hashable α] [DecidableEq β]
 -- runTwice is used to check if the cache was hit on the second run
 unsafe def runTwice'
   [DecidableEq α] [Hashable α]
-  (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+  (G: Hedge.Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
   unsafeEIO (runTwice (n := n) (validate G AnyEq.Pred.evalb G.start) t)
 
 open TokenTree (node)
 
 -- #eval runTwice'
---   (Grammar.singleton Regex.emptyset)
+--   (Hedge.Grammar.singleton Regex.emptyset)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 1)
+--   (Hedge.Grammar.mk (n := 1)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptystr]
 --   )
 --   (node "a" [])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 1)
+--   (Hedge.Grammar.mk (n := 1)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptystr]
 --   )
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 2)
+--   (Hedge.Grammar.mk (n := 2)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
@@ -67,7 +67,7 @@ open TokenTree (node)
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 2)
+--   (Hedge.Grammar.mk (n := 2)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -80,7 +80,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" []])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 3)
+--   (Hedge.Grammar.mk (n := 3)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -95,14 +95,14 @@ open TokenTree (node)
 
 -- -- try to engage skip using emptyset, since it is unescapable
 -- #eval runTwice'
---   (Grammar.mk (n := 1)
+--   (Hedge.Grammar.mk (n := 1)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[Regex.emptyset]
 --   )
 --   (node "a" [node "b" []])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 4)
+--   (Hedge.Grammar.mk (n := 4)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -117,7 +117,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 2)
+--   (Hedge.Grammar.mk (n := 2)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -130,7 +130,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 3)
+--   (Hedge.Grammar.mk (n := 3)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat
@@ -144,7 +144,7 @@ open TokenTree (node)
 --   (node "a" [node "b" [], node "c" [node "d" []]])
 
 -- #eval runTwice'
---   (Grammar.mk (n := 4)
+--   (Hedge.Grammar.mk (n := 4)
 --     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
 --     #v[
 --       (Regex.concat

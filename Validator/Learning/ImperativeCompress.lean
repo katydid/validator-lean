@@ -23,7 +23,7 @@ inductive Index where
  | val (n: Nat)
  | emptyset
 
-def indexOf [DecidableEq φ] (xs: List (Rule n φ)) (y: (Rule n φ)): Except String Index :=
+def indexOf [DecidableEq φ] (xs: List (Hedge.Grammar.Rule n φ)) (y: (Hedge.Grammar.Rule n φ)): Except String Index :=
   match y with
   | Regex.emptyset => Except.ok Index.emptyset
   | _ =>
@@ -31,7 +31,7 @@ def indexOf [DecidableEq φ] (xs: List (Rule n φ)) (y: (Rule n φ)): Except Str
     | Option.none => Except.error "indexOf: unable to find expression"
     | Option.some idx => Except.ok (Index.val idx)
 
-def ofIndex' (xs: List (Rule n φ)) (index: Nat): Except String (Rule n φ) :=
+def ofIndex' (xs: List (Hedge.Grammar.Rule n φ)) (index: Nat): Except String (Hedge.Grammar.Rule n φ) :=
   match xs with
   | [] => Except.error "index overflow"
   | x::xs' =>
@@ -39,7 +39,7 @@ def ofIndex' (xs: List (Rule n φ)) (index: Nat): Except String (Rule n φ) :=
     | 0 => Except.ok x
     | (n' + 1) => ofIndex' xs' n'
 
-def ofIndex (xs: List (Rule n φ)) (index: Index): Except String (Rule n φ) :=
+def ofIndex (xs: List (Hedge.Grammar.Rule n φ)) (index: Index): Except String (Hedge.Grammar.Rule n φ) :=
   match index with
   | Index.emptyset => Except.ok Regex.emptyset
   | Index.val n =>
@@ -51,11 +51,11 @@ def ofIndex (xs: List (Rule n φ)) (index: Index): Except String (Rule n φ) :=
 inductive Indices where
   | mk (indices: List Index)
 
-def compressed [DecidableEq φ] (xs: Rules n φ l): Nat :=
+def compressed [DecidableEq φ] (xs: Hedge.Grammar.Rules n φ l): Nat :=
   (List.erase (List.eraseReps xs.toList) Regex.emptyset).length
 
 -- compress compresses a list of expressions.
-def compress [DecidableEq φ] (xs: List (Rule n φ)): Except String ((List (Rule n φ)) × Indices) := do
+def compress [DecidableEq φ] (xs: List (Hedge.Grammar.Rule n φ)): Except String ((List (Hedge.Grammar.Rule n φ)) × Indices) := do
   -- sort to increase chance of cache hit
   -- TODO: let sxs := List.mergeSort xs
 
@@ -77,7 +77,7 @@ def compress [DecidableEq φ] (xs: List (Rule n φ)): Except String ((List (Rule
   )
 
 -- expand expands a list of expressions.
-def expand (indices: Indices) (xs: List (Rule n φ)): Except String (List (Rule n φ)) :=
+def expand (indices: Indices) (xs: List (Hedge.Grammar.Rule n φ)): Except String (List (Hedge.Grammar.Rule n φ)) :=
   match indices with
   | Indices.mk indexes =>
     match MonadExcept.ofExcept (List.mapM (ofIndex xs) indexes) with
@@ -86,24 +86,24 @@ def expand (indices: Indices) (xs: List (Rule n φ)): Except String (List (Rule 
 
 -- deriv is the same as ImperativeBasic's deriv function, except that it includes the use of the compress and expand functions.
 def derive [DecidableEq φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (xs: List (Rule n φ)) (t: Hedge.Node α): Except String (List (Rule n φ)) :=
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (xs: List (Hedge.Grammar.Rule n φ)) (t: Hedge.Node α): Except String (List (Hedge.Grammar.Rule n φ)) :=
   if List.all xs Regex.unescapable
   then Except.ok xs
   else
     match t with
     | Hedge.Node.mk label children =>
-      let ifexprs: List (Symbol n φ) := ImperativeEnter.deriveEnter xs
+      let ifexprs: List (Hedge.Grammar.Symbol n φ) := ImperativeEnter.deriveEnter xs
       -- Vec.map (fun x => eval g x t) ifExprs
-      let childxs: List (Rule n φ) := List.map (fun x => IfExpr.eval G Φ x label) ifexprs
+      let childxs: List (Hedge.Grammar.Rule n φ) := List.map (fun x => Hedge.Grammar.evalif G Φ x label) ifexprs
       -- cchildxs' = compressed expressions to evaluate on children. The ' is for the exception it is wrapped in.
-      let cchildxs' : Except String ((List (Rule n φ)) × Indices) := compress childxs
+      let cchildxs' : Except String ((List (Hedge.Grammar.Rule n φ)) × Indices) := compress childxs
       match cchildxs' with
       | Except.error err => Except.error err
       | Except.ok (cchildxs, indices) =>
       -- cdchildxs = compressed derivatives of children. The ' is for the exception it is wrapped in.
       -- see foldLoop for an explanation of what List.foldM does.
-      let cdchildxs' : Except String (List (Rule n φ)) := List.foldlM (derive G Φ) cchildxs children
+      let cdchildxs' : Except String (List (Hedge.Grammar.Rule n φ)) := List.foldlM (derive G Φ) cchildxs children
       match cdchildxs' with
       | Except.error err => Except.error err
       | Except.ok cdchildxs =>
@@ -113,12 +113,12 @@ def derive [DecidableEq φ]
       | Except.error err => Except.error err
       | Except.ok dchildxs =>
       -- dxs = derivatives of xs. The ' is for the exception it is wrapped in.
-      let dxs: List (Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Rule.null dchildxs)
+      let dxs: List (Hedge.Grammar.Rule n φ) := ImperativeLeave.deriveLeave xs (List.map Hedge.Grammar.Rule.null dchildxs)
       Except.ok dxs
 
 def derivs [DecidableEq φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (x: Rule n φ) (hedge: Hedge α): Except String (Rule n φ) :=
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (x: Hedge.Grammar.Rule n φ) (hedge: Hedge α): Except String (Hedge.Grammar.Rule n φ) :=
   -- see foldLoop for an explanation of what List.foldM does.
   let dxs := List.foldlM (derive G Φ) [x] hedge
   match dxs with
@@ -127,13 +127,13 @@ def derivs [DecidableEq φ]
   | Except.ok _ => Except.error "expected one expression"
 
 def validate [DecidableEq φ]
-  (G: Grammar n φ) (Φ: φ -> α -> Bool)
-  (x: Rule n φ) (hedge: Hedge α): Except String Bool :=
+  (G: Hedge.Grammar n φ) (Φ: φ -> α -> Bool)
+  (x: Hedge.Grammar.Rule n φ) (hedge: Hedge α): Except String Bool :=
   match derivs G Φ x hedge with
   | Except.error err => Except.error err
   | Except.ok x' => Except.ok (Regex.null x')
 
-def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
+def run [DecidableEq α] (G: Hedge.Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Except String Bool :=
   validate G AnyEq.Pred.evalb G.start [t]
 
 -- Tests
@@ -141,12 +141,12 @@ def run [DecidableEq α] (G: Grammar n (AnyEq.Pred α)) (t: Hedge.Node α): Exce
 open TokenTree (node)
 
 #guard run
-  (Grammar.singleton Regex.emptyset)
+  (Hedge.Grammar.singleton Regex.emptyset)
   (node "a" [node "b" [], node "c" [node "d" []]]) =
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -154,7 +154,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 1)
+  (Hedge.Grammar.mk (n := 1)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[Regex.emptystr]
   )
@@ -162,7 +162,7 @@ open TokenTree (node)
   Except.ok false
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.symbol (AnyEq.Pred.eq (Token.string "b"), 1))
@@ -173,7 +173,7 @@ open TokenTree (node)
   = Except.ok true
 
 #guard run
-  (Grammar.mk (n := 2)
+  (Hedge.Grammar.mk (n := 2)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
@@ -187,7 +187,7 @@ open TokenTree (node)
   Except.ok true
 
 #guard run
-  (Grammar.mk (n := 3)
+  (Hedge.Grammar.mk (n := 3)
     (Regex.symbol (AnyEq.Pred.eq (Token.string "a"), 0))
     #vec[
       (Regex.concat
