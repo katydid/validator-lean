@@ -239,7 +239,7 @@ theorem Rule.denote_concat {n: Nat} {α: Type}
   funext xs
   rw [Regex.Language.concat_n_is_concat]
 
-theorem denote_rule_star_n_iff {n: Nat} {α: Type}
+theorem denote_star_n_iff {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ} (xs: Hedge α):
   Rule.denote G Φ (Regex.star r) xs
   <->
@@ -263,7 +263,7 @@ theorem denote_rule_star_n_iff {n: Nat} {α: Type}
     simp only
     simp only [List.ElemOf.mk]
     simp
-    rw [<- denote_rule_star_n_iff]
+    rw [<- denote_star_n_iff]
     rw [Rule.denote]
   termination_by xs.length
   decreasing_by
@@ -276,7 +276,7 @@ theorem Rule.denote_star_n {n: Nat} {α: Type}
   =
   Regex.Language.star_n (Rule.denote G Φ r) := by
   funext xs
-  rw [denote_rule_star_n_iff]
+  rw [denote_star_n_iff]
 
 theorem Rule.denote_star {n: Nat} {α: Type}
   {G: Grammar n φ} {Φ: φ -> α -> Bool} {r: Rule n φ}:
@@ -284,7 +284,7 @@ theorem Rule.denote_star {n: Nat} {α: Type}
   =
   Regex.Language.star_append (Rule.denote G Φ r) := by
   funext xs
-  rw [denote_rule_star_n_iff]
+  rw [denote_star_n_iff]
   rw [Regex.Language.star_append_is_star_n]
 
 def Rule.denote_onlyif {α: Type}
