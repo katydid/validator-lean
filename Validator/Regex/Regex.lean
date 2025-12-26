@@ -52,7 +52,7 @@ def unescapable (x: Regex σ): Bool :=
 def onlyif (cond: Prop) [dcond: Decidable cond] (x: Regex σ): Regex σ :=
   if cond then x else emptyset
 
-def denote_onlyif {α: Type} (Φ : σ -> α -> Prop) (condition: Prop) [dcond: Decidable condition] (r: Regex σ):
+theorem denote_onlyif {α: Type} (Φ : σ -> α -> Prop) (condition: Prop) [dcond: Decidable condition] (r: Regex σ):
   denote Φ (onlyif condition r) = Language.onlyif condition (denote Φ r) := by
   unfold Language.onlyif
   unfold onlyif

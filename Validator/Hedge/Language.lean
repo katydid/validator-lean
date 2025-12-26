@@ -24,6 +24,31 @@ def Lang (α: Type): Type := Regex.Language.Langs (Hedge.Node α)
 def tree {α: Type} (φ: α -> Bool) (R: Lang α): Lang α :=
   fun xs => ∃ label children, xs = [Hedge.Node.mk label children] /\ φ label /\ R children
 
+def tree_match {α: Type} (φ: α -> Bool) (R: Lang α): Lang α :=
+  fun xs =>
+    match xs with
+    | [Hedge.Node.mk label children] =>
+      φ label /\ R children
+    | _ => False
+
+theorem tree_exists_is_tree_match:
+  tree φ R = tree_match φ R := by
+  unfold tree
+  unfold tree_match
+  funext xs
+  cases xs with
+  | nil =>
+    simp only [List.ne_cons_self, false_and, exists_const, exists_false]
+  | cons x xs =>
+    cases xs with
+    | nil =>
+      simp only [cons.injEq, and_true, eq_iff_iff]
+      cases x with
+      | mk label children =>
+      simp only [Node.mk.injEq, ↓existsAndEq, and_true, exists_eq_left']
+    | cons x' xs =>
+      simp only [cons.injEq, reduceCtorEq, and_false, false_and, exists_const, exists_false]
+
 example: Lang Nat := (tree (fun x => x = 1) (Regex.Language.or (tree (fun x => x = 1) Regex.Language.emptystr) Regex.Language.emptyset))
 
 theorem null_iff_tree {α: Type} {p: α -> Bool} {children: Lang α}:

@@ -159,7 +159,7 @@ theorem derives_foldl (R: Langs α) (xs: List α):
     unfold derives
     simp only [nil_append, foldl_nil, implies_true]
   | cons x xs ih =>
-    simp
+    simp only [List.foldl_cons, derive]
     intro R
     rw [derives_step]
     rw [ih (derive R x)]
@@ -1588,3 +1588,15 @@ theorem simp_or_star_append_any_r_is_star_append_any (r: Langs α):
   or r (star_append any) = (star_append any) := by
   rw [simp_star_append_any_is_universal]
   rw [simp_or_universal_r_is_universal]
+
+theorem simp_onlyif_and {α: Type} (cond1 cond2 : Prop) (P : Langs α):
+  onlyif (cond1 /\ cond2) P = onlyif cond1 (onlyif cond2 P) := by
+  unfold onlyif
+  funext xs
+  -- aesop?
+  simp_all only [eq_iff_iff]
+  apply Iff.intro
+  · intro a
+    simp_all only [and_self]
+  · intro a
+    simp_all only [and_self]

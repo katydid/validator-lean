@@ -203,6 +203,26 @@ theorem denote_emptystr {α: Type} {φ: Type} (G: Hedge.Grammar n φ) (Φ: φ ->
   unfold Rule.denote
   simp only [Rule.denote_elem]
 
+theorem denote_onlyif {α: Type}
+  (condition: Prop) [dcond: Decidable condition]
+  (G: Grammar n φ) {Φ: φ -> α -> Prop} (x: Rule n φ):
+  Rule.denote G Φ (Regex.onlyif condition x) = Regex.Language.onlyif condition (Rule.denote G Φ x) := by
+  unfold Regex.Language.onlyif
+  unfold Regex.onlyif
+  funext xs
+  split_ifs
+  case pos hc =>
+    simp only [eq_iff_iff, iff_and_self]
+    intro d
+    assumption
+  case neg hc =>
+    simp only [eq_iff_iff]
+    rw [Rule.denote]
+    rw [Rule.denote_elem]
+    simp only [Regex.Language.emptyset, false_iff, not_and]
+    intro h
+    contradiction
+
 theorem denote_symbol {α: Type} {φ: Type} (G: Hedge.Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ] (s: Symbol n φ):
   Rule.denote G Φ (Regex.symbol s) = Hedge.Language.tree (fun a => Φ s.1 a) (Rule.denote G Φ (G.lookup s.2)) := by
   unfold Rule.denote
@@ -301,3 +321,64 @@ theorem denote_star_n {α: Type} {φ: Type} (G: Hedge.Grammar n φ) (Φ: φ -> �
   Rule.denote G Φ (Regex.star r) = Regex.Language.star_n (Rule.denote G Φ r) := by
   funext
   rw [denote_star_n_iff]
+
+theorem null_commutes {α: Type}
+  (G: Grammar n φ) (Φ: φ -> α -> Prop) [DecidableRel Φ] (x: Rule n φ):
+  ((Rule.null x) = true) = Regex.Language.null (Hedge.Grammar.Elem.Rule.denote G Φ x) := by
+  unfold Rule.null
+  induction x with
+  | emptyset =>
+    rw [denote_emptyset]
+    rw [Regex.Language.null_emptyset]
+    unfold Regex.null
+    apply Bool.false_eq_true
+  | emptystr =>
+    rw [denote_emptystr]
+    rw [Regex.Language.null_emptystr]
+    unfold Regex.null
+    simp only
+  | symbol s =>
+    obtain ⟨p, children⟩ := s
+    rw [denote_symbol]
+    rw [Hedge.Language.null_tree]
+    unfold Regex.null
+    apply Bool.false_eq_true
+  | or p q ihp ihq =>
+    rw [denote_or]
+    rw [Regex.Language.null_or]
+    unfold Regex.null
+    rw [<- ihp]
+    rw [<- ihq]
+    unfold Regex.null
+    rw [Bool.or_eq_true]
+  | concat p q ihp ihq =>
+    rw [denote_concat_n]
+    rw [Regex.Language.null_concat_n]
+    unfold Regex.null
+    rw [<- ihp]
+    rw [<- ihq]
+    unfold Regex.null
+    rw [Bool.and_eq_true]
+  | star r ih =>
+    rw [denote_star_n]
+    rw [Regex.Language.null_star_n]
+    unfold Regex.null
+    simp only
+
+theorem denote_nil_is_null (Φ: φ -> α -> Prop) [DecidableRel Φ]:
+  Rule.denote G Φ r [] = Rule.null r := by
+  rw [null_commutes G (fun s a => Φ s a)]
+  cases r with
+  | emptyset =>
+    simp only [denote_emptyset, Regex.Language.emptyset, Regex.Language.null]
+  | emptystr =>
+    simp only [denote_emptystr, Regex.Language.emptystr, Regex.Language.null]
+  | symbol s =>
+    simp only [denote_symbol]
+    simp only [Regex.Language.null]
+  | or r1 r2 =>
+    simp only [denote_or, Regex.Language.or, Regex.Language.null]
+  | concat r1 r2 =>
+    simp only [denote_concat_n, Regex.Language.null]
+  | star r1 =>
+    simp only [denote_star_n, Regex.Language.null]

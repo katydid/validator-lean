@@ -58,6 +58,17 @@ def LabelIn.self {α: Type} (x: Hedge.Node α) : LabelIn [x] :=
       List.mem_cons, List.mem_flatMap, true_or]
   ))
 
+def Node.getDescendants (t: Hedge.Node α): Hedge α :=
+  match t with
+  | Node.mk _ children => children ++ List.flatMap Node.getDescendants children
+
+abbrev Node.Descendant (child: Hedge.Node α) (ancestor: Hedge.Node α) := child ∈ ancestor.getDescendants
+
+abbrev Node.DescendantOf {α: Type} (ancestor: Hedge.Node α) := {
+    child: Hedge.Node α
+    // Descendant child ancestor
+  }
+
 example: Hedge String := [
   node "html" [
     node "head" [
