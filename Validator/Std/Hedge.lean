@@ -69,6 +69,87 @@ abbrev Node.DescendantOf {α: Type} (ancestor: Hedge.Node α) := {
     // Descendant child ancestor
   }
 
+def Node.Descendant.mkFirstChild (parentLabel: α) (x: Hedge.Node α) (siblings: Hedge α): (Node.mk parentLabel (x :: siblings)).DescendantOf := by
+  refine (Subtype.mk x ?_)
+  unfold Node.Descendant
+  unfold Node.getDescendants
+  simp only [List.flatMap_cons, List.cons_append, List.mem_cons, List.mem_append, List.mem_flatMap,
+    true_or]
+
+def Node.Descendant.mkFirstChild_eq (parentLabel: α) (x: Hedge.Node α) (siblings: Hedge α):
+  {
+    descendant: (Node.mk parentLabel (x :: siblings)).DescendantOf
+    // descendant.val = x
+  } := by
+  refine (Subtype.mk (Subtype.mk x ?_) ?_)
+  · unfold Node.Descendant
+    unfold Node.getDescendants
+    simp only [List.flatMap_cons, List.cons_append, List.mem_cons, List.mem_append, List.mem_flatMap,
+      true_or]
+  · simp only
+
+def Node.Descendant.consFirstChild
+  (firstchild: Hedge.Node α) (h: (Node.mk label xs).DescendantOf):
+  (Node.mk label (firstchild :: xs)).DescendantOf := by
+  unfold Node.DescendantOf at *
+  unfold Node.Descendant at *
+  unfold Node.getDescendants at *
+  obtain ⟨child, h⟩ := h
+  refine (Subtype.mk child ?_)
+  simp
+  simp at h
+  apply Or.inr
+  cases h
+  · apply Or.inl
+    assumption
+  · apply Or.inr
+    apply Or.inr
+    assumption
+
+def Node.Descendant.consFirstChild_eq
+  (firstchild: Hedge.Node α) (h: (Node.mk label xs).DescendantOf):
+  {
+    descendant: (Node.mk label (firstchild :: xs)).DescendantOf
+    // descendant.val = h.val
+  } := by
+  obtain ⟨child, h⟩ := h
+  unfold Node.Descendant at *
+  simp only
+  refine (Subtype.mk (Subtype.mk child ?_) ?_)
+  · unfold Node.Descendant
+    unfold Node.getDescendants at *
+    simp
+    simp at h
+    apply Or.inr
+    cases h
+    · apply Or.inl
+      assumption
+    · apply Or.inr
+      apply Or.inr
+      assumption
+  · simp
+
+def Node.getFirstChild (x: Hedge.Node α): Option (Hedge.Node α) :=
+  match x with
+  | Node.mk _ (y::_ys) => Option.some y
+  | _ => Option.none
+
+abbrev Node.FirstChild (child: Hedge.Node α) (parent: Hedge.Node α) :=
+  Option.some child = Node.getFirstChild parent
+
+abbrev Node.FirstChildOf {α: Type} (parent: Hedge.Node α) := {
+    child: Hedge.Node α
+    // Node.FirstChild child parent
+  }
+
+def Node.FirstChild.mk
+  (parentLabel: α) (firstchild: Hedge.Node α) (siblings: Hedge α):
+  (Node.mk parentLabel (firstchild :: siblings)).FirstChildOf := by
+  refine (Subtype.mk firstchild ?_)
+  unfold Node.FirstChild
+  unfold Node.getFirstChild
+  simp only
+
 example: Hedge String := [
   node "html" [
     node "head" [
@@ -278,3 +359,100 @@ theorem labelin_drop_is_labelelem {xs: Hedge α} (y: Hedge.LabelIn (List.drop n 
   rw [List.flatten_append]
   rw [List.mem_append]
   exact Or.inr hy
+
+private theorem Hedge.Node.sizeOf_lt_cons_child {α: Type} (label: α) (x1: Hedge.Node α) (x2: Hedge.Node α) (xs: Hedge α):
+  sizeOf x1 < sizeOf (Hedge.Node.mk label xs)
+  -> sizeOf x1 < sizeOf (Hedge.Node.mk label (x2 :: xs)) := by
+  simp
+  intro h
+  omega
+
+private theorem Hedge.Node.sizeOf_lt_cons_siblings {α: Type} (label: α) (x1: Hedge.Node α) (x2: Hedge.Node α) (xs: Hedge α):
+  sizeOf x1 < sizeOf x2
+  -> sizeOf x1 < sizeOf (Hedge.Node.mk label (x2 :: xs)) := by
+  simp
+  intro h
+  omega
+
+theorem Node.sizeOf_children
+  {α : Type}
+  (child : Node α)
+  (label : α)
+  (children : List (Node α))
+  (h : child ∈ children)
+  : sizeOf child < sizeOf (Hedge.Node.mk label children) := by
+  induction children with
+  | nil =>
+    simp at h
+  | cons x xs ih =>
+    simp at h
+    cases h with
+    | inl h =>
+      rw [h]
+      simp
+      omega
+    | inr h =>
+      apply Hedge.Node.sizeOf_lt_cons_child
+      apply ih
+      assumption
+
+theorem Node.sizeOf_grandchildren
+  {α : Type}
+  (child : Node α)
+  (label : α)
+  (children : List (Node α))
+  (h : child ∈ List.flatMap Hedge.Node.getDescendants children)
+  : sizeOf child < sizeOf (Hedge.Node.mk label children) := by
+  cases hchildren: children with
+  | nil =>
+    subst hchildren
+    simp at h
+  | cons firstchild children =>
+    subst hchildren
+    simp only [List.flatMap_cons, List.mem_append] at h
+    cases h with
+    | inl h =>
+      unfold getDescendants at h
+      cases hfirstchild: firstchild with
+      | mk firstchildlabel firstgranchildren =>
+      apply Hedge.Node.sizeOf_lt_cons_siblings
+      subst hfirstchild
+      simp only [List.mem_append] at h
+      cases h with
+      | inl h =>
+        apply Node.sizeOf_children
+        assumption
+      | inr h =>
+        apply Node.sizeOf_grandchildren
+        exact h
+    | inr h =>
+      apply Hedge.Node.sizeOf_lt_cons_child
+      apply Node.sizeOf_grandchildren
+      assumption
+  termination_by children
+  decreasing_by
+    · subst hfirstchild
+      subst hchildren
+      simp
+      omega
+    · subst hchildren
+      simp
+      omega
+
+theorem Node.DescendantOf.sizeOf
+  (x: Hedge.Node α)
+  (d : x.DescendantOf): sizeOf d.val < sizeOf x := by
+  unfold DescendantOf at d
+  unfold Descendant at d
+  obtain ⟨d, h⟩ := d
+  simp only
+  obtain ⟨label, children⟩ := x
+  unfold getDescendants at h
+  simp only [List.mem_append] at h
+  cases h with
+  | inl h =>
+    apply Node.sizeOf_children
+    assumption
+  | inr h =>
+    apply Node.sizeOf_grandchildren
+    assumption
