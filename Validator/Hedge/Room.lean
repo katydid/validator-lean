@@ -234,9 +234,8 @@ theorem derive_commutesb_iff {α: Type} (G: Hedge.Grammar n φ) (Φ: φ -> α ->
     rw [Hedge.Grammar.Elem.denote_star_n]
     rw [Regex.Language.derive_star_n]
     rw [ih1]
-  termination_by (sizeOf x, sizeOf r)
+  termination_by x
   decreasing_by
-    apply Prod.Lex.left
     apply Hedge.Node.DescendantOf.sizeOf
 
 theorem derive_commutesb {α: Type}
