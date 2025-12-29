@@ -18,6 +18,9 @@ def derive {σ: Type}
   let pred_results: Vec Bool (Symbol.num r) := Vec.map symbols Φ
   Leave.leave r pred_results
 
+def derive_pretty {σ: Type} (Φ: σ -> Bool) (r: Regex σ): Regex σ :=
+  Leave.leave r (Vec.map (Enter.enter r) Φ)
+
 def derive_distrib {σ: Type}
   (ps: {n: Nat} -> Vec σ n -> Vec Bool n) (r: Regex σ): Regex σ :=
   let symbols: Vec σ (Symbol.num r) := Enter.enter r
