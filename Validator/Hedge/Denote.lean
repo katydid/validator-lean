@@ -341,3 +341,6 @@ theorem denote_nil_is_null (Φ: φ -> α -> Prop) [DecidableRel Φ]:
     simp only [denote_concat_n, Regex.Language.null]
   | star r1 =>
     simp only [denote_star_n, Regex.Language.null]
+
+def denote (G: Grammar n φ) (Φ: φ -> α -> Prop) (xs: Hedge α): Prop :=
+  Rule.denote G Φ G.start xs

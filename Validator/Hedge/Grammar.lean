@@ -11,8 +11,7 @@ import Validator.Hedge.Language
 
 namespace Hedge.Grammar
 
-def lookup {n: Nat} {φ: Type}
-  (G: Grammar n φ) (ref: Fin n): Rule n φ :=
+def lookup {n: Nat} {φ: Type} (G: Grammar n φ) (ref: Ref n): Rule n φ :=
   Vec.get G.prods ref
 
 def singleton (x: Rule 0 φ): Grammar 0 φ  :=
