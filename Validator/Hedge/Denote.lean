@@ -110,7 +110,7 @@ theorem denote_elem_sizeOf_star_right {α: Type} {σ: Type} [SizeOf σ] {p: Rege
     simp only [List.cons.sizeOf_spec, gt_iff_lt]
     omega
 
--- Hedge.Elem.Rule.denote_elem is an alternative version of Hedge.Grammar.Rule.denote.
+-- Hedge.Denote.Rule.denote_elem is an alternative version of Hedge.Grammar.Rule.denote.
 -- The only other changes is that denote_elem contains unfolded versions of Language.or, Language.concat_n and Language.star_n.
 def Rule.denote_elem
   {α: Type} {φ: Type}

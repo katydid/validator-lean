@@ -3,7 +3,7 @@ import Mathlib.Tactic.SimpRw
 import Validator.Std.Hedge
 
 import Validator.Regex.Room
-import Validator.Hedge.Elem
+import Validator.Hedge.Denote
 import Validator.Hedge.Grammar
 import Validator.Hedge.IfExpr
 
