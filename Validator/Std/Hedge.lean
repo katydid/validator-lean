@@ -40,24 +40,6 @@ def getAttachedChildren (t: Hedge.Node α): List {x // x ∈ t.getChildren} :=
 def node {α: Type} (label: α) (children: Hedge α): Hedge.Node α :=
   Hedge.Node.mk label children
 
-abbrev LabelElem (x: α) (xs: Hedge α) := x ∈ List.flatMap Node.getLabels xs
-
-abbrev LabelIn {α: Type} (xs: Hedge α) := {
-    a: α
-    // LabelElem a xs
-  }
-
-def LabelIn.mk {α: Type} (y: α) (xs: Hedge α) (property : LabelElem y xs) : LabelIn xs :=
-  (Subtype.mk y property)
-
-def LabelIn.self {α: Type} (x: Hedge.Node α) : LabelIn [x] :=
-  (Subtype.mk x.getLabel (by
-    cases x with
-    | mk label children =>
-    simp only [LabelElem, List.flatMap_cons, Node.getLabels, List.flatMap_nil, List.append_nil, Node.getLabel,
-      List.mem_cons, List.mem_flatMap, true_or]
-  ))
-
 def Node.getDescendants (t: Hedge.Node α): Hedge α :=
   match t with
   | Node.mk _ children => children ++ List.flatMap Node.getDescendants children
@@ -128,27 +110,6 @@ def Node.Descendant.consFirstChild_eq
       apply Or.inr
       assumption
   · simp
-
-def Node.getFirstChild (x: Hedge.Node α): Option (Hedge.Node α) :=
-  match x with
-  | Node.mk _ (y::_ys) => Option.some y
-  | _ => Option.none
-
-abbrev Node.FirstChild (child: Hedge.Node α) (parent: Hedge.Node α) :=
-  Option.some child = Node.getFirstChild parent
-
-abbrev Node.FirstChildOf {α: Type} (parent: Hedge.Node α) := {
-    child: Hedge.Node α
-    // Node.FirstChild child parent
-  }
-
-def Node.FirstChild.mk
-  (parentLabel: α) (firstchild: Hedge.Node α) (siblings: Hedge α):
-  (Node.mk parentLabel (firstchild :: siblings)).FirstChildOf := by
-  refine (Subtype.mk firstchild ?_)
-  unfold Node.FirstChild
-  unfold Node.getFirstChild
-  simp only
 
 example: Hedge String := [
   node "html" [
@@ -335,30 +296,6 @@ theorem elem_is_leq_sizeOf {α: Type} [SizeOf α] {x: Hedge.Node α} {ys: Hedge 
   | tail =>
     simp only [List.cons.sizeOf_spec]
     omega
-
-theorem labelin_take_is_labelelem {xs: Hedge α} (y: Hedge.LabelIn (List.take n xs)):
-  LabelElem y.val xs := by
-  obtain ⟨y, hy⟩ := y
-  simp only
-  rw [List.list_take_drop_n n xs]
-  unfold LabelElem at *
-  unfold List.flatMap
-  rw [List.map_append]
-  rw [List.flatten_append]
-  rw [List.mem_append]
-  exact Or.inl hy
-
-theorem labelin_drop_is_labelelem {xs: Hedge α} (y: Hedge.LabelIn (List.drop n xs)):
-  LabelElem y.val xs := by
-  obtain ⟨y, hy⟩ := y
-  simp only
-  rw [List.list_take_drop_n n xs]
-  unfold LabelElem at *
-  unfold List.flatMap
-  rw [List.map_append]
-  rw [List.flatten_append]
-  rw [List.mem_append]
-  exact Or.inr hy
 
 private theorem Hedge.Node.sizeOf_lt_cons_child {α: Type} (label: α) (x1: Hedge.Node α) (x2: Hedge.Node α) (xs: Hedge α):
   sizeOf x1 < sizeOf (Hedge.Node.mk label xs)
