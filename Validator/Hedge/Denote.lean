@@ -111,6 +111,7 @@ theorem denote_sizeOf_star_right {α: Type} {σ: Type} [SizeOf σ] {p: Regex σ}
     omega
 
 -- Language.or, Language.concat_n and Language.star_n are unfolded to help with the termination proof.
+-- Φ needs to be the last parameter, so that simp only works on this function when the parameter r is provided.
 def Rule.denote'
   {α: Type} {n: Nat} {φ: Type}
   (G: Hedge.Grammar n φ)
